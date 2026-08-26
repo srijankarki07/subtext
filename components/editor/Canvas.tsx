@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { Canvas as FabricCanvas, FabricImage } from "fabric"
 import { useEditorStore } from "@/store/editorStore"
+import { Canvas as FabricCanvas, FabricImage, IText } from "fabric"
+import { useEffect, useRef } from "react"
 
 export default function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -16,7 +16,7 @@ export default function Canvas() {
     const canvas = new FabricCanvas(canvasRef.current, {
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
-      backgroundColor: "#1e293b",
+      backgroundColor: "#0A0A0A",
     })
 
     setCanvas(canvas)
@@ -30,7 +30,24 @@ export default function Canvas() {
     )
     canvas.on("selection:cleared", () => setActiveObject(null))
 
+    // KEYBOARD LISTENER: Delete objects
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent deleting if the user is typing inside an active IText block!
+      const activeObj = canvas.getActiveObject()
+      if (activeObj && activeObj.type === "i-text") {
+        const textObj = activeObj as IText
+        if (textObj.isEditing) return // Don't delete while they are typing text
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        useEditorStore.getState().deleteActiveObject()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
     return () => {
+      window.removeEventListener("keydown", handleKeyDown)
       canvas.dispose()
     }
   }, [setCanvas, setActiveObject])
