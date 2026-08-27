@@ -1,5 +1,6 @@
 "use client"
 
+import FontPicker from "@/components/panels/FontPicker"
 import TextPanel from "@/components/panels/TextPanel"
 import { useEditorStore } from "@/store/editorStore"
 import {
@@ -12,6 +13,7 @@ import {
   Type,
 } from "lucide-react"
 import dynamic from "next/dynamic"
+import { useState } from "react"
 
 const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
   ssr: false,
@@ -45,6 +47,52 @@ function AddTextBtn({
       <span className="text-white/50">{icon}</span>
       {label}
     </button>
+  )
+}
+
+function RightPanelManager() {
+  const { activeObject } = useEditorStore()
+  const [activeTab, setActiveTab] = useState<"font" | "style">("font")
+
+  if (!activeObject || activeObject.type !== "i-text") {
+    return (
+      <div className="flex flex-1 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center text-[13px] text-white/40 shadow-inner">
+        Select a text layer to edit typography.
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
+      {/* iOS-Style Segmented Control */}
+      <div className="mb-4 flex rounded-xl border border-white/[0.05] bg-black/40 p-1">
+        <button
+          onClick={() => setActiveTab("font")}
+          className={`flex-1 rounded-lg py-1.5 text-[13px] font-medium transition-all ${
+            activeTab === "font"
+              ? "bg-[#2C2C2E] text-white shadow-md"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Font
+        </button>
+        <button
+          onClick={() => setActiveTab("style")}
+          className={`flex-1 rounded-lg py-1.5 text-[13px] font-medium transition-all ${
+            activeTab === "style"
+              ? "bg-[#2C2C2E] text-white shadow-md"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Style
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "font" ? <FontPicker /> : <TextPanel />}
+      </div>
+    </div>
   )
 }
 
@@ -115,10 +163,8 @@ export default function EditorPage() {
           </button>
         </div>
 
-        {/* Mount the Text Panel here */}
-        <div className="flex-1 overflow-y-auto">
-          <TextPanel />
-        </div>
+        {/* We use a separate component to manage Right Panel state without re-rendering the whole page */}
+        <RightPanelManager />
       </aside>
 
       {/* MOBILE BOTTOM NAVIGATION - Apple Glassmorphism style */}
