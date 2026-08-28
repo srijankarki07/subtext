@@ -1,7 +1,17 @@
 "use client"
 
+import TextPanel from "@/components/panels/TextPanel"
+import { useEditorStore } from "@/store/editorStore"
+import {
+  AtSign,
+  Download,
+  Layers,
+  LayoutTemplate,
+  Quote,
+  Settings2,
+  Type,
+} from "lucide-react"
 import dynamic from "next/dynamic"
-import { Layers, LayoutTemplate, Settings2, Download } from "lucide-react"
 
 const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
   ssr: false,
@@ -18,6 +28,26 @@ const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
   ),
 })
 
+function AddTextBtn({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 text-[13px] text-white/80 transition-all hover:bg-white/[0.06] active:scale-[0.98]"
+    >
+      <span className="text-white/50">{icon}</span>
+      {label}
+    </button>
+  )
+}
+
 export default function EditorPage() {
   return (
     // font-sans defaults to SF Pro on Apple devices.
@@ -26,10 +56,26 @@ export default function EditorPage() {
       {/* DESKTOP LEFT PANEL */}
       <aside className="hidden w-72 flex-col border-r border-white/[0.08] bg-[#1C1C1E] p-5 lg:flex">
         <h2 className="mb-6 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
-          Templates & Layers
+          Add Elements
         </h2>
-        <div className="flex flex-1 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.02] text-sm text-white/40 shadow-inner">
-          Left Panel Content
+
+        {/* Add Text Buttons */}
+        <div className="flex flex-col gap-2">
+          <AddTextBtn
+            icon={<Type size={16} />}
+            label="Add Quote Block"
+            onClick={() => useEditorStore.getState().addText("quote")}
+          />
+          <AddTextBtn
+            icon={<Quote size={16} />}
+            label="Add Author Name"
+            onClick={() => useEditorStore.getState().addText("author")}
+          />
+          <AddTextBtn
+            icon={<AtSign size={16} />}
+            label="Add Social Handle"
+            onClick={() => useEditorStore.getState().addText("handle")}
+          />
         </div>
       </aside>
 
@@ -68,8 +114,10 @@ export default function EditorPage() {
             Export
           </button>
         </div>
-        <div className="flex flex-1 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.02] text-sm text-white/40 shadow-inner">
-          Right Panel Content
+
+        {/* Mount the Text Panel here */}
+        <div className="flex-1 overflow-y-auto">
+          <TextPanel />
         </div>
       </aside>
 

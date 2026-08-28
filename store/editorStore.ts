@@ -1,4 +1,4 @@
-import { Canvas, FabricObject, IText, ITextProps, Shadow } from "fabric"
+import { Canvas, FabricObject, IText, Shadow } from "fabric"
 import { create } from "zustand"
 
 export type TextBlockType = "quote" | "author" | "handle"
@@ -9,6 +9,7 @@ interface EditorState {
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
   addText: (type: TextBlockType) => void
+  deleteActiveObject: () => void
   clearCanvas: () => void
 }
 
@@ -18,13 +19,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCanvas: (canvas) => set({ canvas }),
   setActiveObject: (activeObject) => set({ activeObject }),
 
+  deleteActiveObject: () => {
+    const { canvas, activeObject } = get()
+    if (canvas && activeObject) {
+      canvas.remove(activeObject)
+      canvas.discardActiveObject()
+      canvas.requestRenderAll()
+      set({ activeObject: null })
+    }
+  },
+
   addText: (type: TextBlockType) => {
     const { canvas } = get()
     if (!canvas) return
 
     let textStr = ""
-
-    let options: Partial<ITextProps> = {
+    const options: Record<string, string | number | Shadow> = {
       fill: "#ffffff",
       originX: "center",
       originY: "center",
@@ -39,35 +49,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     switch (type) {
       case "quote":
         textStr = '"To create is to live twice."'
-        options = {
-          ...options,
+        Object.assign(options, {
           fontFamily: "Playfair Display",
           fontSize: 64,
           fontWeight: "bold",
           textAlign: "center",
-        }
+        })
         break
-
       case "author":
         textStr = "— Albert Camus"
-        options = {
-          ...options,
+        Object.assign(options, {
           fontFamily: "Montserrat",
           fontSize: 24,
           fontStyle: "italic",
           opacity: 0.8,
-        }
+        })
         break
-
       case "handle":
         textStr = "@cinemate"
-        options = {
-          ...options,
+        Object.assign(options, {
           fontFamily: "Inter",
           fontSize: 16,
           charSpacing: 200,
           opacity: 0.6,
-        }
+        })
         break
     }
 
