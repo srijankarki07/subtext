@@ -1,16 +1,18 @@
 "use client"
 
+import { useReducer, useState } from "react"
 import { useEditorStore } from "@/store/editorStore"
-import { IText } from "fabric"
 import {
-  AlignCenter,
   AlignLeft,
+  AlignCenter,
   AlignRight,
   Bold,
   Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
   Trash2,
 } from "lucide-react"
-import { useReducer } from "react"
+import { IText, Shadow } from "fabric"
 
 interface AppleSliderProps {
   label: string
@@ -21,11 +23,30 @@ interface AppleSliderProps {
   onChange: (val: number) => void
 }
 
+// Apple iOS/macOS Default Dark Mode Palette
+const PRESET_COLORS = [
+  "#FFFFFF",
+  "#EBEBF5",
+  "#8E8E93",
+  "#000000", // Neutrals
+  "#FF453A",
+  "#FF9F0A",
+  "#FFD60A",
+  "#32D74B", // Warm & Green
+  "#64D2FF",
+  "#0A84FF",
+  "#5E5CE6",
+  "#FF375F", // Cool & Pink
+]
+
 export default function TextPanel() {
   const { canvas, activeObject, deleteActiveObject } = useEditorStore()
-
-  // A lightweight way to force React to re-render without complex useEffect syncing
   const [, forceUpdate] = useReducer((x) => x + 1, 0)
+
+  // Track which color picker is currently open
+  const [openPicker, setOpenPicker] = useState<
+    "fill" | "stroke" | "shadow" | null
+  >(null)
 
   if (!activeObject || activeObject.type !== "i-text") {
     return (
@@ -35,70 +56,135 @@ export default function TextPanel() {
     )
   }
 
-  // Cast activeObject safely to access text properties
   const textObj = activeObject as IText
 
-  // Derive values directly from the object (Single Source of Truth)
+  // Single Source of Truth from Fabric Object
   const fontSize = (textObj.get("fontSize") as number) || 40
   const charSpacing = (textObj.get("charSpacing") as number) || 0
   const lineHeight = (textObj.get("lineHeight") as number) || 1.1
+  const fill = (textObj.get("fill") as string) || "#ffffff"
 
-  // Strictly typed update function
-  const updateTextProp = (key: keyof IText, value: string | number) => {
+  // Text Styles
+  const rawWeight = textObj.get("fontWeight")
+  const fontWeight =
+    typeof rawWeight === "number"
+      ? rawWeight
+      : rawWeight === "bold"
+        ? 700
+        : parseInt(rawWeight as string) || 400
+  const isItalic = textObj.get("fontStyle") === "italic"
+  const isUnderline = !!textObj.get("underline")
+  const isLinethrough = !!textObj.get("linethrough")
+
+  // Stroke properties
+  const strokeWidth = (textObj.get("strokeWidth") as number) || 0
+  const strokeColor = (textObj.get("stroke") as string) || "#000000"
+
+  // Shadow properties safely typed
+  const currentShadow = textObj.get("shadow") as Shadow | null
+  const shadowBlur = currentShadow?.blur || 0
+  const shadowOffset = currentShadow?.offsetX || 0
+  const shadowColor = currentShadow?.color || "rgba(0,0,0,0.8)"
+
+  const updateTextProp = (key: keyof IText, value: any) => {
     if (!textObj || !canvas) return
-
+    // @ts-ignore
     textObj.set(key, value)
     canvas.requestRenderAll()
-    forceUpdate() // Re-render this panel to show updated slider values
+    forceUpdate()
+  }
+
+  // Dedicated Shadow Engine
+  const updateShadow = (updates: Partial<Shadow>) => {
+    if (!textObj || !canvas) return
+    const baseShadow = currentShadow || {
+      color: "rgba(0,0,0,0.8)",
+      blur: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }
+    textObj.set("shadow", new Shadow({ ...baseShadow, ...updates }))
+    canvas.requestRenderAll()
+    forceUpdate()
+  }
+
+  const clearShadow = () => {
+    if (!textObj || !canvas) return
+    textObj.set("shadow", null)
+    canvas.requestRenderAll()
+    forceUpdate()
+  }
+
+  const togglePicker = (picker: "fill" | "stroke" | "shadow") => {
+    setOpenPicker(openPicker === picker ? null : picker)
   }
 
   return (
-    <div className="flex flex-col gap-6 p-1">
-      {/* ALIGNMENT & STYLE */}
-      <div className="flex items-center justify-between rounded-xl bg-white/[0.04] p-1">
-        <div className="flex gap-1">
-          <FormatButton
-            icon={<AlignLeft size={16} />}
-            isActive={textObj.get("textAlign") === "left"}
-            onClick={() => updateTextProp("textAlign", "left")}
-          />
-          <FormatButton
-            icon={<AlignCenter size={16} />}
-            isActive={textObj.get("textAlign") === "center"}
-            onClick={() => updateTextProp("textAlign", "center")}
-          />
-          <FormatButton
-            icon={<AlignRight size={16} />}
-            isActive={textObj.get("textAlign") === "right"}
-            onClick={() => updateTextProp("textAlign", "right")}
-          />
-        </div>
-        <div className="h-6 w-[1px] bg-white/[0.1]"></div>
-        <div className="flex gap-1">
-          <FormatButton
-            icon={<Bold size={16} />}
-            isActive={textObj.get("fontWeight") === "bold"}
-            onClick={() =>
-              updateTextProp(
-                "fontWeight",
-                textObj.get("fontWeight") === "bold" ? "normal" : "bold"
-              )
-            }
-          />
-          <FormatButton
-            icon={<Italic size={16} />}
-            isActive={textObj.get("fontStyle") === "italic"}
-            onClick={() =>
-              updateTextProp(
-                "fontStyle",
-                textObj.get("fontStyle") === "italic" ? "normal" : "italic"
-              )
-            }
-          />
+    <div className="flex flex-col gap-6 p-1 pb-24">
+      {/* ALIGNMENT & BASIC STYLE */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between rounded-xl bg-white/[0.04] p-1">
+          <div className="flex gap-1">
+            <FormatButton
+              icon={<AlignLeft size={16} />}
+              isActive={textObj.get("textAlign") === "left"}
+              onClick={() => updateTextProp("textAlign", "left")}
+            />
+            <FormatButton
+              icon={<AlignCenter size={16} />}
+              isActive={textObj.get("textAlign") === "center"}
+              onClick={() => updateTextProp("textAlign", "center")}
+            />
+            <FormatButton
+              icon={<AlignRight size={16} />}
+              isActive={textObj.get("textAlign") === "right"}
+              onClick={() => updateTextProp("textAlign", "right")}
+            />
+          </div>
+          <div className="h-6 w-[1px] bg-white/[0.1]"></div>
+          <div className="flex gap-1">
+            <FormatButton
+              icon={<Bold size={16} />}
+              isActive={fontWeight >= 700}
+              onClick={() =>
+                updateTextProp("fontWeight", fontWeight >= 700 ? 400 : 700)
+              }
+            />
+            <FormatButton
+              icon={<Italic size={16} />}
+              isActive={isItalic}
+              onClick={() =>
+                updateTextProp("fontStyle", isItalic ? "normal" : "italic")
+              }
+            />
+            <FormatButton
+              icon={<UnderlineIcon size={16} />}
+              isActive={isUnderline}
+              onClick={() => updateTextProp("underline", !isUnderline)}
+            />
+            <FormatButton
+              icon={<Strikethrough size={16} />}
+              isActive={isLinethrough}
+              onClick={() => updateTextProp("linethrough", !isLinethrough)}
+            />
+          </div>
         </div>
       </div>
 
-      {/* SLIDERS */}
+      {/* TEXT FILL COLOR */}
+      <div className="relative">
+        <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
+          <span>Text Color</span>
+          <ColorCircle color={fill} onClick={() => togglePicker("fill")} />
+        </div>
+        <ColorPickerDropdown
+          isOpen={openPicker === "fill"}
+          currentColor={fill}
+          onChange={(color) => updateTextProp("fill", color)}
+        />
+      </div>
+
+      {/* TYPOGRAPHY SLIDERS */}
       <div className="space-y-5">
         <AppleSlider
           label="Size"
@@ -106,6 +192,14 @@ export default function TextPanel() {
           min={10}
           max={200}
           onChange={(v) => updateTextProp("fontSize", v)}
+        />
+        <AppleSlider
+          label="Font Weight"
+          value={fontWeight}
+          min={100}
+          max={900}
+          step={100}
+          onChange={(v) => updateTextProp("fontWeight", v)}
         />
         <AppleSlider
           label="Letter Spacing"
@@ -124,8 +218,103 @@ export default function TextPanel() {
         />
       </div>
 
+      {/* CINEMATIC EFFECTS SECTION */}
+      <div className="space-y-6 border-t border-white/[0.08] pt-6">
+        <h3 className="mb-2 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
+          Cinematic Effects
+        </h3>
+
+        {/* Outline / Stroke */}
+        <div className="space-y-4 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <div className="relative">
+            <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
+              <span>Outline Color</span>
+              <ColorCircle
+                color={strokeColor}
+                onClick={() => togglePicker("stroke")}
+              />
+            </div>
+            <ColorPickerDropdown
+              isOpen={openPicker === "stroke"}
+              currentColor={strokeColor}
+              onChange={(color) => updateTextProp("stroke", color)}
+            />
+          </div>
+          <AppleSlider
+            label="Width"
+            value={strokeWidth}
+            min={0}
+            max={10}
+            step={0.5}
+            onChange={(v) => updateTextProp("strokeWidth", v)}
+          />
+        </div>
+
+        {/* Drop Shadow & Glow */}
+        <div className="space-y-4 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+          <div className="relative">
+            <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
+              <span>Shadow Color</span>
+              <ColorCircle
+                color={shadowColor}
+                onClick={() => togglePicker("shadow")}
+              />
+            </div>
+            <ColorPickerDropdown
+              isOpen={openPicker === "shadow"}
+              currentColor={shadowColor}
+              onChange={(color) => updateShadow({ color })}
+            />
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex gap-2 pt-1">
+            <PresetButton
+              label="Soft"
+              onClick={() =>
+                updateShadow({
+                  blur: 15,
+                  offsetX: 4,
+                  offsetY: 4,
+                  color:
+                    shadowColor === "rgba(0,0,0,0.8)"
+                      ? "rgba(0,0,0,0.6)"
+                      : shadowColor,
+                })
+              }
+            />
+            <PresetButton
+              label="Hard"
+              onClick={() => updateShadow({ blur: 0, offsetX: 5, offsetY: 5 })}
+            />
+            <PresetButton
+              label="Glow"
+              onClick={() => updateShadow({ blur: 25, offsetX: 0, offsetY: 0 })}
+            />
+            <PresetButton label="Off" onClick={clearShadow} isDanger />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <AppleSlider
+              label="Blur"
+              value={shadowBlur}
+              min={0}
+              max={50}
+              onChange={(v) => updateShadow({ blur: v })}
+            />
+            <AppleSlider
+              label="Distance"
+              value={shadowOffset}
+              min={-20}
+              max={50}
+              onChange={(v) => updateShadow({ offsetX: v, offsetY: v })}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* DELETE BUTTON */}
-      <div className="border-t border-white/[0.08] pt-4">
+      <div className="pt-2">
         <button
           onClick={deleteActiveObject}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
@@ -137,6 +326,8 @@ export default function TextPanel() {
     </div>
   )
 }
+
+// --- Helper UI Components ---
 
 function FormatButton({
   icon,
@@ -153,6 +344,87 @@ function FormatButton({
       className={`rounded-lg p-2 transition-all ${isActive ? "bg-white text-black" : "text-white/60 hover:bg-white/[0.08] hover:text-white"}`}
     >
       {icon}
+    </button>
+  )
+}
+
+function ColorCircle({
+  color,
+  onClick,
+}: {
+  color: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-6 w-6 rounded-full border border-white/20 shadow-inner transition-transform hover:scale-105 active:scale-95"
+      style={{ backgroundColor: color }}
+    />
+  )
+}
+
+function ColorPickerDropdown({
+  isOpen,
+  currentColor,
+  onChange,
+}: {
+  isOpen: boolean
+  currentColor: string
+  onChange: (color: string) => void
+}) {
+  if (!isOpen) return null
+
+  // Ensure the picker is absolute and aligned to the right so it never overflows the sidebar
+  return (
+    <div className="absolute top-8 right-0 z-50 w-60 animate-in rounded-2xl border border-white/[0.1] bg-[#2C2C2E] p-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] duration-150 zoom-in-95 fade-in">
+      {/* Preset Color Grid */}
+      <div className="mb-3 grid grid-cols-4 gap-2">
+        {PRESET_COLORS.map((preset) => (
+          <button
+            key={preset}
+            onClick={() => onChange(preset)}
+            className={`aspect-square w-full rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
+            style={{ backgroundColor: preset }}
+          />
+        ))}
+      </div>
+
+      {/* Hex Input Field */}
+      <div className="flex items-center gap-2 rounded-lg border border-white/[0.05] bg-black/40 p-1.5">
+        <span className="pl-1 font-mono text-[11px] font-medium text-white/40">
+          HEX
+        </span>
+        <input
+          type="text"
+          value={currentColor}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 bg-transparent font-mono text-[12px] text-white uppercase outline-none"
+        />
+      </div>
+    </div>
+  )
+}
+
+function PresetButton({
+  label,
+  onClick,
+  isDanger,
+}: {
+  label: string
+  onClick: () => void
+  isDanger?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 rounded-lg py-1.5 text-[10px] font-medium tracking-wider uppercase transition-all active:scale-95 ${
+        isDanger
+          ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+          : "border border-white/[0.05] bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
+      }`}
+    >
+      {label}
     </button>
   )
 }
