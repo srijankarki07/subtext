@@ -17,6 +17,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      colorthief:
+        specifier: ^3.5.0
+        version: 3.5.0(sharp@0.35.3(@types/node@26.3.0))
       fabric:
         specifier: ^7.4.0
         version: 7.4.0
@@ -1294,6 +1297,15 @@ packages:
 
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
+
+  colorthief@3.5.0:
+    resolution: {integrity: sha512-wV/6Rnkqdx07CAuv8O3WYKBU/j5QdSXbYUfGp26seMIqze5Q40C9ovBSZB9PeVV6XkGe3VWb4zUEtQCYzCfyEA==}
+    hasBin: true
+    peerDependencies:
+      sharp: '>=0.33.0'
+    peerDependenciesMeta:
+      sharp:
+        optional: true
 
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
@@ -4518,6 +4530,10 @@ snapshots:
   clsx@2.1.1: {}
 
   code-block-writer@13.0.3: {}
+
+  colorthief@3.5.0(sharp@0.35.3(@types/node@26.3.0)):
+    optionalDependencies:
+      sharp: 0.35.3(@types/node@26.3.0)
 
   commander@11.1.0: {}
 

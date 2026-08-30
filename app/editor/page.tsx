@@ -1,5 +1,6 @@
 "use client"
 
+import ColorPanel from "@/components/panels/ColorPanel"
 import FontPicker from "@/components/panels/FontPicker"
 import TextPanel from "@/components/panels/TextPanel"
 import {
@@ -61,7 +62,7 @@ function AddTextBtn({
 
 function RightPanelManager() {
   const { activeObject } = useEditorStore()
-  const [activeTab, setActiveTab] = useState<"font" | "style">("font")
+  const [activeTab, setActiveTab] = useState<"font" | "style" | "color">("font")
 
   if (!activeObject || activeObject.type !== "i-text") {
     return (
@@ -95,11 +96,23 @@ function RightPanelManager() {
         >
           Style
         </button>
+        <button
+          onClick={() => setActiveTab("color")}
+          className={`flex-1 rounded-lg py-1.5 text-[13px] font-medium transition-all ${
+            activeTab === "color"
+              ? "bg-[#2C2C2E] text-white shadow-md"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Color
+        </button>
       </div>
 
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === "font" ? <FontPicker /> : <TextPanel />}
+        {activeTab === "font" && <FontPicker />}
+        {activeTab === "style" && <TextPanel />}
+        {activeTab === "color" && <ColorPanel />}
       </div>
     </div>
   )
@@ -226,12 +239,12 @@ export default function EditorPage() {
                 <SelectValue placeholder="Select Canvas Size" />
               </SelectTrigger>
 
-              <SelectContent className="border-white/[0.1] bg-[#1C1C1E] text-white">
+              <SelectContent className="border-white/[0.1] bg-[#1C1C1E] p-2 text-white">
                 {Object.keys(ASPECT_RATIOS).map((ratio) => (
                   <SelectItem
                     key={ratio}
                     value={ratio}
-                    className="text-[12px] focus:bg-white/[0.1] focus:text-white"
+                    className="cursor-pointer text-[12px]"
                   >
                     {ratio}
                   </SelectItem>
@@ -239,7 +252,7 @@ export default function EditorPage() {
 
                 <SelectItem
                   value="custom"
-                  className="text-[12px] focus:bg-white/[0.1] focus:text-white"
+                  className="cursor-pointer text-[12px]"
                 >
                   Custom Size...
                 </SelectItem>
