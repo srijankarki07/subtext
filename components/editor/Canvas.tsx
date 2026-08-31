@@ -1,7 +1,7 @@
 "use client"
 
 import { extractPalette } from "@/lib/colorUtils"
-import { useEditorStore } from "@/store/editorStore"
+import { useEditorStore } from "@/store/useEditorStore"
 import {
   Canvas as FabricCanvas,
   FabricImage,

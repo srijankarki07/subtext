@@ -1,0 +1,115 @@
+import { Canvas, FabricObject } from "fabric"
+
+export type TextBlockType = "quote" | "author" | "handle"
+export type MobileTab = "templates" | "layers" | "edit" | "export" | null
+
+export interface ContrastStats {
+  ratio: number
+  score: number
+  badge: "AAA" | "AA" | "FAIL"
+  bgColor: string
+}
+
+export interface ContextMenuState {
+  visible: boolean
+  x: number
+  y: number
+  targetObject: FabricObject | null
+}
+
+/**
+ * CORE SLICE: Manages the canvas initialization, global selections,
+ * artboard dimensions, and adding/removing base objects.
+ */
+export interface CoreSlice {
+  canvas: Canvas | null
+  activeObject: FabricObject | null
+  activeMobileTab: MobileTab
+  artboard: { width: number; height: number }
+
+  setCanvas: (canvas: Canvas) => void
+  setActiveObject: (obj: FabricObject | null) => void
+  setActiveMobileTab: (tab: MobileTab) => void
+  setAspectRatio: (width: number, height: number) => void
+  addText: (type: TextBlockType) => void
+  addImage: () => void
+  deleteActiveObject: (targetObj?: FabricObject | null) => void
+  clearCanvas: () => void
+}
+
+/**
+ * HISTORY SLICE: Manages the undo/redo stack using JSON snapshots of the canvas.
+ */
+export interface HistorySlice {
+  history: string[]
+  historyIndex: number
+  canUndo: boolean
+  canRedo: boolean
+  isHistoryProcessing: boolean
+
+  saveHistoryState: () => void
+  undo: () => Promise<void>
+  redo: () => Promise<void>
+}
+
+/**
+ * CONTEXT MENU SLICE: Manages the visibility and coordinates of the right-click menu.
+ */
+export interface ContextMenuSlice {
+  contextMenu: ContextMenuState
+  openContextMenu: (x: number, y: number, obj: FabricObject | null) => void
+  closeContextMenu: () => void
+  duplicateActiveObject: () => void
+}
+
+/**
+ * LAYER SLICE: Handles depth sorting (z-index), alignments, locking, and scaling to fit.
+ */
+export interface LayerSlice {
+  bringToFront: () => void
+  bringForward: () => void
+  sendBackward: () => void
+  sendToBack: () => void
+  moveLayerToIndex: (oldIndex: number, newIndex: number) => void
+  toggleLayerLock: (obj?: FabricObject | null) => void
+  toggleLayerVisibility: (obj?: FabricObject | null) => void
+  alignObjectToCanvas: (
+    alignment: "left" | "center-h" | "right" | "top" | "center-v" | "bottom"
+  ) => void
+  fitImageToCanvas: (mode: "fit" | "fill") => void
+}
+
+/**
+ * COLOR SLICE: Handles typographic styling, background pixel sampling for contrast checking,
+ * and the custom eyedropper tool.
+ */
+export interface ColorSlice {
+  imagePalette: string[]
+  contrastStats: ContrastStats | null
+  isPickingColor: boolean
+  colorPickerTarget: "fill" | "stroke" | "shadow" | "background" | null
+  pickerSnapshot: HTMLCanvasElement | null
+  colorPickerActiveObject: FabricObject | null
+
+  getCanvasColor: (x: number, y: number) => string | null
+  setImagePalette: (colors: string[]) => void
+  calculateContrast: () => void
+  autoColorText: () => void
+  startColorPicker: (
+    target: "fill" | "stroke" | "shadow" | "background"
+  ) => void
+  stopColorPicker: () => void
+  sampleCanvasColor: (x: number, y: number) => void
+  pickColor: (
+    target: "fill" | "stroke" | "shadow" | "background"
+  ) => Promise<void>
+  applyTextStyle: (key: string, value: any) => void
+  getActiveSelectionStyle: (key: string) => any
+}
+
+// Combined Store Type defining the entire global state tree
+export type EditorStore = CoreSlice &
+  HistorySlice &
+  ContextMenuSlice &
+  LayerSlice &
+  ColorSlice

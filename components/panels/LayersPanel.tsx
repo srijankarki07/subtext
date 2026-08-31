@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditorStore } from "@/store/editorStore"
+import { useEditorStore } from "@/store/useEditorStore"
 import {
   ArrowDown,
   ArrowUp,

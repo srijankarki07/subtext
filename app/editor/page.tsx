@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ASPECT_RATIOS, MobileTab, useEditorStore } from "@/store/editorStore"
+import { ASPECT_RATIOS, useEditorStore } from "@/store/useEditorStore"
+import { MobileTab } from "@/types/store.types"
 import {
   AtSign,
   Download,
