@@ -1,7 +1,7 @@
 "use client"
 
 import { useEditorStore } from "@/store/editorStore"
-import { AlertTriangle, CheckCircle2, Droplet, Zap } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Droplet, PaintBucket } from "lucide-react"
 
 export default function ColorPanel() {
   const { activeObject, contrastStats, imagePalette, autoColorText, canvas } =
@@ -89,7 +89,7 @@ export default function ColorPanel() {
               onClick={autoColorText}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
             >
-              <Zap size={16} className="fill-white/20" />
+              <PaintBucket size={16} className="fill-white/20" />
               Smart Auto-Color
             </button>
           </div>

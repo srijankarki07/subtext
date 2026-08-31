@@ -11,6 +11,13 @@ import {
   Underline as UnderlineIcon,
   Strikethrough,
   Trash2,
+  Pipette,
+  MoveLeft,
+  MoveRight,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignStartVertical,
+  AlignEndVertical,
 } from "lucide-react"
 import { IText, Shadow } from "fabric"
 
@@ -23,27 +30,33 @@ interface AppleSliderProps {
   onChange: (val: number) => void
 }
 
-// Apple iOS/macOS Default Dark Mode Palette
 const PRESET_COLORS = [
   "#FFFFFF",
   "#EBEBF5",
   "#8E8E93",
-  "#000000", // Neutrals
+  "#000000",
   "#FF453A",
   "#FF9F0A",
   "#FFD60A",
-  "#32D74B", // Warm & Green
+  "#32D74B",
   "#64D2FF",
   "#0A84FF",
   "#5E5CE6",
-  "#FF375F", // Cool & Pink
+  "#FF375F",
 ]
 
 export default function TextPanel() {
-  const { canvas, activeObject, deleteActiveObject } = useEditorStore()
-  const [, forceUpdate] = useReducer((x) => x + 1, 0)
+  const {
+    canvas,
+    activeObject,
+    deleteActiveObject,
+    applyTextStyle,
+    getActiveSelectionStyle,
+    alignObjectToCanvas,
+    pickColor,
+  } = useEditorStore()
 
-  // Track which color picker is currently open
+  const [, forceUpdate] = useReducer((x) => x + 1, 0)
   const [openPicker, setOpenPicker] = useState<
     "fill" | "stroke" | "shadow" | null
   >(null)
@@ -58,43 +71,31 @@ export default function TextPanel() {
 
   const textObj = activeObject as IText
 
-  // Single Source of Truth from Fabric Object
-  const fontSize = (textObj.get("fontSize") as number) || 40
-  const charSpacing = (textObj.get("charSpacing") as number) || 0
-  const lineHeight = (textObj.get("lineHeight") as number) || 1.1
-  const fill = (textObj.get("fill") as string) || "#ffffff"
+  // Read properties with partial-selection fallback
+  const fontSize = getActiveSelectionStyle("fontSize") || 40
+  const charSpacing = getActiveSelectionStyle("charSpacing") || 0
+  const lineHeight = getActiveSelectionStyle("lineHeight") || 1.1
+  const fill = getActiveSelectionStyle("fill") || "#ffffff"
 
-  // Text Styles
-  const rawWeight = textObj.get("fontWeight")
+  const rawWeight = getActiveSelectionStyle("fontWeight")
   const fontWeight =
     typeof rawWeight === "number"
       ? rawWeight
       : rawWeight === "bold"
         ? 700
         : parseInt(rawWeight as string) || 400
-  const isItalic = textObj.get("fontStyle") === "italic"
-  const isUnderline = !!textObj.get("underline")
-  const isLinethrough = !!textObj.get("linethrough")
+  const isItalic = getActiveSelectionStyle("fontStyle") === "italic"
+  const isUnderline = !!getActiveSelectionStyle("underline")
+  const isLinethrough = !!getActiveSelectionStyle("linethrough")
 
-  // Stroke properties
-  const strokeWidth = (textObj.get("strokeWidth") as number) || 0
-  const strokeColor = (textObj.get("stroke") as string) || "#000000"
+  const strokeWidth = getActiveSelectionStyle("strokeWidth") || 0
+  const strokeColor = getActiveSelectionStyle("stroke") || "#000000"
 
-  // Shadow properties safely typed
   const currentShadow = textObj.get("shadow") as Shadow | null
   const shadowBlur = currentShadow?.blur || 0
   const shadowOffset = currentShadow?.offsetX || 0
   const shadowColor = currentShadow?.color || "rgba(0,0,0,0.8)"
 
-  const updateTextProp = (key: keyof IText, value: any) => {
-    if (!textObj || !canvas) return
-    // @ts-ignore
-    textObj.set(key, value)
-    canvas.requestRenderAll()
-    forceUpdate()
-  }
-
-  // Dedicated Shadow Engine
   const updateShadow = (updates: Partial<Shadow>) => {
     if (!textObj || !canvas) return
     const baseShadow = currentShadow || {
@@ -121,24 +122,67 @@ export default function TextPanel() {
 
   return (
     <div className="flex flex-col gap-6 p-1 pb-24">
-      {/* ALIGNMENT & BASIC STYLE */}
+      {/* CANVAS ALIGNMENT */}
       <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+            Canvas Alignment
+          </h3>
+        </div>
+        <div className="grid grid-cols-6 gap-1 rounded-xl border border-white/[0.05] bg-white/[0.04] p-1.5">
+          <AlignmentButton
+            icon={<MoveLeft size={16} />}
+            onClick={() => alignObjectToCanvas("left")}
+          />
+          <AlignmentButton
+            icon={<AlignCenterHorizontal size={16} />}
+            onClick={() => alignObjectToCanvas("center-h")}
+          />
+          <AlignmentButton
+            icon={<MoveRight size={16} />}
+            onClick={() => alignObjectToCanvas("right")}
+          />
+          <AlignmentButton
+            icon={<AlignStartVertical size={16} />}
+            onClick={() => alignObjectToCanvas("top")}
+          />
+          <AlignmentButton
+            icon={<AlignCenterVertical size={16} />}
+            onClick={() => alignObjectToCanvas("center-v")}
+          />
+          <AlignmentButton
+            icon={<AlignEndVertical size={16} />}
+            onClick={() => alignObjectToCanvas("bottom")}
+          />
+        </div>
+      </div>
+
+      {/* TEXT ALIGNMENT & BASIC STYLE */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+            Formatting & Style
+          </h3>
+          <span className="text-[9px] text-[#D6B47A]/70">
+            Partial select supported
+          </span>
+        </div>
         <div className="flex items-center justify-between rounded-xl bg-white/[0.04] p-1">
           <div className="flex gap-1">
             <FormatButton
               icon={<AlignLeft size={16} />}
               isActive={textObj.get("textAlign") === "left"}
-              onClick={() => updateTextProp("textAlign", "left")}
+              onClick={() => applyTextStyle("textAlign", "left")}
             />
             <FormatButton
               icon={<AlignCenter size={16} />}
               isActive={textObj.get("textAlign") === "center"}
-              onClick={() => updateTextProp("textAlign", "center")}
+              onClick={() => applyTextStyle("textAlign", "center")}
             />
             <FormatButton
               icon={<AlignRight size={16} />}
               isActive={textObj.get("textAlign") === "right"}
-              onClick={() => updateTextProp("textAlign", "right")}
+              onClick={() => applyTextStyle("textAlign", "right")}
             />
           </div>
           <div className="h-6 w-[1px] bg-white/[0.1]"></div>
@@ -147,40 +191,49 @@ export default function TextPanel() {
               icon={<Bold size={16} />}
               isActive={fontWeight >= 700}
               onClick={() =>
-                updateTextProp("fontWeight", fontWeight >= 700 ? 400 : 700)
+                applyTextStyle("fontWeight", fontWeight >= 700 ? 400 : 700)
               }
             />
             <FormatButton
               icon={<Italic size={16} />}
               isActive={isItalic}
               onClick={() =>
-                updateTextProp("fontStyle", isItalic ? "normal" : "italic")
+                applyTextStyle("fontStyle", isItalic ? "normal" : "italic")
               }
             />
             <FormatButton
               icon={<UnderlineIcon size={16} />}
               isActive={isUnderline}
-              onClick={() => updateTextProp("underline", !isUnderline)}
+              onClick={() => applyTextStyle("underline", !isUnderline)}
             />
             <FormatButton
               icon={<Strikethrough size={16} />}
               isActive={isLinethrough}
-              onClick={() => updateTextProp("linethrough", !isLinethrough)}
+              onClick={() => applyTextStyle("linethrough", !isLinethrough)}
             />
           </div>
         </div>
       </div>
 
       {/* TEXT FILL COLOR */}
-      <div className="relative">
+      <div className="relative flex flex-col gap-3">
         <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
           <span>Text Color</span>
-          <ColorCircle color={fill} onClick={() => togglePicker("fill")} />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => pickColor("fill")}
+              className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/[0.06] px-2 py-1 text-[10px] text-white/70 transition-all hover:bg-white/[0.1] hover:text-white"
+            >
+              <Pipette size={12} />
+              Pick
+            </button>
+            <ColorCircle color={fill} onClick={() => togglePicker("fill")} />
+          </div>
         </div>
         <ColorPickerDropdown
           isOpen={openPicker === "fill"}
           currentColor={fill}
-          onChange={(color) => updateTextProp("fill", color)}
+          onChange={(color) => applyTextStyle("fill", color)}
         />
       </div>
 
@@ -191,7 +244,7 @@ export default function TextPanel() {
           value={fontSize}
           min={10}
           max={200}
-          onChange={(v) => updateTextProp("fontSize", v)}
+          onChange={(v) => applyTextStyle("fontSize", v)}
         />
         <AppleSlider
           label="Font Weight"
@@ -199,14 +252,14 @@ export default function TextPanel() {
           min={100}
           max={900}
           step={100}
-          onChange={(v) => updateTextProp("fontWeight", v)}
+          onChange={(v) => applyTextStyle("fontWeight", v)}
         />
         <AppleSlider
           label="Letter Spacing"
           value={charSpacing}
           min={-100}
           max={800}
-          onChange={(v) => updateTextProp("charSpacing", v)}
+          onChange={(v) => applyTextStyle("charSpacing", v)}
         />
         <AppleSlider
           label="Line Height"
@@ -214,7 +267,7 @@ export default function TextPanel() {
           min={0.5}
           max={3}
           step={0.1}
-          onChange={(v) => updateTextProp("lineHeight", v)}
+          onChange={(v) => applyTextStyle("lineHeight", v)}
         />
       </div>
 
@@ -229,15 +282,24 @@ export default function TextPanel() {
           <div className="relative">
             <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
               <span>Outline Color</span>
-              <ColorCircle
-                color={strokeColor}
-                onClick={() => togglePicker("stroke")}
-              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => pickColor("stroke")}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/[0.06] px-2 py-1 text-[10px] text-white/70 transition-all hover:bg-white/[0.1] hover:text-white"
+                >
+                  <Pipette size={12} />
+                  Pick
+                </button>
+                <ColorCircle
+                  color={strokeColor}
+                  onClick={() => togglePicker("stroke")}
+                />
+              </div>
             </div>
             <ColorPickerDropdown
               isOpen={openPicker === "stroke"}
               currentColor={strokeColor}
-              onChange={(color) => updateTextProp("stroke", color)}
+              onChange={(color) => applyTextStyle("stroke", color)}
             />
           </div>
           <AppleSlider
@@ -246,7 +308,7 @@ export default function TextPanel() {
             min={0}
             max={10}
             step={0.5}
-            onChange={(v) => updateTextProp("strokeWidth", v)}
+            onChange={(v) => applyTextStyle("strokeWidth", v)}
           />
         </div>
 
@@ -255,10 +317,19 @@ export default function TextPanel() {
           <div className="relative">
             <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
               <span>Shadow Color</span>
-              <ColorCircle
-                color={shadowColor}
-                onClick={() => togglePicker("shadow")}
-              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => pickColor("shadow")}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-md bg-white/[0.06] px-2 py-1 text-[10px] text-white/70 transition-all hover:bg-white/[0.1] hover:text-white"
+                >
+                  <Pipette size={12} />
+                  Pick
+                </button>
+                <ColorCircle
+                  color={shadowColor}
+                  onClick={() => togglePicker("shadow")}
+                />
+              </div>
             </div>
             <ColorPickerDropdown
               isOpen={openPicker === "shadow"}
@@ -267,7 +338,6 @@ export default function TextPanel() {
             />
           </div>
 
-          {/* Quick Presets */}
           <div className="flex gap-2 pt-1">
             <PresetButton
               label="Soft"
@@ -313,11 +383,10 @@ export default function TextPanel() {
         </div>
       </div>
 
-      {/* DELETE BUTTON */}
       <div className="pt-2">
         <button
-          onClick={deleteActiveObject}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
+          onClick={() => deleteActiveObject()}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
         >
           <Trash2 size={16} />
           Delete Element
@@ -327,7 +396,22 @@ export default function TextPanel() {
   )
 }
 
-// --- Helper UI Components ---
+function AlignmentButton({
+  icon,
+  onClick,
+}: {
+  icon: React.ReactNode
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex cursor-pointer items-center justify-center rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+    >
+      {icon}
+    </button>
+  )
+}
 
 function FormatButton({
   icon,
@@ -341,7 +425,7 @@ function FormatButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg p-2 transition-all ${isActive ? "bg-white text-black" : "text-white/60 hover:bg-white/[0.08] hover:text-white"}`}
+      className={`cursor-pointer rounded-lg p-2 transition-all ${isActive ? "bg-white text-black" : "text-white/60 hover:bg-white/[0.08] hover:text-white"}`}
     >
       {icon}
     </button>
@@ -358,7 +442,7 @@ function ColorCircle({
   return (
     <button
       onClick={onClick}
-      className="h-6 w-6 rounded-full border border-white/20 shadow-inner transition-transform hover:scale-105 active:scale-95"
+      className="h-6 w-6 cursor-pointer rounded-full border border-white/20 shadow-inner transition-transform hover:scale-105 active:scale-95"
       style={{ backgroundColor: color }}
     />
   )
@@ -375,22 +459,18 @@ function ColorPickerDropdown({
 }) {
   if (!isOpen) return null
 
-  // Ensure the picker is absolute and aligned to the right so it never overflows the sidebar
   return (
     <div className="absolute top-8 right-0 z-50 w-60 animate-in rounded-2xl border border-white/[0.1] bg-[#2C2C2E] p-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] duration-150 zoom-in-95 fade-in">
-      {/* Preset Color Grid */}
       <div className="mb-3 grid grid-cols-4 gap-2">
         {PRESET_COLORS.map((preset) => (
           <button
             key={preset}
             onClick={() => onChange(preset)}
-            className={`aspect-square w-full rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
+            className={`aspect-square w-full cursor-pointer rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
             style={{ backgroundColor: preset }}
           />
         ))}
       </div>
-
-      {/* Hex Input Field */}
       <div className="flex items-center gap-2 rounded-lg border border-white/[0.05] bg-black/40 p-1.5">
         <span className="pl-1 font-mono text-[11px] font-medium text-white/40">
           HEX
@@ -418,7 +498,7 @@ function PresetButton({
   return (
     <button
       onClick={onClick}
-      className={`flex-1 rounded-lg py-1.5 text-[10px] font-medium tracking-wider uppercase transition-all active:scale-95 ${
+      className={`flex-1 cursor-pointer rounded-lg py-1.5 text-[10px] font-medium tracking-wider uppercase transition-all active:scale-95 ${
         isDanger
           ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
           : "border border-white/[0.05] bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
