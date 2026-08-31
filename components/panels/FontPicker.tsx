@@ -20,7 +20,8 @@ const CATEGORIES: FontFilter[] = [
 ]
 
 export default function FontPicker() {
-  const { canvas, activeObject } = useEditorStore()
+  const { canvas, activeObject, applyTextStyle, getActiveSelectionStyle } =
+    useEditorStore()
 
   const [activeCategory, setActiveCategory] = useState<FontFilter>("All")
 
@@ -41,7 +42,7 @@ export default function FontPicker() {
    */
   const currentFontFamily =
     activeObject?.type === "i-text"
-      ? (activeObject as IText).get("fontFamily")
+      ? getActiveSelectionStyle("fontFamily")
       : undefined
 
   /*
@@ -120,14 +121,8 @@ export default function FontPicker() {
    * Change font in Fabric.
    */
   const handleFontChange = (fabricFamily: string) => {
-    if (!textObj || !canvas) return
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    textObj.set("fontFamily", fabricFamily)
-
-    canvas.requestRenderAll()
-
+    if (!activeObject || !canvas) return
+    applyTextStyle("fontFamily", fabricFamily)
     forceUpdate()
   }
 
@@ -153,9 +148,7 @@ export default function FontPicker() {
 
   return (
     <div className="flex h-full min-h-0 flex-col pt-2">
-      {/* =====================================================
-          SEARCH
-      ====================================================== */}
+      {/* SEARCH */}
 
       <div className="relative mb-3 shrink-0">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -182,9 +175,7 @@ export default function FontPicker() {
         )}
       </div>
 
-      {/* =====================================================
-          CURRENT FONT
-      ====================================================== */}
+      {/* CURRENT FONT */}
 
       {currentFont && (
         <div className="mb-3 shrink-0 rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-white/[0.04] to-transparent p-3.5 shadow-[0_0_25px_rgba(59,130,246,0.05)]">
@@ -244,9 +235,7 @@ export default function FontPicker() {
         </div>
       )}
 
-      {/* =====================================================
-          CATEGORY FILTERS
-      ====================================================== */}
+      {/* CATEGORY FILTERS */}
 
       <div className="mb-3 shrink-0 border-b border-white/[0.05] pb-3">
         <div className="flex flex-wrap gap-1.5">
@@ -275,9 +264,7 @@ export default function FontPicker() {
         </div>
       </div>
 
-      {/* =====================================================
-          RESULT COUNT
-      ====================================================== */}
+      {/* RESULT COUNT */}
 
       <div className="mb-2 flex shrink-0 items-center justify-between px-1">
         <span className="text-[10px] tracking-wider text-white/30 uppercase">
@@ -292,9 +279,7 @@ export default function FontPicker() {
         )}
       </div>
 
-      {/* =====================================================
-          SCROLLABLE FONT LIST
-      ====================================================== */}
+      {/* SCROLLABLE FONT LIST */}
 
       <div
         ref={fontListRef}
