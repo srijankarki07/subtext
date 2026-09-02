@@ -148,7 +148,7 @@ export function AppleSlider({
       <div className="flex items-center justify-between text-[12px] font-medium text-white/60">
         <span>{label}</span>
         <span className="text-white/40 tabular-nums">
-          {value.toFixed(step < 1 ? 1 : 0)}
+          {value?.toFixed(step < 1 ? 1 : 0)}
         </span>
       </div>
       <input
