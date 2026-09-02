@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditorStore } from "@/store/editorStore"
+import { useEditorStore } from "@/store/useEditorStore"
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -12,6 +12,7 @@ import {
   MoveRight,
   Trash2,
 } from "lucide-react"
+import { AlignmentButton } from "../functions"
 
 export default function ImagePanel() {
   const {
@@ -99,22 +100,5 @@ export default function ImagePanel() {
         </button>
       </div>
     </div>
-  )
-}
-
-function AlignmentButton({
-  icon,
-  onClick,
-}: {
-  icon: React.ReactNode
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center justify-center rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-    >
-      {icon}
-    </button>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditorStore } from "@/store/editorStore"
+import { useEditorStore } from "@/store/useEditorStore"
 import { AlertTriangle, CheckCircle2, Droplet, PaintBucket } from "lucide-react"
 
 export default function ColorPanel() {

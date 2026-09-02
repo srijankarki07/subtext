@@ -1,7 +1,7 @@
 "use client"
 
 import { FONTS, FontCategory } from "@/lib/fonts"
-import { useEditorStore } from "@/store/editorStore"
+import { useEditorStore } from "@/store/useEditorStore"
 import { IText } from "fabric"
 import { Check, Crown, Search, Sparkles, X } from "lucide-react"
 import { useEffect, useMemo, useReducer, useRef, useState } from "react"
