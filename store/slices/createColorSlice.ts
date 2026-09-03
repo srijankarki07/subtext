@@ -1,9 +1,8 @@
 import {
   getComplianceBadge,
   getContrastRatio,
-  getLuminance,
+  getSmartTextColor,
   getVisibilityScore,
-  hexToRgb,
 } from "@/lib/colorUtils"
 import { ColorSlice, EditorStore } from "@/types/store.types"
 import { IText, Shadow } from "fabric"
@@ -340,18 +339,24 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
   },
 
   autoColorText: () => {
-    const { activeObject, contrastStats, applyTextStyle } = get()
+    const { activeObject, contrastStats, imagePalette, applyTextStyle } = get()
+
+    // We need a text object and calculated contrast background color to proceed
     if (!activeObject || activeObject.type !== "i-text" || !contrastStats)
       return
 
-    const bgRgb = hexToRgb(contrastStats.bgColor)
+    const currentTextHex = (activeObject.get("fill") as string) || "#FFFFFF"
+    const bgHex = contrastStats.bgColor
 
-    // Calculates relative brightness (Luminance) of the background (0.0 to 1.0)
-    const bgLuminance = getLuminance(bgRgb.r, bgRgb.g, bgRgb.b)
+    // Pass the user's current color, the exact background color, and the cinematic palette
+    // into the harmony engine to calculate the most aesthetic, WCAG-compliant color.
+    const optimalTextColor = getSmartTextColor(
+      currentTextHex,
+      bgHex,
+      imagePalette
+    )
 
-    // Standard WCAG breakpoint: if background luminance > 0.179, it's considered "light", so we use Black text. Otherwise use White.
-    const optimalTextColor = bgLuminance > 0.179 ? "#000000" : "#FFFFFF"
-
+    // Apply the intelligent color
     applyTextStyle("fill", optimalTextColor)
   },
 })
