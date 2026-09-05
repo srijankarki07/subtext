@@ -1,15 +1,13 @@
 "use client"
 
-import { CINEMATIC_PRESETS } from "@/lib/filters"
 import { useEditorStore } from "@/store/useEditorStore"
-import { MonitorPlay, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react"
+import { HelpCircle, MonitorPlay, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { AppleSlider, ColorCircle, ColorPickerDropdown } from "../functions"
 
 export default function EffectsPanel() {
   const {
     applyImageFilter,
-    applyPreset,
     applyWarmth,
     applyDuotone,
     vignettes,
@@ -50,9 +48,7 @@ export default function EffectsPanel() {
     }
   }
 
-  const handleReset = (
-    category: "adjustments" | "cinematic" | "atmospherics" | "all"
-  ) => {
+  const handleReset = (category: "adjustments" | "atmospherics") => {
     resetEffect(category)
     if (category === "adjustments") {
       setBrightness(0)
@@ -63,49 +59,24 @@ export default function EffectsPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-1 pb-24">
-      {/* 1. CINEMATIC PRESETS */}
-      <div className="space-y-3 border-b border-white/[0.08] pb-6">
+    <div className="flex flex-col gap-6 p-1 pb-24 font-sans">
+      {/* 1. BASE IMAGE ADJUSTMENTS */}
+      <div className="space-y-4 border-b border-white/[0.08] pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-              LUT Presets
+              Image Adjustments
             </h3>
-            <Sparkles size={11} className="text-[#D6B47A]/70" />
           </div>
           <button
-            onClick={() => handleReset("cinematic")}
-            className="text-white/30 transition-colors hover:text-white"
-          >
-            <RotateCcw size={12} />
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(CINEMATIC_PRESETS).map(([name, matrix]) => (
-            <button
-              key={name}
-              onClick={() => applyPreset(matrix)}
-              className="cursor-pointer rounded-lg border border-white/[0.05] bg-white/[0.03] py-2 text-[10px] font-medium text-white/70 transition-all hover:bg-white/[0.1] hover:text-white active:scale-95"
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. BASE ADJUSTMENTS */}
-      <div className="space-y-4 border-b border-white/[0.08] pb-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-            Adjustments
-          </h3>
-          <button
             onClick={() => handleReset("adjustments")}
+            title="Reset adjustments"
             className="text-white/30 transition-colors hover:text-white"
           >
             <RotateCcw size={12} />
           </button>
         </div>
+
         <AppleSlider
           label="Brightness"
           min={-1}
@@ -140,7 +111,7 @@ export default function EffectsPanel() {
           }}
         />
         <AppleSlider
-          label="Warmth"
+          label="Color Warmth"
           min={-100}
           max={100}
           step={1}
@@ -152,14 +123,15 @@ export default function EffectsPanel() {
         />
       </div>
 
-      {/* 3. ATMOSPHERICS (Generators) */}
+      {/* 2. ATMOSPHERICS (Draggable Vignette & Grain) */}
       <div className="space-y-4 border-b border-white/[0.08] pb-6">
         <div className="flex items-center justify-between">
           <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-            Atmospherics
+            Atmosphere & Texture
           </h3>
           <button
             onClick={() => handleReset("atmospherics")}
+            title="Reset atmosphere"
             className="text-white/30 transition-colors hover:text-white"
           >
             <RotateCcw size={12} />
@@ -174,7 +146,7 @@ export default function EffectsPanel() {
           >
             <div className="flex items-center justify-between text-[11px] font-medium text-white/80">
               <span className="flex items-center gap-2">
-                Vignette{" "}
+                Vignette
                 <ColorCircle
                   color={v.color}
                   onClick={() =>
@@ -185,23 +157,33 @@ export default function EffectsPanel() {
               <div className="flex rounded-md bg-black/40 p-0.5">
                 <button
                   onClick={() => updateVignette(v.id, { type: "radial" })}
-                  className={`cursor-pointer rounded px-2 py-0.5 ${v.type === "radial" ? "bg-white/20 text-white" : "text-white/40"}`}
+                  className={`cursor-pointer rounded px-2 py-0.5 text-[10px] ${
+                    v.type === "radial"
+                      ? "bg-white/20 font-medium text-white"
+                      : "text-white/40"
+                  }`}
                 >
                   Radial
                 </button>
                 <button
                   onClick={() => updateVignette(v.id, { type: "linear" })}
-                  className={`cursor-pointer rounded px-2 py-0.5 ${v.type === "linear" ? "bg-white/20 text-white" : "text-white/40"}`}
+                  className={`cursor-pointer rounded px-2 py-0.5 text-[10px] ${
+                    v.type === "linear"
+                      ? "bg-white/20 font-medium text-white"
+                      : "text-white/40"
+                  }`}
                 >
                   Linear
                 </button>
               </div>
             </div>
+
             <ColorPickerDropdown
               isOpen={openPicker === v.id}
               currentColor={v.color}
               onChange={(hex) => updateVignette(v.id, { color: hex })}
             />
+
             <AppleSlider
               label="Intensity"
               min={0}
@@ -209,11 +191,12 @@ export default function EffectsPanel() {
               value={v.opacity}
               onChange={(val) => updateVignette(v.id, { opacity: val })}
             />
+
             <button
               onClick={() => removeVignette(v.id)}
-              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
+              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
             >
-              <Trash2 size={12} /> Remove
+              <Trash2 size={12} /> Remove Vignette
             </button>
           </div>
         ))}
@@ -232,6 +215,7 @@ export default function EffectsPanel() {
           value={grainIntensity}
           onChange={setGrainIntensity}
         />
+
         <AppleSlider
           label="Shadow Gradient"
           min={0}
@@ -243,17 +227,26 @@ export default function EffectsPanel() {
         />
       </div>
 
-      {/* 4. DUOTONE EFFECT */}
-      <div className="space-y-4 border-b border-white/[0.08] pb-6">
+      {/* 3. DUOTONE EFFECT */}
+      <div className="space-y-3 border-b border-white/[0.08] pb-6">
         <div>
-          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-            Duotone mapping
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+              Duotone Mapping
+            </h3>
+            <span
+              title="Maps image luminance between two colors: lighter tones become Highlights, darker tones become Shadows."
+              className="cursor-help text-white/40 hover:text-white"
+            >
+              <HelpCircle size={11} />
+            </span>
+          </div>
           <p className="mt-1 text-[10px] text-white/30">
-            Replaces highlights and shadows with selected colors.
+            Replaces image highlights and shadows with two rich colors.
           </p>
         </div>
-        <div className="flex gap-4">
+
+        <div className="flex gap-3">
           <div className="relative flex-1 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
             <div className="mb-2 flex items-center justify-between text-[11px] text-white/60">
               <span>Highlights</span>
@@ -270,6 +263,7 @@ export default function EffectsPanel() {
               onChange={(hex) => handleDuotoneChange("light", hex)}
             />
           </div>
+
           <div className="relative flex-1 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
             <div className="mb-2 flex items-center justify-between text-[11px] text-white/60">
               <span>Shadows</span>
@@ -289,17 +283,25 @@ export default function EffectsPanel() {
         </div>
       </div>
 
-      {/* 5. CINEMATIC UTILITIES */}
-      <div className="space-y-3">
-        <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-          Director Tools
-        </h3>
+      {/* 4. DIRECTOR TOOLS */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+            Director Framing Tools
+          </h3>
+          <span
+            title="Widescreen bars crop top/bottom for a cinematic aspect ratio. Blur zones allow blurring behind text to boost readability."
+            className="cursor-help text-white/40 hover:text-white"
+          >
+            <HelpCircle size={11} />
+          </span>
+        </div>
 
-        {/* Letterbox Generator */}
+        {/* Widescreen Letterbox */}
         <div className="space-y-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <div className="flex items-center justify-between pb-2 text-[12px] font-medium text-white/80">
+          <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
             <span className="flex items-center gap-2">
-              <MonitorPlay size={14} /> Widescreen Bars
+              <MonitorPlay size={14} /> Widescreen Letterbox
             </span>
           </div>
 
@@ -309,7 +311,7 @@ export default function EffectsPanel() {
               className="flex items-center justify-between rounded-lg bg-white/[0.04] p-2"
             >
               <span className="text-[10px] text-white/50">
-                Draggable on canvas
+                Draggable bars on canvas
               </span>
               <button
                 onClick={() => removeLetterbox(l.id)}
@@ -325,35 +327,39 @@ export default function EffectsPanel() {
               onClick={() => addLetterbox(10)}
               className="rounded bg-white/[0.05] py-1.5 text-[10px] text-white/70 transition-colors hover:bg-white/[0.1]"
             >
-              Thin
+              10% (Thin)
             </button>
             <button
               onClick={() => addLetterbox(15)}
               className="rounded bg-white/[0.05] py-1.5 text-[10px] text-white/70 transition-colors hover:bg-white/[0.1]"
             >
-              Medium
+              15% (Cinema)
             </button>
             <button
               onClick={() => addLetterbox(20)}
               className="rounded bg-white/[0.05] py-1.5 text-[10px] text-white/70 transition-colors hover:bg-white/[0.1]"
             >
-              Thick
+              20% (Heavy)
             </button>
           </div>
         </div>
 
-        {/* Dynamic Blur Zones */}
+        {/* Selective Blur Zones */}
         <div className="space-y-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-          <span className="block text-[12px] font-medium text-white/80">
-            Selective Blur Zones
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-medium text-white/80">
+              Selective Blur Zone
+            </span>
+            <span className="text-[9px] text-white/40">Draggable mask</span>
+          </div>
+
           {blurZones.map((b) => (
             <div
               key={b.id}
               className="relative space-y-3 rounded-lg border border-white/10 bg-white/[0.04] p-3"
             >
               <AppleSlider
-                label="Intensity"
+                label="Blur Radius"
                 min={0}
                 max={100}
                 value={b.opacity}
@@ -363,26 +369,27 @@ export default function EffectsPanel() {
                 onClick={() => removeBlurZone(b.id)}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
               >
-                <Trash2 size={12} /> Remove
+                <Trash2 size={12} /> Remove Blur Zone
               </button>
             </div>
           ))}
+
           <button
             onClick={addBlurZone}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
           >
-            <Plus size={14} /> Add Blur Zone
+            <Plus size={14} /> Add Selective Blur Box
           </button>
         </div>
       </div>
 
-      {/* GLOBAL RESET */}
+      {/* 5. GLOBAL CLEAR */}
       <div className="border-t border-white/[0.08] pt-2">
         <button
-          onClick={() => handleReset("all")}
+          onClick={() => handleReset("atmospherics")}
           className="w-full cursor-pointer py-3 text-center text-[11px] font-medium text-red-400 transition-colors hover:text-red-300"
         >
-          Clear All Effects
+          Reset All Custom Atmosphere & Layers
         </button>
       </div>
     </div>
