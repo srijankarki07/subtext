@@ -12,6 +12,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   activeObject: null,
   activeMobileTab: null,
   artboard: { width: 1080, height: 1080 },
+  isExportModalOpen: false,
 
   setCanvas: (canvas) => set({ canvas }),
 
@@ -22,7 +23,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
-
+  setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
   setAspectRatio: (width, height) => {
     const { canvas, saveHistoryState } = get()
     if (!canvas) return

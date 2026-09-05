@@ -189,10 +189,12 @@ export interface CoreSlice {
   activeObject: FabricObject | null
   activeMobileTab: MobileTab
   artboard: { width: number; height: number }
+  isExportModalOpen: boolean
 
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
   setActiveMobileTab: (tab: MobileTab) => void
+  setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void
   addText: (type: TextBlockType) => void
   addImage: () => void

@@ -1,12 +1,13 @@
 "use client"
 
 import ContextMenu from "@/components/editor/contextMenu"
+import ExportModal from "@/components/modals/ExportModal"
 import ColorPanel from "@/components/panels/ColorPanel"
 import EffectsPanel from "@/components/panels/EffectPanel"
 import FontPicker from "@/components/panels/FontPicker"
 import ImagePanel from "@/components/panels/ImagePanel"
 import LayersPanel from "@/components/panels/LayersPanel"
-import TemplatesPanel from "@/components/panels/TemplatesPanel" // <-- ADDED
+import TemplatesPanel from "@/components/panels/TemplatesPanel"
 import TextPanel from "@/components/panels/TextPanel"
 import {
   Select,
@@ -155,8 +156,12 @@ function RightPanelManager() {
 }
 
 export default function EditorPage() {
-  const { setAspectRatio, activeMobileTab, setActiveMobileTab } =
-    useEditorStore()
+  const {
+    setAspectRatio,
+    activeMobileTab,
+    setActiveMobileTab,
+    setIsExportModalOpen,
+  } = useEditorStore()
 
   // Track if left sidebar is showing Elements vs Templates
   const [leftSidebarTab, setLeftSidebarTab] = useState<
@@ -182,6 +187,7 @@ export default function EditorPage() {
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#080808] font-sans text-white antialiased selection:bg-[#D6B47A]/30 lg:flex-row">
       <ContextMenu />
+      <ExportModal />
       <aside className="hidden w-[260px] shrink-0 flex-col border-r border-white/[0.055] bg-[#101010] lg:flex">
         <div className="flex h-[72px] items-center border-b border-white/[0.055] px-6">
           <div>
@@ -339,7 +345,10 @@ export default function EditorPage() {
 
             <div className="mx-1 hidden h-5 w-px bg-white/[0.07] lg:block" />
 
-            <button className="group hidden h-8 cursor-pointer items-center gap-2 rounded-lg bg-[#D6B47A] px-3.5 text-[10px] font-semibold text-[#101010] transition-all hover:bg-[#e2c492] active:scale-[0.97] lg:flex">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="group hidden h-8 cursor-pointer items-center gap-2 rounded-lg bg-[#D6B47A] px-3.5 text-[10px] font-semibold text-[#101010] transition-all hover:bg-[#e2c492] active:scale-[0.97] lg:flex"
+            >
               <Download
                 size={12}
                 className="transition-transform group-hover:-translate-y-0.5"
@@ -405,11 +414,15 @@ export default function EditorPage() {
           label="Layers"
           tab="layers"
         />
-        <MobileTabButton
-          icon={<Download size={19} />}
-          label="Export"
-          tab="export"
-        />
+        <button
+          onClick={() => setIsExportModalOpen(true)}
+          className="relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1.5 text-white/30 transition-colors hover:text-white/70"
+        >
+          <Download size={19} />
+          <span className="text-[9px] font-medium tracking-[0.05em]">
+            Export
+          </span>
+        </button>
       </nav>
 
       {activeMobileTab && (
