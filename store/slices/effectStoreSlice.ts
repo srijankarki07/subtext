@@ -1,5 +1,3 @@
-// src/store/slices/createEffectSlice.ts
-
 import {
   CINEMATIC_PRESETS,
   getDuotoneMatrix,
@@ -30,24 +28,29 @@ export const createEffectSlice: StateCreator<
   letterboxes: [],
 
   // --- VIGNETTES ---
-  addVignette: () => {
-    const { canvas, artboard, vignettes, saveHistoryState } = get()
+  addVignette: (initialConfig) => {
+    const { canvas, vignettes, saveHistoryState } = get()
     if (!canvas) return
 
+    const w = canvas.getWidth()
+    const h = canvas.getHeight()
     const id = "vignette-" + Date.now()
-    const newState = {
+
+    const config = {
       id,
-      opacity: 50,
-      type: "radial" as const,
-      color: "#000000",
+      opacity: initialConfig?.opacity ?? 50,
+      type: initialConfig?.type ?? ("radial" as const),
+      color: initialConfig?.color ?? "#000000",
     }
 
-    // Create exactly at aspect ratio
+    // Explicitly anchor to top-left corner (0,0) so it covers 100% of width and height
     const vignette = new Rect({
       left: 0,
       top: 0,
-      width: artboard.width,
-      height: artboard.height,
+      originX: "left",
+      originY: "top",
+      width: w,
+      height: h,
       selectable: true,
       evented: true,
       cornerColor: "white",
@@ -57,12 +60,13 @@ export const createEffectSlice: StateCreator<
     ;(vignette as any).id = id
     ;(vignette as any).isEffect = true
     canvas.add(vignette)
+    vignette.setCoords()
 
-    set({ vignettes: [...vignettes, newState] })
-    get().updateVignette(id, {}) // Trigger gradient build
+    set({ vignettes: [...vignettes, config] })
+    get().updateVignette(id, config)
 
-    canvas.setActiveObject(vignette)
     canvas.bringObjectToFront(vignette)
+    canvas.requestRenderAll()
     saveHistoryState()
   },
 
@@ -79,22 +83,27 @@ export const createEffectSlice: StateCreator<
     const obj = canvas.getObjects().find((o) => (o as any).id === id) as Rect
 
     if (state && obj) {
-      const w = obj.width || 100
-      const h = obj.height || 100
+      const w = canvas.getWidth()
+      const h = canvas.getHeight()
 
       obj.set({
+        originX: "left",
+        originY: "top",
+        width: obj.width && obj.width > 50 ? obj.width : w,
+        height: obj.height && obj.height > 50 ? obj.height : h,
         fill: new Gradient({
           type: state.type,
+          gradientUnits: "percentage", // Percentages ensure 100% full coverage on any resolution
           coords:
             state.type === "linear"
-              ? { x1: 0, y1: 0, x2: 0, y2: h }
+              ? { x1: 0, y1: 0, x2: 0, y2: 1 } // Full top-to-bottom
               : {
-                  x1: w / 2,
-                  y1: h / 2,
+                  x1: 0.5,
+                  y1: 0.5,
                   r1: 0,
-                  x2: w / 2,
-                  y2: h / 2,
-                  r2: Math.max(w, h) / 1.5,
+                  x2: 0.5,
+                  y2: 0.5,
+                  r2: 0.7, // Radiates out to cover all 4 corners
                 },
           colorStops: [
             { offset: 0, color: hexToRgba(state.color, 0) },
@@ -102,6 +111,7 @@ export const createEffectSlice: StateCreator<
           ],
         }),
       })
+      obj.setCoords()
       canvas.requestRenderAll()
     }
   },
@@ -224,18 +234,24 @@ export const createEffectSlice: StateCreator<
 
   // --- LETTERBOX ---
   addLetterbox: (thicknessRatio) => {
-    const { canvas, artboard, letterboxes, saveHistoryState } = get()
+    const { canvas, letterboxes, saveHistoryState } = get()
     if (!canvas) return
+
+    const w = canvas.getWidth()
+    const h = canvas.getHeight()
+    const thickness = h * (thicknessRatio / 100)
 
     const id = "letterbox-" + Date.now()
     const topId = id + "-top"
     const bottomId = id + "-bottom"
-    const thickness = artboard.height * (thicknessRatio / 100)
 
+    // Top Bar: Anchored top-left, spans 100% width
     const topBar = new Rect({
       left: 0,
       top: 0,
-      width: artboard.width,
+      originX: "left",
+      originY: "top",
+      width: w,
       height: thickness,
       fill: "black",
       selectable: true,
@@ -243,10 +259,14 @@ export const createEffectSlice: StateCreator<
       lockMovementX: true,
       lockScalingX: true,
     })
+
+    // Bottom Bar: Anchored top-left, placed flush at (h - thickness), spans 100% width
     const bottomBar = new Rect({
       left: 0,
-      top: artboard.height - thickness,
-      width: artboard.width,
+      top: h - thickness,
+      originX: "left",
+      originY: "top",
+      width: w,
       height: thickness,
       fill: "black",
       selectable: true,
@@ -260,11 +280,78 @@ export const createEffectSlice: StateCreator<
     ;(bottomBar as any).id = bottomId
     ;(bottomBar as any).isEffect = true
 
+    topBar.setCoords()
+    bottomBar.setCoords()
+
     canvas.add(topBar, bottomBar)
     canvas.bringObjectToFront(topBar)
     canvas.bringObjectToFront(bottomBar)
 
     set({ letterboxes: [...letterboxes, { id, topId, bottomId }] })
+    canvas.requestRenderAll()
+    saveHistoryState()
+  },
+
+  // --- SHADOW GRADIENT OVERLAY ---
+  setGradientOverlay: (opacity, type, color1, color2) => {
+    set({ gradientOpacity: opacity })
+    const { canvas, saveHistoryState } = get()
+    if (!canvas) return
+
+    let gradOverlay = canvas
+      .getObjects()
+      .find((o) => (o as any).id === "gradient-overlay")
+
+    if (opacity === 0) {
+      if (gradOverlay) canvas.remove(gradOverlay)
+    } else {
+      const w = canvas.getWidth()
+      const h = canvas.getHeight()
+
+      if (!gradOverlay) {
+        gradOverlay = new Rect({
+          left: 0,
+          top: 0,
+          originX: "left",
+          originY: "top",
+          width: w,
+          height: h,
+          selectable: false,
+          evented: false,
+        })
+        ;(gradOverlay as any).id = "gradient-overlay"
+        ;(gradOverlay as any).isEffect = true
+        canvas.add(gradOverlay)
+      }
+
+      gradOverlay.set({
+        left: 0,
+        top: 0,
+        originX: "left",
+        originY: "top",
+        width: w,
+        height: h,
+        opacity: opacity / 100,
+        fill: new Gradient({
+          type: type,
+          gradientUnits: "percentage",
+          coords:
+            type === "linear"
+              ? { x1: 0, y1: 0, x2: 0, y2: 1 }
+              : { x1: 0.5, y1: 0.5, r1: 0, x2: 0.5, y2: 0.5, r2: 0.7 },
+          colorStops: [
+            { offset: 0, color: color1 },
+            { offset: 1, color: color2 },
+          ],
+        }),
+      })
+
+      gradOverlay.setCoords()
+      canvas.sendObjectToBack(gradOverlay)
+      canvas.bringObjectForward(gradOverlay)
+    }
+
+    canvas.requestRenderAll()
     saveHistoryState()
   },
 
@@ -286,59 +373,6 @@ export const createEffectSlice: StateCreator<
   },
 
   setGrainIntensity: (intensity) => set({ grainIntensity: intensity }),
-
-  setGradientOverlay: (opacity, type, color1, color2) => {
-    set({ gradientOpacity: opacity })
-    const { canvas, artboard, saveHistoryState } = get()
-    if (!canvas) return
-
-    let gradOverlay = canvas
-      .getObjects()
-      .find((o) => (o as any).id === "gradient-overlay")
-
-    if (opacity === 0) {
-      if (gradOverlay) canvas.remove(gradOverlay)
-    } else {
-      if (!gradOverlay) {
-        gradOverlay = new Rect({
-          left: 0,
-          top: 0,
-          width: artboard.width,
-          height: artboard.height,
-          selectable: false,
-          evented: false,
-        })
-        ;(gradOverlay as any).id = "gradient-overlay"
-        ;(gradOverlay as any).isEffect = true
-        canvas.add(gradOverlay)
-      }
-      gradOverlay.set({
-        opacity: opacity / 100,
-        fill: new Gradient({
-          type: type,
-          coords:
-            type === "linear"
-              ? { x1: 0, y1: 0, x2: 0, y2: artboard.height }
-              : {
-                  x1: artboard.width / 2,
-                  y1: artboard.height / 2,
-                  r1: 0,
-                  x2: artboard.width / 2,
-                  y2: artboard.height / 2,
-                  r2: Math.max(artboard.width, artboard.height) / 1.5,
-                },
-          colorStops: [
-            { offset: 0, color: color1 },
-            { offset: 1, color: color2 },
-          ],
-        }),
-      })
-      canvas.sendObjectToBack(gradOverlay)
-      canvas.bringObjectForward(gradOverlay)
-    }
-    canvas.requestRenderAll()
-    saveHistoryState()
-  },
 
   applyImageFilter: (type, options) => {
     const { canvas, saveHistoryState } = get()

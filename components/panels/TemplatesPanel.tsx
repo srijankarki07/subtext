@@ -3,7 +3,7 @@
 import { CINEMATIC_PRESET_METADATA, CINEMATIC_PRESETS } from "@/lib/filters"
 import { TEMPLATES } from "@/lib/templates"
 import { useEditorStore } from "@/store/useEditorStore"
-import { TemplateCategory } from "@/types/template.types"
+import { Template, TemplateCategory } from "@/types/template.types"
 import { Info, LayoutTemplate, Palette, Sparkles, X } from "lucide-react"
 import { useState } from "react"
 
@@ -15,6 +15,119 @@ const CATEGORIES: TemplateCategory[] = [
   "Bold",
   "Vintage",
 ]
+
+// Thumbnail Mockup Card
+function TemplateThumbnailCard({
+  template,
+  onClick,
+}: {
+  template: Template
+  onClick: () => void
+}) {
+  const fx = template.effects
+
+  return (
+    <button
+      onClick={onClick}
+      className="group relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#141414] p-2 text-left transition-all hover:border-[#D6B47A]/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] active:scale-[0.98]"
+    >
+      {/* 1. MINI ARTBOARD CANVAS PREVIEW (4:5 Aspect Ratio) */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg border border-white/[0.04] bg-[#1C1C1E]">
+        {/* Atmosphere tint */}
+        <div
+          className={`absolute inset-0 opacity-20 ${
+            template.category === "Cinematic"
+              ? "bg-gradient-to-tr from-blue-900 via-transparent to-amber-900"
+              : template.category === "Vintage"
+                ? "bg-amber-950/40"
+                : template.category === "Bold"
+                  ? "bg-red-950/30"
+                  : "bg-white/[0.05]"
+          }`}
+        />
+
+        {/* Mini Vignette */}
+        {fx.vignette && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(circle, transparent 40%, rgba(0,0,0,${fx.vignette.opacity / 100}) 100%)`,
+            }}
+          />
+        )}
+
+        {/* Mini Widescreen Letterbox Bars */}
+        {fx.letterbox && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 bg-black"
+              style={{ height: `${fx.letterbox * 0.8}%` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 bg-black"
+              style={{ height: `${fx.letterbox * 0.8}%` }}
+            />
+          </>
+        )}
+
+        {/* Mini Positioned Text Elements */}
+        {template.texts.map((t, i) => {
+          const isQuote = t.type === "quote"
+          return (
+            <div
+              key={i}
+              className="pointer-events-none absolute max-w-[85%] truncate leading-tight select-none"
+              style={{
+                left: `${t.left * 100}%`,
+                top: `${t.top * 100}%`,
+                transform: `translate(${
+                  t.originX === "center"
+                    ? "-50%"
+                    : t.originX === "right"
+                      ? "-100%"
+                      : "0%"
+                }, ${
+                  t.originY === "center"
+                    ? "-50%"
+                    : t.originY === "bottom"
+                      ? "-100%"
+                      : "0%"
+                })`,
+                fontFamily: t.fontFamily,
+                fontSize: `${Math.max(7, Math.min(13, t.fontSize * 0.16))}px`,
+                fontWeight: t.fontWeight as any,
+                fontStyle: t.fontStyle,
+                color: t.fill,
+                textAlign: t.textAlign,
+                letterSpacing: t.charSpacing
+                  ? `${t.charSpacing * 0.005}px`
+                  : undefined,
+                opacity: isQuote ? 0.95 : 0.65,
+              }}
+            >
+              {t.text ||
+                (isQuote
+                  ? '"Your quote here"'
+                  : t.type === "author"
+                    ? "— AUTHOR"
+                    : "@handle")}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* 2. CARD FOOTER INFO */}
+      <div className="mt-2 flex items-center justify-between px-1">
+        <span className="truncate text-[11px] font-semibold text-white/80 group-hover:text-white">
+          {template.name}
+        </span>
+        <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[8px] font-medium tracking-wider text-white/40 uppercase">
+          {template.category}
+        </span>
+      </div>
+    </button>
+  )
+}
 
 export default function TemplatesPanel() {
   const [activeSubTab, setActiveSubTab] = useState<"layouts" | "luts">(
@@ -71,18 +184,18 @@ export default function TemplatesPanel() {
 
       {/* 2. DYNAMIC (i) INFO BANNER */}
       {showInfo && (
-        <div className="relative mb-3.5 shrink-0 rounded-xl border border-blue-500/20 bg-blue-500/[0.07] p-3 text-[11px] leading-relaxed text-blue-200/90">
+        <div className="relative mb-3 shrink-0 rounded-xl border border-blue-500/20 bg-blue-500/[0.07] p-3 text-[11px] leading-relaxed text-blue-200/90">
           <div className="flex items-start gap-2.5">
             <Info size={15} className="mt-0.5 shrink-0 text-blue-400" />
             <div className="flex-1 pr-4">
               {activeSubTab === "layouts" ? (
                 <span>
                   <strong className="font-semibold text-white">
-                    Full Scene Presets:
+                    Full Layouts:
                   </strong>{" "}
-                  Applies typography styling, framing, positioning, and mood.{" "}
-                  <span className="text-blue-300/70">
-                    Replaces current text layers.
+                  Replaces typography styling, framing, and mood.{" "}
+                  <span className="text-blue-300/80">
+                    Your existing quote text will be preserved!
                   </span>
                 </span>
               ) : (
@@ -91,8 +204,8 @@ export default function TemplatesPanel() {
                     Film Stock LUTs:
                   </strong>{" "}
                   Applies color matrix grades strictly to the background image.{" "}
-                  <span className="text-blue-300/70">
-                    Leaves text and layout untouched.
+                  <span className="text-blue-300/80">
+                    Text and layout stay untouched.
                   </span>
                 </span>
               )}
@@ -129,49 +242,14 @@ export default function TemplatesPanel() {
           </div>
 
           {/* Template Cards Grid */}
-          <div className="custom-scrollbar min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1 pb-24">
-            {filteredTemplates.map((template) => {
-              const primaryText = template.texts[0]
-              return (
-                <button
-                  key={template.id}
-                  onClick={() => handleApplyTemplate(template.id)}
-                  className="group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all hover:border-white/20 hover:bg-white/[0.05] active:scale-[0.98]"
-                >
-                  <div
-                    className={`absolute inset-0 opacity-10 transition-opacity group-hover:opacity-25 ${
-                      template.category === "Cinematic"
-                        ? "bg-gradient-to-t from-blue-900 to-transparent"
-                        : template.category === "Vintage"
-                          ? "bg-[#8B4513]"
-                          : template.category === "Bold"
-                            ? "bg-red-600"
-                            : "bg-[#D6B47A]"
-                    }`}
-                  />
-                  <span
-                    className="relative z-10 text-[18px] text-white transition-transform group-hover:scale-105"
-                    style={{
-                      fontFamily: primaryText?.fontFamily,
-                      fontWeight: primaryText?.fontWeight as any,
-                      fontStyle: primaryText?.fontStyle,
-                    }}
-                  >
-                    {template.name}
-                  </span>
-                  <div className="relative z-10 mt-1.5 flex items-center gap-2">
-                    <span className="text-[8px] font-semibold tracking-wider text-white/40 uppercase">
-                      {template.category}
-                    </span>
-                    <span className="h-1 w-1 rounded-full bg-white/20" />
-                    <span className="text-[8px] text-white/30">
-                      {template.texts.length} layer
-                      {template.texts.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </button>
-              )
-            })}
+          <div className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 pb-24">
+            {filteredTemplates.map((template) => (
+              <TemplateThumbnailCard
+                key={template.id}
+                template={template}
+                onClick={() => handleApplyTemplate(template.id)}
+              />
+            ))}
           </div>
         </>
       )}
