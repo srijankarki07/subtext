@@ -200,7 +200,8 @@ export interface CoreSlice {
   addImage: () => void
   deleteActiveObject: (targetObj?: FabricObject | null) => void
   clearCanvas: () => void
-  applyTemplate: (templateId: string) => void // <-- ADDED
+  applyTemplate: (templateId: string) => void
+  copyCanvasToClipboard: (scale?: number) => Promise<boolean>
 }
 
 export type EditorStore = CoreSlice &

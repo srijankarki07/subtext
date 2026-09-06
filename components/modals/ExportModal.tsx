@@ -1,7 +1,7 @@
 "use client"
 
 import { useEditorStore } from "@/store/useEditorStore"
-import { Download, FileImage, X } from "lucide-react"
+import { Check, Copy, Download, FileImage, Loader2, X } from "lucide-react"
 import { useState } from "react"
 import { AppleSlider } from "../functions"
 
@@ -13,12 +13,19 @@ const SCALE_PRESETS = [
 ]
 
 export default function ExportModal() {
-  const { isExportModalOpen, setIsExportModalOpen, canvas } = useEditorStore()
+  const {
+    isExportModalOpen,
+    setIsExportModalOpen,
+    canvas,
+    copyCanvasToClipboard,
+  } = useEditorStore()
 
   const [format, setFormat] = useState<"png" | "jpg">("png")
   const [quality, setQuality] = useState(0.92) // 92% quality default for JPG
   const [scale, setScale] = useState(1)
   const [isExporting, setIsExporting] = useState(false)
+  const [isCopying, setIsCopying] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   if (!isExportModalOpen) return null
 
@@ -68,10 +75,24 @@ export default function ExportModal() {
     }
   }
 
+  const handleCopy = async () => {
+    setIsCopying(true)
+    setCopied(false)
+    const success = await copyCanvasToClipboard(scale)
+    setIsCopying(false)
+
+    if (success) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } else {
+      alert("Unable to copy to clipboard. Please check browser permissions.")
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-[200] flex animate-in items-center justify-center bg-black/70 p-4 backdrop-blur-md duration-150 fade-in">
+    <div className="fixed inset-0 z-[200] flex animate-in items-center justify-center bg-black/70 p-4 font-sans backdrop-blur-md duration-150 fade-in">
       <div
-        className="relative w-full max-w-md animate-in overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141414] p-6 font-sans text-white shadow-2xl duration-150 zoom-in-95"
+        className="relative w-full max-w-md animate-in overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141414] p-6 text-white shadow-2xl duration-150 zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
@@ -85,7 +106,7 @@ export default function ExportModal() {
                 Export Artwork
               </h2>
               <p className="text-[10px] text-white/40">
-                Render high-resolution visual
+                Render or copy high-resolution visual
               </p>
             </div>
           </div>
@@ -180,21 +201,49 @@ export default function ExportModal() {
         </div>
 
         {/* FOOTER ACTIONS */}
-        <div className="border-t border-white/[0.06] pt-4">
+        <div className="space-y-2.5 border-t border-white/[0.06] pt-4">
           <button
             onClick={handleDownload}
-            disabled={isExporting}
+            disabled={isExporting || isCopying}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#D6B47A] py-3 text-[12px] font-semibold text-black transition-all hover:bg-[#e2c492] active:scale-[0.98] disabled:opacity-50"
           >
             {isExporting ? (
               <span className="flex items-center gap-2">
-                <span className="h-3 w-3 animate-spin rounded-full border border-black/30 border-t-black" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Rendering {outputW}×{outputH}...
               </span>
             ) : (
               <>
-                <Download size={15} />
+                <Download size={14} />
                 Download {format.toUpperCase()} ({outputW}×{outputH})
+              </>
+            )}
+          </button>
+
+          {/* CLIPBOARD COPY BUTTON */}
+          <button
+            onClick={handleCopy}
+            disabled={isExporting || isCopying}
+            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-[12px] font-medium transition-all active:scale-[0.98] ${
+              copied
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                : "border-white/[0.08] bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white"
+            }`}
+          >
+            {isCopying ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-white/50" />
+                <span>Copying to Clipboard...</span>
+              </>
+            ) : copied ? (
+              <>
+                <Check size={14} className="text-emerald-400" />
+                <span>Copied to Clipboard!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} className="text-white/50" />
+                <span>Copy to Clipboard (PNG)</span>
               </>
             )}
           </button>
