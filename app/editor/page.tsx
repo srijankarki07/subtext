@@ -2,6 +2,7 @@
 
 import ContextMenu from "@/components/editor/contextMenu"
 import ColorPanel from "@/components/panels/ColorPanel"
+import EffectsPanel from "@/components/panels/EffectPanel"
 import FontPicker from "@/components/panels/FontPicker"
 import ImagePanel from "@/components/panels/ImagePanel"
 import LayersPanel from "@/components/panels/LayersPanel"
@@ -81,8 +82,9 @@ function AddElement({
 
 function RightPanelManager() {
   const { activeObject } = useEditorStore()
+  // 1. Appended 'effects' to state tree logic
   const [activeTab, setActiveTab] = useState<
-    "font" | "style" | "color" | "layers"
+    "font" | "style" | "color" | "layers" | "effects"
   >("style")
 
   const tabs = [
@@ -90,6 +92,7 @@ function RightPanelManager() {
     { id: "style" as const, label: "Style" },
     { id: "color" as const, label: "Color" },
     { id: "layers" as const, label: "Layers" },
+    { id: "effects" as const, label: "FX" },
   ]
 
   return (
@@ -114,8 +117,11 @@ function RightPanelManager() {
       </div>
 
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+        {/* Render Layers & Effects without demanding object selection */}
         {activeTab === "layers" ? (
           <LayersPanel />
+        ) : activeTab === "effects" ? (
+          <EffectsPanel />
         ) : !activeObject ? (
           <div className="flex min-h-[220px] flex-1 items-center justify-center rounded-2xl border border-dashed border-white/[0.07] bg-white/[0.015] p-8 text-center">
             <div>
@@ -128,7 +134,7 @@ function RightPanelManager() {
               </p>
             </div>
           </div>
-        ) : activeObject.type === "image" ? (
+        ) : activeObject.type === "image" && !(activeObject as any).isEffect ? (
           <div className="flex h-full flex-col gap-4">
             <h2 className="border-b border-white/[0.08] pb-2 text-[12px] font-medium text-white/80">
               Image Properties

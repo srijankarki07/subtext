@@ -107,9 +107,68 @@ export interface ColorSlice {
   getActiveSelectionStyle: (key: string) => any
 }
 
-// Combined Store Type defining the entire global state tree
+// src/types/store.types.ts (Replace only the EffectSlice part)
+
+export interface VignetteState {
+  id: string
+  opacity: number
+  type: "radial" | "linear"
+  color: string
+}
+
+export interface BlurZoneState {
+  id: string
+  overlayId: string
+  opacity: number
+}
+
+export interface LetterboxState {
+  id: string
+  topId: string
+  bottomId: string
+}
+
+export interface EffectSlice {
+  grainIntensity: number
+  gradientOpacity: number
+
+  // Arrays to hold multiple independent effect layers
+  vignettes: VignetteState[]
+  blurZones: BlurZoneState[]
+  letterboxes: LetterboxState[]
+
+  setGrainIntensity: (intensity: number) => void
+  setGradientOverlay: (
+    opacity: number,
+    type: "linear" | "radial",
+    color1: string,
+    color2: string
+  ) => void
+
+  applyImageFilter: (type: string, options: any) => void
+  applyPreset: (matrix: number[]) => void
+  applyWarmth: (value: number) => void
+  applyDuotone: (lightHex: string, darkHex: string) => void
+  resetEffect: (
+    category: "adjustments" | "cinematic" | "atmospherics" | "all"
+  ) => void
+
+  // Multi-instance Generators
+  addVignette: () => void
+  updateVignette: (id: string, updates: Partial<VignetteState>) => void
+  removeVignette: (id: string) => void
+
+  addBlurZone: () => Promise<void>
+  updateBlurZone: (id: string, opacity: number) => void
+  removeBlurZone: (id: string) => void
+
+  addLetterbox: (thicknessRatio: number) => void
+  removeLetterbox: (id: string) => void
+}
+
 export type EditorStore = CoreSlice &
   HistorySlice &
-  ContextMenuSlice &
   LayerSlice &
-  ColorSlice
+  ColorSlice &
+  ContextMenuSlice &
+  EffectSlice

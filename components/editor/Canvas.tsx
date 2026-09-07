@@ -1,3 +1,5 @@
+// src/components/editor/Canvas.tsx
+
 "use client"
 
 import { extractPalette } from "@/lib/colorUtils"
@@ -38,11 +40,11 @@ export default function Canvas() {
     sendBackward,
     sendToBack,
     duplicateActiveObject,
+    grainIntensity, // 1. Grabbing grain intensity state
   } = useEditorStore()
 
   const [hasImage, setHasImage] = useState(false)
 
-  // Manage custom crosshair overriding the fabric default pointer cursors when picking
   useEffect(() => {
     const canvas = useEditorStore.getState().canvas
     if (!canvas) return
@@ -94,7 +96,14 @@ export default function Canvas() {
     canvas.on("selection:cleared", () => setActiveObject(null))
 
     const handleObjectsChanged = () => {
-      setHasImage(canvas.getObjects().some((object) => object.type === "image"))
+      // Adjusted to ensure effect layers don't trigger "has image" flag errantly
+      setHasImage(
+        canvas
+          .getObjects()
+          .some(
+            (object) => object.type === "image" && !(object as any).isEffect
+          )
+      )
       saveHistoryState()
     }
 
@@ -137,10 +146,8 @@ export default function Canvas() {
       const e = opt.e as MouseEvent
 
       if (useEditorStore.getState().isPickingColor) {
-        // Stop default action and selection behavior from disrupting our tool
         e.preventDefault()
         e.stopPropagation()
-
         const pointer = canvas.getScenePoint(e)
         sampleCanvasColor(pointer.x, pointer.y)
         return
@@ -241,53 +248,29 @@ export default function Canvas() {
 
   const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return
-
     const reader = new FileReader()
-
     reader.onload = async (f) => {
       const data = f.target?.result as string
-
       const canvas = useEditorStore.getState().canvas
-
       if (!canvas) return
-
       try {
-        // --------------------------------------------------------------
-        // 1. Load Image into Fabric
-        // --------------------------------------------------------------
-
         const img = await FabricImage.fromURL(data)
-
-        // Scale image to fit canvas while maintaining aspect ratio
         const scale = Math.min(
           canvas.getWidth() / (img.width || 1),
           canvas.getHeight() / (img.height || 1)
         )
-
         img.scale(scale * 0.9)
-
         canvas.centerObject(img)
-
-        // Keep uploaded image behind text/other objects
         canvas.insertAt(0, img)
-
         canvas.setActiveObject(img)
 
-        // --------------------------------------------------------------
-        // 2. Extract Image Palette
-        // --------------------------------------------------------------
-
         const palette = await extractPalette(data, 6)
-
         useEditorStore.getState().setImagePalette(palette)
-
-        // Make sure the canvas renders after adding the image
         canvas.requestRenderAll()
       } catch (error) {
         console.error("Failed to load image or extract palette:", error)
       }
     }
-
     reader.readAsDataURL(file)
   }
 
@@ -305,6 +288,31 @@ export default function Canvas() {
     >
       <canvas ref={canvasRef} className="rounded-xl" />
 
+      {/* 2. FILM GRAIN SVG LAYER OVERLAY */}
+      {grainIntensity > 0 && (
+        <div
+          className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
+          style={{ opacity: grainIntensity / 100 }}
+        >
+          <svg
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-full w-full opacity-60"
+            preserveAspectRatio="none"
+          >
+            <filter id="cinematic-noise">
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.65"
+                numOctaves="3"
+                stitchTiles="stitch"
+              />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#cinematic-noise)" />
+          </svg>
+        </div>
+      )}
+
       <input
         type="file"
         accept="image/*"
@@ -316,7 +324,6 @@ export default function Canvas() {
         }}
       />
 
-      {/* Floating Precision Magnifier UI - Rendered offset from Cursor to avoid blocking */}
       {isPickingColor && pickerPreview && (
         <div
           className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
@@ -336,7 +343,6 @@ export default function Canvas() {
         </div>
       )}
 
-      {/* Banner */}
       {isPickingColor && !pickerPreview && (
         <div className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 animate-bounce items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xl backdrop-blur-md">
           <Pipette size={14} />
@@ -345,7 +351,7 @@ export default function Canvas() {
       )}
 
       {!hasImage && (
-        <div className="pointer-events-none absolute right-0 bottom-4 left-0 flex justify-center">
+        <div className="pointer-events-none absolute right-0 bottom-4 left-0 z-50 flex justify-center">
           <button
             onClick={() => fileInputRef.current?.click()}
             className="pointer-events-auto cursor-pointer text-xs text-white/30 transition-colors hover:text-white/60"
