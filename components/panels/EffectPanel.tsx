@@ -202,7 +202,7 @@ export default function EffectsPanel() {
         ))}
 
         <button
-          onClick={addVignette}
+          onClick={() => addVignette()}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
         >
           <Plus size={14} /> Add Vignette Layer

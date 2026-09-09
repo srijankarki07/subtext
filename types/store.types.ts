@@ -154,7 +154,7 @@ export interface EffectSlice {
   ) => void
 
   // Multi-instance Generators
-  addVignette: () => void
+  addVignette: (initialConfig?: Partial<VignetteState>) => void
   updateVignette: (id: string, updates: Partial<VignetteState>) => void
   removeVignette: (id: string) => void
 

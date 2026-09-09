@@ -29,34 +29,42 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     set({ artboard: { width, height } })
 
-    // Set internal resolution (high quality for export)
-    canvas.setDimensions({ width, height }, { backstoreOnly: true })
+    // 1. Synchronize logical canvas coordinate dimensions
+    canvas.setDimensions({ width, height })
 
+    // 2. Scale visually with CSS to fit container
     const container = canvas.getElement().parentElement?.parentElement
     if (container) {
-      // Calculate a responsive scale to fit the canvas visually within the browser window
       const scale = Math.min(
         (container.clientWidth - 80) / width,
         (container.clientHeight - 80) / height
       )
 
-      // CSS scaling visually downsizes the canvas without losing backstore resolution
       canvas.setDimensions(
-        { width: width * scale, height: height * scale },
+        {
+          width: `${Math.round(width * scale)}px`,
+          height: `${Math.round(height * scale)}px`,
+        },
         { cssOnly: true }
       )
-
-      // Reset zoom to 1 to ensure mouse coordinates accurately map to the canvas elements
-      canvas.setZoom(1)
-
-      // Add a distinct UI treatment so the canvas looks like an editable "Artboard"
-      const wrapper = canvas.getElement().parentElement
-      if (wrapper) {
-        wrapper.style.boxShadow = "0 20px 50px rgba(0,0,0,0.8)"
-        wrapper.style.border = "1px solid rgba(255,255,255,0.1)"
-        wrapper.style.backgroundColor = "#1C1C1E"
-      }
     }
+
+    // 3. Adapt existing letterboxes and vignettes to the new aspect ratio
+    const objects = canvas.getObjects()
+    objects.forEach((obj: any) => {
+      if (obj.id?.startsWith("vignette")) {
+        obj.set({ left: 0, top: 0, width, height })
+        obj.setCoords()
+      }
+      if (obj.id?.endsWith("-top")) {
+        obj.set({ left: 0, top: 0, width })
+        obj.setCoords()
+      }
+      if (obj.id?.endsWith("-bottom")) {
+        obj.set({ left: 0, top: height - obj.getScaledHeight(), width })
+        obj.setCoords()
+      }
+    })
 
     canvas.requestRenderAll()
     saveHistoryState()
@@ -200,19 +208,40 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   // TEMPLATE INJECTION
   applyTemplate: (templateId) => {
     const store = get() as EditorStore // Access full combined store context
-    const { canvas, artboard, saveHistoryState } = store
+    const { canvas, saveHistoryState } = store
     if (!canvas) return
+
+    const canvasWidth = canvas.getWidth()
+    const canvasHeight = canvas.getHeight()
 
     const template = TEMPLATES.find((t) => t.id === templateId)
     if (!template) return
 
-    // 1. CLEAR EXISTING TEXT (Keep Background Image)
+    // 1. EXTRACT EXISTING USER TEXT
     const objects = canvas.getObjects()
-    const textsToRemove = objects.filter((o) => o.type === "i-text")
-    textsToRemove.forEach((t) => canvas.remove(t))
+    const existingTexts = objects.filter((o) => o.type === "i-text") as IText[]
+
+    let preservedQuote: string | null = null
+    let preservedAuthor: string | null = null
+    let preservedHandle: string | null = null
+
+    existingTexts.forEach((tObj, idx) => {
+      const text = tObj.text || ""
+      const role = (tObj as any).textType
+
+      if (role === "quote" || (!role && idx === 0)) {
+        if (!preservedQuote) preservedQuote = text
+      } else if (role === "author" || (!role && idx === 1)) {
+        if (!preservedAuthor) preservedAuthor = text
+      } else if (role === "handle" || (!role && idx === 2)) {
+        if (!preservedHandle) preservedHandle = text
+      }
+    })
+
+    existingTexts.forEach((t) => canvas.remove(t))
     canvas.discardActiveObject()
 
-    // 2. RESET ALL EFFECTS
+    // 2. RESET EFFECTS
     store.resetEffect("all")
 
     // 3. APPLY TEMPLATE EFFECTS
@@ -242,27 +271,31 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     }
 
     if (fx.vignette) {
-      store.addVignette()
-      const currentVignettes = store.vignettes
-      const latestVig = currentVignettes[currentVignettes.length - 1]
-      if (latestVig) {
-        store.updateVignette(latestVig.id, fx.vignette)
-      }
+      store.addVignette(fx.vignette)
     }
 
     if (fx.duotone) {
       store.applyDuotone(fx.duotone.lightHex, fx.duotone.darkHex)
     }
 
-    // 4. INJECT TEMPLATE TEXTS
+    // 4. INJECT TEMPLATE TEXTS WITH DYNAMIC BOUNDING BOX CLAMPING
     template.texts.forEach((tConfig) => {
-      const textStr =
-        tConfig.text ||
-        (tConfig.type === "quote"
-          ? '"To create is to live twice."'
-          : tConfig.type === "author"
-            ? "— ALBERT CAMUS"
-            : "@cinemate")
+      let content = tConfig.text
+
+      if (tConfig.type === "quote" && preservedQuote) content = preservedQuote
+      else if (tConfig.type === "author" && preservedAuthor)
+        content = preservedAuthor
+      else if (tConfig.type === "handle" && preservedHandle)
+        content = preservedHandle
+
+      if (!content) {
+        content =
+          tConfig.type === "quote"
+            ? '"To create is to live twice."'
+            : tConfig.type === "author"
+              ? "— ALBERT CAMUS"
+              : "@cinemate"
+      }
 
       const shadowObj = tConfig.shadow
         ? new Shadow({
@@ -273,15 +306,47 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
           })
         : undefined
 
-      const textObject = new IText(textStr, {
-        ...tConfig,
+      const {
+        type: textRole,
+        text: _t,
+        shadow: _s,
+        left: relLeft,
+        top: relTop,
+        originX,
+        originY,
+        fontSize,
+        ...styleOptions
+      } = tConfig
+
+      const textObject = new IText(content, {
+        ...styleOptions,
+        fontSize,
         shadow: shadowObj,
-        left: artboard.width * tConfig.left, // Convert relative 0-1 to absolute pixels
-        top: artboard.height * tConfig.top,
-        originX: tConfig.originX || "left",
-        originY: tConfig.originY || "top",
+        left: canvasWidth * relLeft,
+        top: canvasHeight * relTop,
+        originX: originX || "left",
+        originY: originY || "top",
       })
 
+      // Dynamic text clamping: Prevents overflowing the canvas on narrow aspect ratios
+      const sideMargin = canvasWidth * 0.08
+      let availableWidth = canvasWidth - sideMargin * 2
+
+      if (originX === "left") {
+        availableWidth = canvasWidth - canvasWidth * relLeft - sideMargin
+      } else if (originX === "right") {
+        availableWidth = canvasWidth * relLeft - sideMargin
+      }
+
+      if (textObject.width > availableWidth && availableWidth > 50) {
+        const fitScale = availableWidth / textObject.width
+        textObject.set(
+          "fontSize",
+          Math.max(14, Math.floor(fontSize * fitScale))
+        )
+      }
+
+      ;(textObject as any).textType = textRole
       canvas.add(textObject)
     })
 
