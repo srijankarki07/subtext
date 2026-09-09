@@ -50,7 +50,7 @@ export function getWarmthMatrix(value: number): number[] {
   return [1, 0, 0, 0, v, 0, 1, 0, 0, v * 0.4, 0, 0, 1, 0, -v, 0, 0, 0, 1, 0]
 }
 
-// 12 Cinematic Presets
+// 12 Cinematic Presets (Matrices)
 export const CINEMATIC_PRESETS: Record<string, number[]> = {
   None: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
   Matrix: [
@@ -96,3 +96,73 @@ export const CINEMATIC_PRESETS: Record<string, number[]> = {
     0, 1, 0,
   ],
 }
+
+// Preset Details for UI Cards & (i) tooltips
+export interface PresetMeta {
+  name: string
+  description: string
+  accentColor: string
+}
+
+export const CINEMATIC_PRESET_METADATA: PresetMeta[] = [
+  {
+    name: "None",
+    description: "Neutral / Raw image tones",
+    accentColor: "#8E8E93",
+  },
+  {
+    name: "Matrix",
+    description: "Green phosphor dystopian tint",
+    accentColor: "#32D74B",
+  },
+  {
+    name: "BladeRunner",
+    description: "Cyan shadows with warm neon amber",
+    accentColor: "#FF9F0A",
+  },
+  {
+    name: "Amelie",
+    description: "Warm French golden-green whimsy",
+    accentColor: "#D6B47A",
+  },
+  {
+    name: "Teal & Orange",
+    description: "Hollywood blockbuster skin & sky contrast",
+    accentColor: "#0A84FF",
+  },
+  {
+    name: "Cyberpunk",
+    description: "Electric magenta and ultraviolet pop",
+    accentColor: "#FF375F",
+  },
+  {
+    name: "Vintage",
+    description: "Faded 70s print film emulation",
+    accentColor: "#C7A779",
+  },
+  {
+    name: "Sepia",
+    description: "Warm antique monochrome look",
+    accentColor: "#A2703F",
+  },
+  {
+    name: "Noir",
+    description: "High-contrast black & white drama",
+    accentColor: "#EBEBF5",
+  },
+  {
+    name: "High Contrast",
+    description: "Crushed rich shadows and punchy lights",
+    accentColor: "#FFFFFF",
+  },
+  {
+    name: "Faded",
+    description: "Matte shadows with low dynamic range",
+    accentColor: "#7A7E85",
+  },
+  {
+    name: "Dreamy",
+    description: "Soft romantic pastel glow and haze",
+    accentColor: "#BF5AF2",
+  },
+]

@@ -166,6 +166,41 @@ export interface EffectSlice {
   removeLetterbox: (id: string) => void
 }
 
+export interface ContrastStats {
+  ratio: number
+  score: number
+  badge: "AAA" | "AA" | "FAIL"
+  bgColor: string
+}
+
+export interface ContextMenuState {
+  visible: boolean
+  x: number
+  y: number
+  targetObject: FabricObject | null
+}
+
+/**
+ * CORE SLICE: Manages the canvas initialization, global selections,
+ * artboard dimensions, and adding/removing base objects.
+ */
+export interface CoreSlice {
+  canvas: Canvas | null
+  activeObject: FabricObject | null
+  activeMobileTab: MobileTab
+  artboard: { width: number; height: number }
+
+  setCanvas: (canvas: Canvas) => void
+  setActiveObject: (obj: FabricObject | null) => void
+  setActiveMobileTab: (tab: MobileTab) => void
+  setAspectRatio: (width: number, height: number) => void
+  addText: (type: TextBlockType) => void
+  addImage: () => void
+  deleteActiveObject: (targetObj?: FabricObject | null) => void
+  clearCanvas: () => void
+  applyTemplate: (templateId: string) => void // <-- ADDED
+}
+
 export type EditorStore = CoreSlice &
   HistorySlice &
   LayerSlice &

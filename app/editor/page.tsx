@@ -6,6 +6,7 @@ import EffectsPanel from "@/components/panels/EffectPanel"
 import FontPicker from "@/components/panels/FontPicker"
 import ImagePanel from "@/components/panels/ImagePanel"
 import LayersPanel from "@/components/panels/LayersPanel"
+import TemplatesPanel from "@/components/panels/TemplatesPanel" // <-- ADDED
 import TextPanel from "@/components/panels/TextPanel"
 import {
   Select,
@@ -157,6 +158,11 @@ export default function EditorPage() {
   const { setAspectRatio, activeMobileTab, setActiveMobileTab } =
     useEditorStore()
 
+  // Track if left sidebar is showing Elements vs Templates
+  const [leftSidebarTab, setLeftSidebarTab] = useState<
+    "elements" | "templates"
+  >("elements")
+
   const [ratioSelection, setRatioSelection] = useState("")
   const [customW, setCustomW] = useState(1080)
   const [customH, setCustomH] = useState(1080)
@@ -186,59 +192,70 @@ export default function EditorPage() {
               Visual editor
             </div>
           </div>
-
-          <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D6B47A]/70 shadow-[0_0_8px_rgba(214,180,122,0.4)]" />
-          </div>
         </div>
 
-        <div className="flex flex-1 flex-col px-3 py-6">
-          <div className="mb-3 flex items-center justify-between px-3">
-            <span className="text-[9px] font-semibold tracking-[0.16em] text-white/25 uppercase">
-              Elements
-            </span>
-            <span className="text-[9px] text-white/15">01</span>
-          </div>
+        {/* Sidebar Tabs */}
+        <div className="flex border-b border-white/[0.055]">
+          <button
+            onClick={() => setLeftSidebarTab("elements")}
+            className={`flex-1 py-3 text-[11px] font-medium transition-colors ${leftSidebarTab === "elements" ? "border-b-2 border-[#D6B47A] text-white" : "text-white/40 hover:text-white"}`}
+          >
+            Elements
+          </button>
+          <button
+            onClick={() => setLeftSidebarTab("templates")}
+            className={`flex-1 py-3 text-[11px] font-medium transition-colors ${leftSidebarTab === "templates" ? "border-b-2 border-[#D6B47A] text-white" : "text-white/40 hover:text-white"}`}
+          >
+            Templates
+          </button>
+        </div>
 
-          <div className="flex flex-col gap-0.5">
-            <AddElement
-              icon={<Type size={15} />}
-              eyebrow="Typography"
-              title="Quote"
-              onClick={() => useEditorStore.getState().addText("quote")}
-            />
-            <AddElement
-              icon={<Quote size={15} />}
-              eyebrow="Typography"
-              title="Author"
-              onClick={() => useEditorStore.getState().addText("author")}
-            />
-            <AddElement
-              icon={<AtSign size={15} />}
-              eyebrow="Typography"
-              title="Social handle"
-              onClick={() => useEditorStore.getState().addText("handle")}
-            />
-            <div className="my-3 h-px bg-white/[0.045]" />
-            <AddElement
-              icon={<ImageIcon size={15} />}
-              eyebrow="Media"
-              title="Image"
-              onClick={() => useEditorStore.getState().addImage()}
-            />
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col p-4">
+          {leftSidebarTab === "elements" ? (
+            <>
+              <div className="flex flex-col gap-0.5">
+                <AddElement
+                  icon={<Type size={15} />}
+                  eyebrow="Typography"
+                  title="Quote"
+                  onClick={() => useEditorStore.getState().addText("quote")}
+                />
+                <AddElement
+                  icon={<Quote size={15} />}
+                  eyebrow="Typography"
+                  title="Author"
+                  onClick={() => useEditorStore.getState().addText("author")}
+                />
+                <AddElement
+                  icon={<AtSign size={15} />}
+                  eyebrow="Typography"
+                  title="Social handle"
+                  onClick={() => useEditorStore.getState().addText("handle")}
+                />
+                <div className="my-3 h-px bg-white/[0.045]" />
+                <AddElement
+                  icon={<ImageIcon size={15} />}
+                  eyebrow="Media"
+                  title="Image"
+                  onClick={() => useEditorStore.getState().addImage()}
+                />
+              </div>
 
-          <div className="mt-auto rounded-xl border border-white/[0.045] bg-white/[0.018] p-3.5">
-            <div className="mb-1.5 flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
-              <span className="text-[9px] font-medium tracking-[0.12em] text-white/30 uppercase">
-                Tip
-              </span>
-            </div>
-            <p className="text-[10px] leading-relaxed text-white/20">
-              Keep typography simple. Let the image do the cinematic work.
-            </p>
-          </div>
+              <div className="mt-auto rounded-xl border border-white/[0.045] bg-white/[0.018] p-3.5">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
+                  <span className="text-[9px] font-medium tracking-[0.12em] text-white/30 uppercase">
+                    Tip
+                  </span>
+                </div>
+                <p className="text-[10px] leading-relaxed text-white/20">
+                  Keep typography simple. Let the image do the cinematic work.
+                </p>
+              </div>
+            </>
+          ) : (
+            <TemplatesPanel />
+          )}
         </div>
       </aside>
 
@@ -375,7 +392,7 @@ export default function EditorPage() {
       <nav className="relative z-50 flex h-[68px] shrink-0 items-center border-t border-white/[0.07] bg-[#101010]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:hidden">
         <MobileTabButton
           icon={<LayoutTemplate size={19} />}
-          label="Add"
+          label="Templates"
           tab="templates"
         />
         <MobileTabButton
@@ -417,47 +434,7 @@ export default function EditorPage() {
             </div>
 
             <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-5">
-              {activeMobileTab === "templates" && (
-                <div className="flex flex-col gap-1">
-                  <AddElement
-                    icon={<Type size={15} />}
-                    eyebrow="Typography"
-                    title="Quote"
-                    onClick={() => {
-                      useEditorStore.getState().addText("quote")
-                      setActiveMobileTab(null)
-                    }}
-                  />
-                  <AddElement
-                    icon={<Quote size={15} />}
-                    eyebrow="Typography"
-                    title="Author"
-                    onClick={() => {
-                      useEditorStore.getState().addText("author")
-                      setActiveMobileTab(null)
-                    }}
-                  />
-                  <AddElement
-                    icon={<AtSign size={15} />}
-                    eyebrow="Typography"
-                    title="Social handle"
-                    onClick={() => {
-                      useEditorStore.getState().addText("handle")
-                      setActiveMobileTab(null)
-                    }}
-                  />
-                  <div className="my-2 h-px bg-white/[0.05]" />
-                  <AddElement
-                    icon={<ImageIcon size={15} />}
-                    eyebrow="Media"
-                    title="Image"
-                    onClick={() => {
-                      useEditorStore.getState().addImage()
-                      setActiveMobileTab(null)
-                    }}
-                  />
-                </div>
-              )}
+              {activeMobileTab === "templates" && <TemplatesPanel />}
               {activeMobileTab === "edit" && <RightPanelManager />}
               {activeMobileTab === "layers" && <LayersPanel />}
             </div>

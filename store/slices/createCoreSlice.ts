@@ -1,3 +1,5 @@
+import { CINEMATIC_PRESETS } from "@/lib/filters"
+import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
 import { FabricImage, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
@@ -194,4 +196,96 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         canRedo: false,
       }
     }),
+
+  // TEMPLATE INJECTION
+  applyTemplate: (templateId) => {
+    const store = get() as EditorStore // Access full combined store context
+    const { canvas, artboard, saveHistoryState } = store
+    if (!canvas) return
+
+    const template = TEMPLATES.find((t) => t.id === templateId)
+    if (!template) return
+
+    // 1. CLEAR EXISTING TEXT (Keep Background Image)
+    const objects = canvas.getObjects()
+    const textsToRemove = objects.filter((o) => o.type === "i-text")
+    textsToRemove.forEach((t) => canvas.remove(t))
+    canvas.discardActiveObject()
+
+    // 2. RESET ALL EFFECTS
+    store.resetEffect("all")
+
+    // 3. APPLY TEMPLATE EFFECTS
+    const fx = template.effects
+    if (fx.presetName && CINEMATIC_PRESETS[fx.presetName]) {
+      store.applyPreset(CINEMATIC_PRESETS[fx.presetName])
+    }
+    if (fx.brightness !== undefined)
+      store.applyImageFilter("Brightness", { brightness: fx.brightness })
+    if (fx.contrast !== undefined)
+      store.applyImageFilter("Contrast", { contrast: fx.contrast })
+    if (fx.saturation !== undefined)
+      store.applyImageFilter("Saturation", { saturation: fx.saturation })
+    if (fx.warmth !== undefined) store.applyWarmth(fx.warmth)
+    if (fx.grainIntensity !== undefined)
+      store.setGrainIntensity(fx.grainIntensity)
+    if (fx.gradientOpacity !== undefined)
+      store.setGradientOverlay(
+        fx.gradientOpacity,
+        "linear",
+        "transparent",
+        "rgba(0,0,0,0.9)"
+      )
+
+    if (fx.letterbox !== undefined) {
+      store.addLetterbox(fx.letterbox)
+    }
+
+    if (fx.vignette) {
+      store.addVignette()
+      const currentVignettes = store.vignettes
+      const latestVig = currentVignettes[currentVignettes.length - 1]
+      if (latestVig) {
+        store.updateVignette(latestVig.id, fx.vignette)
+      }
+    }
+
+    if (fx.duotone) {
+      store.applyDuotone(fx.duotone.lightHex, fx.duotone.darkHex)
+    }
+
+    // 4. INJECT TEMPLATE TEXTS
+    template.texts.forEach((tConfig) => {
+      const textStr =
+        tConfig.text ||
+        (tConfig.type === "quote"
+          ? '"To create is to live twice."'
+          : tConfig.type === "author"
+            ? "— ALBERT CAMUS"
+            : "@cinemate")
+
+      const shadowObj = tConfig.shadow
+        ? new Shadow({
+            color: tConfig.shadow.color,
+            blur: tConfig.shadow.blur,
+            offsetX: tConfig.shadow.offsetX,
+            offsetY: tConfig.shadow.offsetY,
+          })
+        : undefined
+
+      const textObject = new IText(textStr, {
+        ...tConfig,
+        shadow: shadowObj,
+        left: artboard.width * tConfig.left, // Convert relative 0-1 to absolute pixels
+        top: artboard.height * tConfig.top,
+        originX: tConfig.originX || "left",
+        originY: tConfig.originY || "top",
+      })
+
+      canvas.add(textObject)
+    })
+
+    canvas.requestRenderAll()
+    saveHistoryState()
+  },
 })
