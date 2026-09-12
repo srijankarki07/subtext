@@ -354,4 +354,57 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.requestRenderAll()
     saveHistoryState()
   },
+
+  copyCanvasToClipboard: async (scale = 1) => {
+    const { canvas } = get()
+    if (!canvas) return false
+
+    // 1. Temporarily deselect active objects so bounding boxes aren't captured
+    const activeObj = canvas.getActiveObject()
+    canvas.discardActiveObject()
+    canvas.requestRenderAll()
+
+    try {
+      // 2. toCanvasElement takes 'multiplier' directly as a number in Fabric
+      const tempCanvas = canvas.toCanvasElement(scale)
+
+      // 3. Convert to PNG Blob via HTMLCanvasElement.toBlob
+      let blob = await new Promise<Blob | null>((resolve) => {
+        tempCanvas.toBlob((b) => resolve(b), "image/png")
+      })
+
+      // Reliable fallback if toBlob returned null
+      if (!blob) {
+        const dataUrl = canvas.toDataURL({
+          format: "png",
+          multiplier: scale,
+        })
+        const res = await fetch(dataUrl)
+        blob = await res.blob()
+      }
+
+      if (!blob) throw new Error("Failed to create blob from canvas")
+
+      // 4. Write to Clipboard using standard ClipboardItem API
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        throw new Error(
+          "Clipboard API not supported in this browser environment"
+        )
+      }
+
+      const item = new ClipboardItem({ "image/png": blob })
+      await navigator.clipboard.write([item])
+
+      return true
+    } catch (err) {
+      console.error("Clipboard copy error:", err)
+      return false
+    } finally {
+      // Restore selection
+      if (activeObj) {
+        canvas.setActiveObject(activeObj)
+        canvas.requestRenderAll()
+      }
+    }
+  },
 })
