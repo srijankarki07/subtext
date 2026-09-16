@@ -20,19 +20,22 @@ import { ASPECT_RATIOS, useEditorStore } from "@/store/useEditorStore"
 import { MobileTab } from "@/types/store.types"
 import {
   AtSign,
+  Check,
   Download,
+  FolderOpen,
   Image as ImageIcon,
   Layers,
   LayoutTemplate,
   Quote,
   Redo2,
+  Save,
   Settings2,
   Type,
   Undo2,
   X,
 } from "lucide-react"
 import dynamic from "next/dynamic"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
   ssr: false,
@@ -161,7 +164,38 @@ export default function EditorPage() {
     activeMobileTab,
     setActiveMobileTab,
     setIsExportModalOpen,
+    saveProjectToStorage,
+    loadProjectFromStorage,
+    hasSavedProject,
+    lastSavedAt,
+    checkSavedProject,
   } = useEditorStore()
+
+  // Local feedback state for the save button
+  const [justSaved, setJustSaved] = useState(false)
+
+  // Check on load if previous save exists
+  useEffect(() => {
+    checkSavedProject()
+  }, [checkSavedProject])
+
+  const handleSave = () => {
+    const success = saveProjectToStorage()
+    if (success) {
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 2000)
+    }
+  }
+
+  const handleRestore = async () => {
+    if (
+      confirm(
+        "Restore saved project from local storage? Current unsaved changes will be overwritten."
+      )
+    ) {
+      await loadProjectFromStorage()
+    }
+  }
 
   // Track if left sidebar is showing Elements vs Templates
   const [leftSidebarTab, setLeftSidebarTab] = useState<
@@ -288,6 +322,41 @@ export default function EditorPage() {
               className="cursor-pointer rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
             >
               <Redo2 size={15} />
+            </button>
+
+            <div className="mx-1 h-3.5 w-px bg-white/10" />
+
+            {/* SAVE BUTTON */}
+            <button
+              onClick={handleSave}
+              title={
+                lastSavedAt
+                  ? `Saved at ${lastSavedAt}`
+                  : "Save Project (LocalStorage)"
+              }
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-all active:scale-95 ${
+                justSaved
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "text-white/60 hover:bg-white/[0.08] hover:text-white"
+              }`}
+            >
+              {justSaved ? <Check size={13} /> : <Save size={13} />}
+              <span>{justSaved ? "Saved!" : "Save"}</span>
+            </button>
+
+            {/* RESTORE BUTTON */}
+            <button
+              onClick={handleRestore}
+              disabled={!hasSavedProject}
+              title={
+                hasSavedProject
+                  ? "Restore saved project"
+                  : "No saved project found"
+              }
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium text-white/60 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <FolderOpen size={13} />
+              <span>Restore</span>
             </button>
           </div>
           <div className="ml-auto flex items-center gap-2">

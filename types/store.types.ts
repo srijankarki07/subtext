@@ -190,6 +190,8 @@ export interface CoreSlice {
   activeMobileTab: MobileTab
   artboard: { width: number; height: number }
   isExportModalOpen: boolean
+  hasSavedProject: boolean
+  lastSavedAt: string | null
 
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
@@ -202,6 +204,12 @@ export interface CoreSlice {
   clearCanvas: () => void
   applyTemplate: (templateId: string) => void
   copyCanvasToClipboard: (scale?: number) => Promise<boolean>
+
+  // Storage actions
+  saveProjectToStorage: () => boolean
+  loadProjectFromStorage: () => Promise<boolean>
+  clearSavedProject: () => void
+  checkSavedProject: () => void
 }
 
 export type EditorStore = CoreSlice &

@@ -4,6 +4,28 @@ import { CoreSlice, EditorStore } from "@/types/store.types"
 import { FabricImage, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
+const STORAGE_KEY = "cinemate_saved_project"
+// Custom Fabric object attributes to preserve in JSON serialization
+const SERIALIZE_PROPERTIES = [
+  "id",
+  "isEffect",
+  "textType",
+  "vignetteColor",
+  "vignetteType",
+  "vignetteOpacity",
+  "blurOpacity",
+  "overlayId",
+  "selectable",
+  "evented",
+  "lockMovementX",
+  "lockMovementY",
+  "lockScalingX",
+  "lockScalingY",
+  "stroke",
+  "strokeWidth",
+  "strokeDashArray",
+]
+
 export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   set,
   get
@@ -13,8 +35,149 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   activeMobileTab: null,
   artboard: { width: 1080, height: 1080 },
   isExportModalOpen: false,
+  hasSavedProject: false,
+  lastSavedAt: null,
 
-  setCanvas: (canvas) => set({ canvas }),
+  setCanvas: (canvas) => {
+    set({ canvas })
+    get().checkSavedProject()
+  },
+
+  checkSavedProject: () => {
+    if (typeof window === "undefined") return
+    const saved = localStorage.getItem(STORAGE_KEY)
+    set({ hasSavedProject: !!saved })
+  },
+
+  saveProjectToStorage: () => {
+    const {
+      canvas,
+      artboard,
+      grainIntensity,
+      gradientOpacity,
+      vignettes,
+      blurZones,
+      letterboxes,
+      imagePalette,
+    } = get()
+    if (!canvas) return false
+
+    // Temporarily deselect active object so selection border is not serialized
+    const activeObj = canvas.getActiveObject()
+    canvas.discardActiveObject()
+    canvas.requestRenderAll()
+
+    try {
+      // In Fabric v6, toObject() accepts custom property arrays, whereas toJSON() takes 0 arguments
+      const canvasJson = canvas.toObject(SERIALIZE_PROPERTIES as any)
+
+      const payload = {
+        canvasJson,
+        artboard,
+        grainIntensity,
+        gradientOpacity,
+        vignettes,
+        blurZones,
+        letterboxes,
+        imagePalette,
+        savedAt: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+      set({ hasSavedProject: true, lastSavedAt: payload.savedAt })
+      return true
+    } catch (error) {
+      console.error("Failed to save project to localStorage:", error)
+      alert("Storage quota exceeded. Consider compressing uploaded images.")
+      return false
+    } finally {
+      if (activeObj) {
+        canvas.setActiveObject(activeObj)
+        canvas.requestRenderAll()
+      }
+    }
+  },
+
+  loadProjectFromStorage: async () => {
+    const { canvas, setAspectRatio, saveHistoryState } = get()
+    if (!canvas || typeof window === "undefined") return false
+
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return false
+
+    try {
+      const data = JSON.parse(raw)
+      const {
+        canvasJson,
+        artboard,
+        grainIntensity,
+        gradientOpacity,
+        vignettes,
+        blurZones,
+        letterboxes,
+        imagePalette,
+      } = data
+
+      // 1. Restore Artboard & CSS scaling
+      if (artboard?.width && artboard?.height) {
+        setAspectRatio(artboard.width, artboard.height)
+      }
+
+      // 2. Restore Effect Slice States
+      set({
+        grainIntensity: grainIntensity ?? 0,
+        gradientOpacity: gradientOpacity ?? 0,
+        vignettes: vignettes ?? [],
+        blurZones: blurZones ?? [],
+        letterboxes: letterboxes ?? [],
+        imagePalette: imagePalette ?? [],
+      })
+
+      // 3. Load Canvas Objects
+      await canvas.loadFromJSON(canvasJson)
+
+      // 4. Re-bind draggable event listeners for any blur handles
+      canvas.getObjects().forEach((obj: any) => {
+        if (obj.id?.startsWith("blur-handle")) {
+          const overlay = canvas
+            .getObjects()
+            .find((o: any) => o.id === obj.overlayId)
+          if (overlay) {
+            const updateClip = () => {
+              overlay.set({
+                clipPath: new obj.constructor({
+                  left: obj.left,
+                  top: obj.top,
+                  width: obj.getScaledWidth(),
+                  height: obj.getScaledHeight(),
+                  absolutePositioned: true,
+                }),
+              })
+              canvas.requestRenderAll()
+            }
+            obj.on("moving", updateClip)
+            obj.on("scaling", updateClip)
+          }
+        }
+      })
+
+      canvas.requestRenderAll()
+      saveHistoryState()
+      return true
+    } catch (error) {
+      console.error("Failed to load project from localStorage:", error)
+      return false
+    }
+  },
+
+  clearSavedProject: () => {
+    if (typeof window === "undefined") return
+    localStorage.removeItem(STORAGE_KEY)
+    set({ hasSavedProject: false, lastSavedAt: null })
+  },
 
   setActiveObject: (activeObject) => {
     set({ activeObject })
