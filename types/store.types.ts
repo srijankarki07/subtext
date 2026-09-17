@@ -40,16 +40,25 @@ export interface CoreSlice {
 /**
  * HISTORY SLICE: Manages the undo/redo stack using JSON snapshots of the canvas.
  */
+
+export interface HistoryItem {
+  id: string
+  json: string
+  title: string
+  timestamp: string
+  objectCount: number
+}
 export interface HistorySlice {
-  history: string[]
+  history: HistoryItem[]
   historyIndex: number
   canUndo: boolean
   canRedo: boolean
   isHistoryProcessing: boolean
 
-  saveHistoryState: () => void
+  saveHistoryState: (description?: string) => void
   undo: () => Promise<void>
   redo: () => Promise<void>
+  jumpToHistoryIndex: (index: number) => Promise<void>
 }
 
 /**
@@ -192,6 +201,7 @@ export interface CoreSlice {
   isExportModalOpen: boolean
   hasSavedProject: boolean
   lastSavedAt: string | null
+  clipboardObject: FabricObject | null
 
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
@@ -210,6 +220,11 @@ export interface CoreSlice {
   loadProjectFromStorage: () => Promise<boolean>
   clearSavedProject: () => void
   checkSavedProject: () => void
+
+  // Clipboard actions
+  copyActiveObject: () => Promise<void>
+  cutActiveObject: () => Promise<void>
+  pasteClipboardObject: () => Promise<void>
 }
 
 export type EditorStore = CoreSlice &
