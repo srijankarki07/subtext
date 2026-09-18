@@ -37,6 +37,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   isExportModalOpen: false,
   hasSavedProject: false,
   lastSavedAt: null,
+  clipboardObject: null,
 
   setCanvas: (canvas) => {
     set({ canvas })
@@ -569,5 +570,51 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         canvas.requestRenderAll()
       }
     }
+  },
+
+  // ELEMENT CLIPBOARD
+  copyActiveObject: async () => {
+    const { activeObject } = get()
+    if (!activeObject || activeObject.lockMovementX) return
+
+    // Clone the active element and keep an in-memory reference
+    const cloned = await activeObject.clone(SERIALIZE_PROPERTIES as any)
+    set({ clipboardObject: cloned })
+  },
+
+  cutActiveObject: async () => {
+    const { activeObject, copyActiveObject, deleteActiveObject } = get()
+    if (!activeObject || activeObject.lockMovementX) return
+
+    await copyActiveObject()
+    deleteActiveObject(activeObject)
+  },
+
+  pasteClipboardObject: async () => {
+    const { canvas, clipboardObject, saveHistoryState } = get()
+    if (!canvas || !clipboardObject) return
+
+    // Clone the clipboard copy so multiple pastes create independent objects
+    const cloned = await clipboardObject.clone(SERIALIZE_PROPERTIES as any)
+    canvas.discardActiveObject()
+
+    cloned.set({
+      left: (cloned.left || 0) + 20,
+      top: (cloned.top || 0) + 20,
+      evented: true,
+    })
+
+    // Advance original clipboard coordinates so subsequent pastes cascade diagonally
+    clipboardObject.set({
+      left: (clipboardObject.left || 0) + 20,
+      top: (clipboardObject.top || 0) + 20,
+    })
+
+    canvas.add(cloned)
+    canvas.setActiveObject(cloned)
+    canvas.requestRenderAll()
+
+    set({ activeObject: cloned })
+    saveHistoryState()
   },
 })

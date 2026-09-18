@@ -1,5 +1,3 @@
-// src/components/editor/Canvas.tsx
-
 "use client"
 
 import { extractPalette } from "@/lib/colorUtils"
@@ -165,25 +163,38 @@ export default function Canvas() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeObj = canvas.getActiveObject()
+
+      // Never hijack keys if user is actively typing in an IText layer
       if (
         activeObj &&
         activeObj.type === "i-text" &&
         (activeObj as IText).isEditing
-      )
+      ) {
         return
+      }
 
-      const targetTag = (e.target as HTMLElement)?.tagName
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(targetTag)) return
+      // Never hijack keys if user is focused inside an input, select, textarea, or contentEditable
+      const targetElement = e.target as HTMLElement | null
+      const targetTag = targetElement?.tagName
+      if (
+        ["INPUT", "TEXTAREA", "SELECT"].includes(targetTag || "") ||
+        targetElement?.isContentEditable
+      ) {
+        return
+      }
 
       const isCmdOrCtrl = e.metaKey || e.ctrlKey
       const key = e.key.toLowerCase()
       const code = e.code
 
+      // 1. UNDO: Ctrl+Z / Cmd+Z (without Shift)
       if (isCmdOrCtrl && (key === "z" || code === "KeyZ") && !e.shiftKey) {
         e.preventDefault()
         undo()
         return
       }
+
+      // 2. REDO: Ctrl+Y / Cmd+Shift+Z
       if (
         (isCmdOrCtrl && (key === "z" || code === "KeyZ") && e.shiftKey) ||
         (isCmdOrCtrl && (key === "y" || code === "KeyY"))
@@ -192,11 +203,58 @@ export default function Canvas() {
         redo()
         return
       }
+
+      // 3. DUPLICATE: Ctrl+D / Cmd+D
       if (isCmdOrCtrl && (key === "d" || code === "KeyD")) {
         e.preventDefault()
         duplicateActiveObject()
         return
       }
+
+      // 4. QUICK SAVE TO STORAGE: Ctrl+S / Cmd+S
+      if (isCmdOrCtrl && (key === "s" || code === "KeyS")) {
+        e.preventDefault()
+        useEditorStore.getState().saveProjectToStorage()
+        return
+      }
+
+      // 5. DELETE: Delete or Backspace
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault()
+        useEditorStore.getState().deleteActiveObject()
+        return
+      }
+
+      // 6. DESELECT / CLOSE: Escape
+      if (e.key === "Escape") {
+        e.preventDefault()
+        canvas.discardActiveObject()
+        canvas.requestRenderAll()
+        closeContextMenu()
+        return
+      }
+      // 7. COPY ELEMENT: Ctrl+C / Cmd+C
+      if (isCmdOrCtrl && (key === "c" || code === "KeyC")) {
+        e.preventDefault()
+        useEditorStore.getState().copyActiveObject()
+        return
+      }
+
+      // 8. CUT ELEMENT: Ctrl+X / Cmd+X
+      if (isCmdOrCtrl && (key === "x" || code === "KeyX")) {
+        e.preventDefault()
+        useEditorStore.getState().cutActiveObject()
+        return
+      }
+
+      // 9.PASTE ELEMENT: Ctrl+V / Cmd+V
+      if (isCmdOrCtrl && (key === "v" || code === "KeyV")) {
+        e.preventDefault()
+        useEditorStore.getState().pasteClipboardObject()
+        return
+      }
+
+      // 10. LAYER ORDER SHORTCUTS
       if (isCmdOrCtrl && key === "]" && !e.altKey) {
         e.preventDefault()
         bringToFront()
@@ -216,10 +274,6 @@ export default function Canvas() {
         e.preventDefault()
         sendBackward()
         return
-      }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault()
-        useEditorStore.getState().deleteActiveObject()
       }
     }
 
