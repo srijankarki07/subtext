@@ -1,7 +1,7 @@
 export const CUSTOM_FONT_FORMATS = ["ttf", "otf", "woff", "woff2"] as const
 export const CUSTOM_FONT_MAX_BYTES = 10 * 1024 * 1024
 
-const DATABASE_NAME = "cinemate_fonts"
+const DATABASE_NAME = "Subtext_fonts"
 const DATABASE_VERSION = 1
 const STORE_NAME = "fonts"
 
@@ -102,7 +102,7 @@ export function getCustomFontMetadata(
 }
 
 export function getCustomFontFamily(id: string): string {
-  return `CinemateCustom_${id.replace(/[^a-zA-Z0-9_-]/g, "")}`
+  return `SubtextCustom_${id.replace(/[^a-zA-Z0-9_-]/g, "")}`
 }
 
 export async function registerCustomFont(

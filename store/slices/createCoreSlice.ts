@@ -4,7 +4,7 @@ import { CoreSlice, EditorStore } from "@/types/store.types"
 import { FabricImage, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
-const STORAGE_KEY = "cinemate_saved_project"
+const STORAGE_KEY = "Subtext_saved_project"
 // Custom Fabric object attributes to preserve in JSON serialization
 const SERIALIZE_PROPERTIES = [
   "id",
@@ -334,7 +334,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         })
         break
       case "handle":
-        textStr = "@cinemate"
+        textStr = "@Subtext"
         Object.assign(options, {
           fontFamily: "Inter",
           fontSize: 16,
@@ -461,7 +461,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
             ? '"To create is to live twice."'
             : tConfig.type === "author"
               ? "— ALBERT CAMUS"
-              : "@cinemate"
+              : "@Subtext"
       }
 
       const shadowObj = tConfig.shadow

@@ -257,7 +257,7 @@ export default function EditorPage() {
         <div className="flex h-[72px] items-center border-b border-white/[0.055] px-6">
           <div>
             <div className="text-[15px] font-semibold tracking-[-0.02em]">
-              Cinemate
+              Subtext
             </div>
             <div className="mt-0.5 text-[8px] tracking-[0.2em] text-[#D6B47A]/50 uppercase">
               Visual editor
@@ -334,7 +334,7 @@ export default function EditorPage() {
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.055] px-4 select-none lg:h-[72px] lg:px-7">
           <div className="lg:hidden">
             <div className="text-[14px] font-semibold tracking-[-0.02em]">
-              Cinemate
+              Subtext
             </div>
           </div>
 
@@ -478,7 +478,7 @@ export default function EditorPage() {
 
         <div className="hidden h-8 shrink-0 items-center justify-between border-t border-white/[0.04] px-7 select-none lg:flex">
           <span className="text-[8px] tracking-[0.12em] text-white/15 uppercase">
-            Cinemate Studio
+            Subtext Studio
           </span>
           <span className="text-[8px] text-[#D6B47A]/40">Ready</span>
         </div>
@@ -540,7 +540,7 @@ export default function EditorPage() {
                   {activeMobileTab}
                 </div>
                 <div className="mt-1 text-[9px] text-white/20">
-                  Cinemate controls
+                  Subtext controls
                 </div>
               </div>
               <button
