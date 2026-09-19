@@ -86,13 +86,13 @@ export function ColorPickerDropdown({
   if (!isOpen) return null
 
   return (
-    <div className="absolute top-8 right-0 z-50 w-60 animate-in rounded-2xl border border-white/[0.1] bg-[#2C2C2E] p-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] duration-150 zoom-in-95 fade-in">
+    <div className="absolute top-8 right-0 z-50 w-60 animate-in rounded-lg border border-white/[0.1] bg-[#2C2C2E] p-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] duration-150 zoom-in-95 fade-in">
       <div className="mb-3 grid grid-cols-4 gap-2">
         {PRESET_COLORS.map((preset) => (
           <button
             key={preset}
             onClick={() => onChange(preset)}
-            className={`aspect-square w-full cursor-pointer rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
+            className={`aspect-square h-12 w-12 cursor-pointer rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
             style={{ backgroundColor: preset }}
           />
         ))}

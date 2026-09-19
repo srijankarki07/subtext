@@ -8,7 +8,7 @@ import {
   FabricObject,
   IText,
 } from "fabric"
-import { Pipette } from "lucide-react"
+import { ImagePlus, Loader2, Pipette, UploadCloud } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 export default function Canvas() {
@@ -21,6 +21,9 @@ export default function Canvas() {
     x: number
     y: number
   } | null>(null)
+
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
 
   const {
     setCanvas,
@@ -38,7 +41,7 @@ export default function Canvas() {
     sendBackward,
     sendToBack,
     duplicateActiveObject,
-    grainIntensity, // 1. Grabbing grain intensity state
+    grainIntensity,
   } = useEditorStore()
 
   const [hasImage, setHasImage] = useState(false)
@@ -50,16 +53,12 @@ export default function Canvas() {
     if (isPickingColor) {
       canvas.defaultCursor = "crosshair"
       canvas.hoverCursor = "crosshair"
-      canvas.getObjects().forEach((obj) => {
-        obj.set("hoverCursor", "crosshair")
-      })
+      canvas.getObjects().forEach((obj) => obj.set("hoverCursor", "crosshair"))
       canvas.requestRenderAll()
     } else {
       canvas.defaultCursor = "default"
       canvas.hoverCursor = "move"
-      canvas.getObjects().forEach((obj) => {
-        obj.set("hoverCursor", null)
-      })
+      canvas.getObjects().forEach((obj) => obj.set("hoverCursor", null))
       canvas.requestRenderAll()
     }
   }, [isPickingColor])
@@ -83,7 +82,7 @@ export default function Canvas() {
     if (wrapper) wrapper.style.border = "1px solid rgba(255,255,255,0.05)"
 
     setCanvas(canvas)
-    saveHistoryState()
+    saveHistoryState("Initial Canvas")
 
     canvas.on("selection:created", (e) =>
       setActiveObject(e.selected?.[0] || null)
@@ -108,7 +107,7 @@ export default function Canvas() {
     canvas.on("object:added", handleObjectsChanged)
     canvas.on("object:removed", handleObjectsChanged)
     canvas.on("object:modified", () => {
-      saveHistoryState()
+      saveHistoryState("Modified Object")
       triggerContrastCalc()
     })
 
@@ -203,8 +202,21 @@ export default function Canvas() {
         redo()
         return
       }
-
-      // 3. DUPLICATE: Ctrl+D / Cmd+D
+      if (isCmdOrCtrl && (key === "c" || code === "KeyC")) {
+        e.preventDefault()
+        useEditorStore.getState().copyActiveObject()
+        return
+      }
+      if (isCmdOrCtrl && (key === "x" || code === "KeyX")) {
+        e.preventDefault()
+        useEditorStore.getState().cutActiveObject()
+        return
+      }
+      if (isCmdOrCtrl && (key === "v" || code === "KeyV")) {
+        e.preventDefault()
+        useEditorStore.getState().pasteClipboardObject()
+        return
+      }
       if (isCmdOrCtrl && (key === "d" || code === "KeyD")) {
         e.preventDefault()
         duplicateActiveObject()
@@ -233,28 +245,6 @@ export default function Canvas() {
         closeContextMenu()
         return
       }
-      // 7. COPY ELEMENT: Ctrl+C / Cmd+C
-      if (isCmdOrCtrl && (key === "c" || code === "KeyC")) {
-        e.preventDefault()
-        useEditorStore.getState().copyActiveObject()
-        return
-      }
-
-      // 8. CUT ELEMENT: Ctrl+X / Cmd+X
-      if (isCmdOrCtrl && (key === "x" || code === "KeyX")) {
-        e.preventDefault()
-        useEditorStore.getState().cutActiveObject()
-        return
-      }
-
-      // 9.PASTE ELEMENT: Ctrl+V / Cmd+V
-      if (isCmdOrCtrl && (key === "v" || code === "KeyV")) {
-        e.preventDefault()
-        useEditorStore.getState().pasteClipboardObject()
-        return
-      }
-
-      // 10. LAYER ORDER SHORTCUTS
       if (isCmdOrCtrl && key === "]" && !e.altKey) {
         e.preventDefault()
         bringToFront()
@@ -302,11 +292,17 @@ export default function Canvas() {
 
   const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return
+    setIsProcessingImage(true)
+
     const reader = new FileReader()
     reader.onload = async (f) => {
       const data = f.target?.result as string
       const canvas = useEditorStore.getState().canvas
-      if (!canvas) return
+      if (!canvas) {
+        setIsProcessingImage(false)
+        return
+      }
+
       try {
         const img = await FabricImage.fromURL(data)
         const scale = Math.min(
@@ -321,8 +317,11 @@ export default function Canvas() {
         const palette = await extractPalette(data, 6)
         useEditorStore.getState().setImagePalette(palette)
         canvas.requestRenderAll()
+        saveHistoryState("Upload Image")
       } catch (error) {
         console.error("Failed to load image or extract palette:", error)
+      } finally {
+        setIsProcessingImage(false)
       }
     }
     reader.readAsDataURL(file)
@@ -331,18 +330,44 @@ export default function Canvas() {
   return (
     <div
       ref={containerRef}
-      className={`relative flex h-full w-full items-center justify-center ${
+      className={`ro relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl transition-all ${
         isPickingColor ? "cursor-crosshair" : ""
       }`}
-      onDragOver={(e) => e.preventDefault()}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setIsDraggingOver(true)
+      }}
+      onDragLeave={() => setIsDraggingOver(false)}
       onDrop={(e) => {
         e.preventDefault()
+        setIsDraggingOver(false)
         if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0])
       }}
     >
-      <canvas ref={canvasRef} className="rounded-xl" />
+      <canvas ref={canvasRef} className="rounded-xl transition-all" />
 
-      {/* 2. FILM GRAIN SVG LAYER OVERLAY */}
+      {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-6 z-50 flex animate-in flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D6B47A] bg-[#D6B47A]/10 backdrop-blur-md duration-150 zoom-in-95">
+          <UploadCloud size={36} className="animate-bounce text-[#D6B47A]" />
+          <span className="mt-2.5 text-[14px] font-semibold text-white">
+            Drop image to frame
+          </span>
+          <span className="text-[10px] text-white/50">PNG, JPG, or WebP</span>
+        </div>
+      )}
+
+      {/* 2. IMAGE PROCESSING LOADING OVERLAY */}
+      {isProcessingImage && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex animate-in flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md duration-150 fade-in">
+          <Loader2 size={32} className="animate-spin text-[#D6B47A]" />
+          <span className="mt-3 text-[12px] font-medium text-white/90">
+            Processing image & extracting palette...
+          </span>
+        </div>
+      )}
+
+      {/* 3. FILM GRAIN SVG OVERLAY */}
       {grainIntensity > 0 && (
         <div
           className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
@@ -378,6 +403,7 @@ export default function Canvas() {
         }}
       />
 
+      {/* 4. FLOATING EYEDROPPER MAGNIFIER */}
       {isPickingColor && pickerPreview && (
         <div
           className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
@@ -404,13 +430,15 @@ export default function Canvas() {
         </div>
       )}
 
+      {/* 5. CANVAS EMPTY STATE BUTTON */}
       {!hasImage && (
-        <div className="pointer-events-none absolute right-0 bottom-4 left-0 z-50 flex justify-center">
+        <div className="pointer-events-none absolute right-0 bottom-4 left-0 z-40 flex justify-center">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="pointer-events-auto cursor-pointer text-xs text-white/30 transition-colors hover:text-white/60"
+            className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-xs text-white/40 transition-all hover:border-white/25 hover:bg-black/60 hover:text-white"
           >
-            Tap to upload an image · or drag & drop
+            <ImagePlus size={13} />
+            Upload photo · or drag & drop
           </button>
         </div>
       )}

@@ -262,7 +262,7 @@ export default function TextPanel() {
         </h3>
 
         {/* Outline / Stroke */}
-        <div className="space-y-4 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+        <div className="space-y-4 rounded-sm border border-white/[0.05] bg-white/[0.02] p-3">
           <div className="relative">
             <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
               <span>Outline Color</span>
@@ -297,7 +297,7 @@ export default function TextPanel() {
         </div>
 
         {/* Drop Shadow & Glow */}
-        <div className="space-y-4 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+        <div className="space-y-4 rounded-sm border border-white/[0.05] bg-white/[0.02] p-3">
           <div className="relative">
             <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
               <span>Shadow Color</span>

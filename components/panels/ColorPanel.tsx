@@ -22,7 +22,7 @@ export default function ColorPanel() {
   return (
     <>
       {/* 1. CONTRAST METER & VISIBILITY SCORE */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
+      <div className="relative overflow-hidden rounded-md border border-white/[0.05] bg-white/[0.02] p-4">
         {/* Background glow based on status */}
         <div
           className={`pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-20 blur-3xl ${
@@ -87,7 +87,7 @@ export default function ColorPanel() {
             {/* Smart Auto-Color Button */}
             <button
               onClick={autoColorText}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
             >
               <PaintBucket size={16} className="fill-white/20" />
               Smart Auto-Color

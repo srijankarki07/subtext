@@ -110,49 +110,74 @@ function RightPanelManager() {
             onClick={() => setActiveTab(tab.id)}
             className={`relative flex-1 cursor-pointer pb-3 text-[11px] font-medium transition-colors ${
               activeTab === tab.id
-                ? "text-white"
-                : "text-white/30 hover:text-white/60"
+                ? "font-semibold text-white"
+                : "text-white/30 hover:text-white/70"
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute inset-x-5 bottom-0 h-[2px] bg-[#D6B47A]" />
+              <span className="absolute inset-x-4 bottom-0 h-[2px] rounded-full bg-[#D6B47A]" />
             )}
           </button>
         ))}
       </div>
 
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto select-none">
         {/* Render Layers & Effects without demanding object selection */}
         {activeTab === "layers" ? (
           <LayersPanel />
         ) : activeTab === "effects" ? (
           <EffectsPanel />
         ) : !activeObject ? (
-          <div className="flex min-h-[220px] flex-1 items-center justify-center rounded-2xl border border-dashed border-white/[0.07] bg-white/[0.015] p-8 text-center">
-            <div>
-              <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-white/25">
-                <Type size={15} />
-              </div>
-              <p className="text-[12px] text-white/35">Select a layer</p>
-              <p className="mt-1 text-[10px] text-white/20">
-                Properties will appear here
-              </p>
+          <div className="flex animate-in flex-col items-center justify-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.015] p-6 text-center duration-150 fade-in">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.025] text-white/30">
+              <Type size={16} />
+            </div>
+            <h3 className="text-[13px] font-semibold text-white/80">
+              No Layer Selected
+            </h3>
+            <p className="mt-1 max-w-[200px] text-[11px] leading-relaxed text-white/30">
+              Select any element on the artboard to adjust its typography,
+              colors, or effects.
+            </p>
+
+            <div className="mt-5 w-full space-y-2 border-t border-white/[0.06] pt-4">
+              <span className="block text-[9px] font-semibold tracking-wider text-white/30 uppercase">
+                Quick Actions
+              </span>
+              <button
+                onClick={() => useEditorStore.getState().addText("quote")}
+                className="flex w-full items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2 text-[11px] text-white/70 transition-all hover:bg-white/[0.05] hover:text-white"
+              >
+                <span>Add Quote Typography</span>
+                <span className="font-mono text-[9px] text-white/30">
+                  +Text
+                </span>
+              </button>
+              <button
+                onClick={() => useEditorStore.getState().addImage()}
+                className="flex w-full items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2 text-[11px] text-white/70 transition-all hover:bg-white/[0.05] hover:text-white"
+              >
+                <span>Upload Artwork / Photo</span>
+                <span className="font-mono text-[9px] text-white/30">
+                  +Media
+                </span>
+              </button>
             </div>
           </div>
         ) : activeObject.type === "image" && !(activeObject as any).isEffect ? (
-          <div className="flex h-full flex-col gap-4">
+          <div className="flex h-full animate-in flex-col gap-4 duration-150 fade-in">
             <h2 className="border-b border-white/[0.08] pb-2 text-[12px] font-medium text-white/80">
               Image Properties
             </h2>
             <ImagePanel />
           </div>
         ) : (
-          <>
+          <div className="animate-in duration-150 fade-in">
             {activeTab === "font" && <FontPicker />}
             {activeTab === "style" && <TextPanel />}
             {activeTab === "color" && <ColorPanel />}
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -223,7 +248,7 @@ export default function EditorPage() {
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#080808] font-sans text-white antialiased selection:bg-[#D6B47A]/30 lg:flex-row">
       <ContextMenu />
       <ExportModal />
-      <aside className="hidden w-[260px] shrink-0 flex-col border-r border-white/[0.055] bg-[#101010] lg:flex">
+      <aside className="hidden w-[260px] shrink-0 flex-col border-r border-white/[0.055] bg-[#101010] select-none lg:flex">
         <div className="flex h-[72px] items-center border-b border-white/[0.055] px-6">
           <div>
             <div className="text-[15px] font-semibold tracking-[-0.02em]">
@@ -301,40 +326,44 @@ export default function EditorPage() {
       </aside>
 
       <main className="relative flex min-w-0 flex-1 flex-col bg-[#080808]">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.055] px-4 lg:h-[72px] lg:px-7">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.055] px-4 select-none lg:h-[72px] lg:px-7">
           <div className="lg:hidden">
             <div className="text-[14px] font-semibold tracking-[-0.02em]">
               Cinemate
             </div>
           </div>
+
+          {/* UNDO / REDO / HISTORY / SAVE / RESTORE CONTROLS WITH BADGES */}
           <div className="hidden items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] px-1.5 py-1 lg:flex">
             <button
               onClick={() => useEditorStore.getState().undo()}
               disabled={!useEditorStore((s) => s.canUndo)}
-              title="Undo (Cmd/Ctrl + Z)"
-              className="cursor-pointer rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+              title="Undo (Ctrl+Z)"
+              className="group relative cursor-pointer rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
             >
               <Undo2 size={15} />
             </button>
+
             <button
               onClick={() => useEditorStore.getState().redo()}
               disabled={!useEditorStore((s) => s.canRedo)}
-              title="Redo (Cmd/Ctrl + Shift + Z)"
-              className="cursor-pointer rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+              title="Redo (Ctrl+Y or Ctrl+Shift+Z)"
+              className="group relative cursor-pointer rounded-lg p-1.5 text-white/50 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
             >
               <Redo2 size={15} />
             </button>
+
             <HistoryDropdown />
 
             <div className="mx-1 h-3.5 w-px bg-white/10" />
 
-            {/* SAVE BUTTON */}
+            {/* SAVE BUTTON WITH SHORTCUT HINT */}
             <button
               onClick={handleSave}
               title={
                 lastSavedAt
-                  ? `Saved at ${lastSavedAt}`
-                  : "Save Project (LocalStorage)"
+                  ? `Saved at ${lastSavedAt} (Ctrl+S)`
+                  : "Save Project (Ctrl+S)"
               }
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-all active:scale-95 ${
                 justSaved
@@ -352,7 +381,7 @@ export default function EditorPage() {
               disabled={!hasSavedProject}
               title={
                 hasSavedProject
-                  ? "Restore saved project"
+                  ? "Restore saved project from browser storage"
                   : "No saved project found"
               }
               className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium text-white/60 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-30"
@@ -431,7 +460,7 @@ export default function EditorPage() {
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 lg:p-7">
           <div className="pointer-events-none absolute top-1/2 left-1/2 h-[55%] w-[55%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.015] blur-[100px]" />
-          <div className="relative h-full w-full overflow-hidden rounded-[4px] border border-white/[0.04] bg-[#0D0D0D] shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
+          <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/[0.04]">
             <div className="pointer-events-none absolute top-3 left-3 z-10 flex items-center gap-2 rounded-md border border-white/[0.06] bg-black/30 px-2.5 py-1.5 backdrop-blur-md lg:top-4 lg:left-4">
               <span className="h-1.5 w-1.5 rounded-full bg-[#D6B47A]/60" />
               <span className="text-[8px] font-medium tracking-[0.15em] text-white/40 uppercase">
@@ -442,7 +471,7 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <div className="hidden h-8 shrink-0 items-center justify-between border-t border-white/[0.04] px-7 lg:flex">
+        <div className="hidden h-8 shrink-0 items-center justify-between border-t border-white/[0.04] px-7 select-none lg:flex">
           <span className="text-[8px] tracking-[0.12em] text-white/15 uppercase">
             Cinemate Studio
           </span>
@@ -450,7 +479,7 @@ export default function EditorPage() {
         </div>
       </main>
 
-      <aside className="hidden w-[320px] shrink-0 flex-col border-l border-white/[0.055] bg-[#101010] lg:flex">
+      <aside className="hidden w-[320px] shrink-0 flex-col border-l border-white/[0.055] bg-[#101010] select-none lg:flex">
         <div className="flex h-[72px] shrink-0 items-center border-b border-white/[0.055] px-5">
           <div>
             <div className="text-[11px] font-semibold tracking-[0.12em] text-white/50 uppercase">

@@ -247,8 +247,8 @@ export default function EffectsPanel() {
         </div>
 
         <div className="flex gap-3">
-          <div className="relative flex-1 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-            <div className="mb-2 flex items-center justify-between text-[11px] text-white/60">
+          <div className="relative flex-1 rounded-sm border border-white/[0.05] bg-white/[0.02] p-2">
+            <div className="flex items-center justify-between text-[11px] text-white/60">
               <span>Highlights</span>
               <ColorCircle
                 color={lightColor}
@@ -264,8 +264,8 @@ export default function EffectsPanel() {
             />
           </div>
 
-          <div className="relative flex-1 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-            <div className="mb-2 flex items-center justify-between text-[11px] text-white/60">
+          <div className="relative flex-1 rounded-sm border border-white/[0.05] bg-white/[0.02] p-2">
+            <div className="flex items-center justify-between text-[11px] text-white/60">
               <span>Shadows</span>
               <ColorCircle
                 color={darkColor}
@@ -298,7 +298,7 @@ export default function EffectsPanel() {
         </div>
 
         {/* Widescreen Letterbox */}
-        <div className="space-y-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+        <div className="space-y-2 rounded-sm border border-white/[0.05] bg-white/[0.02] p-3">
           <div className="flex items-center justify-between text-[12px] font-medium text-white/80">
             <span className="flex items-center gap-2">
               <MonitorPlay size={14} /> Widescreen Letterbox
@@ -345,7 +345,7 @@ export default function EffectsPanel() {
         </div>
 
         {/* Selective Blur Zones */}
-        <div className="space-y-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
+        <div className="space-y-3 rounded-sm border border-white/[0.05] bg-white/[0.02] p-3">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-medium text-white/80">
               Selective Blur Zone

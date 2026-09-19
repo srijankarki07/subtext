@@ -168,7 +168,7 @@ export default function FontPicker() {
             type="button"
             onClick={clearSearch}
             aria-label="Clear search"
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/40 transition-colors hover:text-white"
+            className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-white/40 transition-colors hover:text-white"
           >
             <X size={14} />
           </button>
@@ -178,7 +178,7 @@ export default function FontPicker() {
       {/* CURRENT FONT */}
 
       {currentFont && (
-        <div className="mb-3 shrink-0 rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-white/[0.04] to-transparent p-3.5 shadow-[0_0_25px_rgba(59,130,246,0.05)]">
+        <div className="mb-3 shrink-0 rounded-lg border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-white/[0.04] to-transparent p-3.5 shadow-[0_0_25px_rgba(59,130,246,0.05)]">
           {/* Header */}
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -247,7 +247,7 @@ export default function FontPicker() {
                 key={category}
                 type="button"
                 onClick={() => setActiveCategory(category)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
+                className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
                   isActive
                     ? "bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.2)]"
                     : "bg-white/[0.04] text-white/60 hover:bg-white/[0.1] hover:text-white"
@@ -295,7 +295,7 @@ export default function FontPicker() {
                 setSearchQuery("")
                 setActiveCategory("All")
               }}
-              className="text-[11px] text-blue-400 transition-colors hover:text-blue-300"
+              className="cursor-pointer text-[11px] text-blue-400 transition-colors hover:text-blue-300"
             >
               Clear filters
             </button>
@@ -309,7 +309,7 @@ export default function FontPicker() {
                 key={font.id}
                 type="button"
                 onClick={() => handleFontChange(font.fabricFamily)}
-                className={`group relative flex w-full items-center justify-between rounded-2xl border p-3.5 text-left transition-all active:scale-[0.98] ${
+                className={`group relative flex w-full cursor-pointer items-center justify-between rounded-md border p-3.5 text-left transition-all active:scale-[0.98] ${
                   isActive
                     ? "border-blue-500/50 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.08)]"
                     : "border-white/[0.05] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.06]"
