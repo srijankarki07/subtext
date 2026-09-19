@@ -195,6 +195,7 @@ export default function EditorPage() {
     hasSavedProject,
     lastSavedAt,
     checkSavedProject,
+    initializeCustomFonts,
   } = useEditorStore()
 
   // Local feedback state for the save button
@@ -204,6 +205,10 @@ export default function EditorPage() {
   useEffect(() => {
     checkSavedProject()
   }, [checkSavedProject])
+
+  useEffect(() => {
+    void initializeCustomFonts()
+  }, [initializeCustomFonts])
 
   const handleSave = () => {
     const success = saveProjectToStorage()

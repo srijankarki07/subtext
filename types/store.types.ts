@@ -1,4 +1,5 @@
 import { Canvas, FabricObject } from "fabric"
+import { CustomFontMetadata } from "@/lib/customFonts"
 
 export type TextBlockType = "quote" | "author" | "handle"
 export type MobileTab = "templates" | "layers" | "edit" | "export" | null
@@ -35,6 +36,15 @@ export interface CoreSlice {
   addImage: () => void
   deleteActiveObject: (targetObj?: FabricObject | null) => void
   clearCanvas: () => void
+}
+
+export interface FontSlice {
+  customFonts: CustomFontMetadata[]
+  customFontsLoading: boolean
+  customFontError: string | null
+  initializeCustomFonts: () => Promise<void>
+  uploadCustomFont: (file: File) => Promise<boolean>
+  removeCustomFont: (id: string) => Promise<boolean>
 }
 
 /**
@@ -228,6 +238,7 @@ export interface CoreSlice {
 }
 
 export type EditorStore = CoreSlice &
+  FontSlice &
   HistorySlice &
   LayerSlice &
   ColorSlice &
