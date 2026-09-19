@@ -52,7 +52,7 @@ export default function HistoryDropdown() {
 
       {/* TIMELINE POPOVER */}
       {isOpen && (
-        <div className="absolute top-10 left-0 z-[150] w-72 animate-in overflow-hidden rounded-2xl border border-white/[0.1] bg-[#141414]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in">
+        <div className="absolute top-10 left-0 z-[150] w-72 animate-in overflow-hidden rounded-lg border border-white/[0.1] bg-[#141414]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in">
           {/* HEADER */}
           <div className="mb-2.5 flex items-center justify-between border-b border-white/[0.06] px-1 pb-2">
             <div className="flex items-center gap-1.5">
@@ -82,7 +82,7 @@ export default function HistoryDropdown() {
                   <button
                     key={item.id || idx}
                     onClick={() => handleSelect(idx)}
-                    className={`group relative flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left transition-all ${
+                    className={`group relative flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-2 text-left transition-all ${
                       isCurrent
                         ? "border border-[#D6B47A]/50 bg-[#D6B47A]/10 text-white shadow-[0_0_15px_rgba(214,180,122,0.1)]"
                         : isFuture
