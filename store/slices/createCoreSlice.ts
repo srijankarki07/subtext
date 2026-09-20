@@ -106,6 +106,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     const { canvas, setAspectRatio, saveHistoryState } = get()
     if (!canvas || typeof window === "undefined") return false
 
+    await get().initializeCustomFonts()
+
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return false
 

@@ -1,17 +1,32 @@
 "use client"
 
-import { FONTS, FontCategory } from "@/lib/fonts"
+import { FONTS, FontCategory, FontDef } from "@/lib/fonts"
 import { useEditorStore } from "@/store/useEditorStore"
-import { IText } from "fabric"
-import { Check, Crown, Search, Sparkles, X } from "lucide-react"
+import {
+  Check,
+  Crown,
+  Loader2,
+  Search,
+  Sparkles,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react"
 import { useEffect, useMemo, useReducer, useRef, useState } from "react"
 
-type FontFilter = "All" | "Recommended" | "Premium" | FontCategory
+type FontFilter = "All" | "Recommended" | "Premium" | "Uploaded" | FontCategory
+
+type FontOption = Omit<FontDef, "category"> & {
+  category: FontCategory | "Uploaded"
+  customFontId?: string
+  format?: string
+}
 
 const CATEGORIES: FontFilter[] = [
   "All",
   "Recommended",
   "Premium",
+  "Uploaded",
   "Serif",
   "Sans-serif",
   "Display",
@@ -20,8 +35,17 @@ const CATEGORIES: FontFilter[] = [
 ]
 
 export default function FontPicker() {
-  const { canvas, activeObject, applyTextStyle, getActiveSelectionStyle } =
-    useEditorStore()
+  const {
+    canvas,
+    activeObject,
+    applyTextStyle,
+    getActiveSelectionStyle,
+    customFonts,
+    customFontsLoading,
+    customFontError,
+    uploadCustomFont,
+    removeCustomFont,
+  } = useEditorStore()
 
   const [activeCategory, setActiveCategory] = useState<FontFilter>("All")
 
@@ -36,6 +60,7 @@ export default function FontPicker() {
    * to scroll into view.
    */
   const fontListRef = useRef<HTMLDivElement>(null)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
 
   /*
    * Find the current Fabric font.
@@ -48,11 +73,31 @@ export default function FontPicker() {
   /*
    * Find the corresponding FontDef.
    */
-  const currentFont = useMemo(() => {
+  const customFontOptions = useMemo<FontOption[]>(
+    () =>
+      customFonts.map((font) => ({
+        id: `custom-${font.id}`,
+        name: font.name,
+        category: "Uploaded",
+        cssVariable: font.family,
+        fabricFamily: font.family,
+        description: `${font.format.toUpperCase()} font`,
+        customFontId: font.id,
+        format: font.format,
+      })),
+    [customFonts]
+  )
+
+  const allFonts = useMemo<FontOption[]>(
+    () => [...FONTS, ...customFontOptions],
+    [customFontOptions]
+  )
+
+  const currentFont = useMemo<FontOption | undefined>(() => {
     if (!currentFontFamily) return undefined
 
-    return FONTS.find((font) => font.fabricFamily === currentFontFamily)
-  }, [currentFontFamily])
+    return allFonts.find((font) => font.fabricFamily === currentFontFamily)
+  }, [allFonts, currentFontFamily])
 
   /*
    * Filter fonts.
@@ -60,53 +105,61 @@ export default function FontPicker() {
   const filteredFonts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
 
-    return FONTS.filter((font) => {
-      let matchesCategory = true
+    return allFonts
+      .filter((font) => {
+        let matchesCategory = true
 
-      if (
-        activeCategory !== "All" &&
-        activeCategory !== "Recommended" &&
-        activeCategory !== "Premium"
-      ) {
-        matchesCategory = font.category === activeCategory
-      }
+        if (
+          activeCategory !== "All" &&
+          activeCategory !== "Recommended" &&
+          activeCategory !== "Premium"
+        ) {
+          matchesCategory = font.category === activeCategory
+        }
 
-      if (activeCategory === "Premium") {
-        matchesCategory = font.premium === true
-      }
+        if (activeCategory === "Premium") {
+          matchesCategory = font.premium === true
+        }
 
-      if (activeCategory === "Recommended") {
-        matchesCategory =
-          font.premium === true ||
+        if (activeCategory === "Recommended") {
+          matchesCategory =
+            font.premium === true ||
+            font.useCases?.some((useCase) =>
+              [
+                "hero",
+                "title",
+                "poster",
+                "cinematic",
+                "fashion",
+                "luxury",
+              ].includes(useCase)
+            ) === true
+        }
+
+        if (activeCategory === "Uploaded") {
+          matchesCategory = font.customFontId !== undefined
+        }
+
+        const matchesSearch =
+          !query ||
+          font.name.toLowerCase().includes(query) ||
+          font.category.toLowerCase().includes(query) ||
+          font.description?.toLowerCase().includes(query) ||
           font.useCases?.some((useCase) =>
-            [
-              "hero",
-              "title",
-              "poster",
-              "cinematic",
-              "fashion",
-              "luxury",
-            ].includes(useCase)
-          ) === true
-      }
+            useCase.toLowerCase().includes(query)
+          )
 
-      const matchesSearch =
-        !query ||
-        font.name.toLowerCase().includes(query) ||
-        font.category.toLowerCase().includes(query) ||
-        font.description?.toLowerCase().includes(query) ||
-        font.useCases?.some((useCase) => useCase.toLowerCase().includes(query))
+        return matchesCategory && matchesSearch
+      })
+      .sort((a, b) => {
+        if (activeCategory === "All") {
+          if (a.premium && !b.premium) return -1
+          if (!a.premium && b.premium) return 1
+        }
 
-      return matchesCategory && matchesSearch
-    }).sort((a, b) => {
-      if (activeCategory === "All") {
-        if (a.premium && !b.premium) return -1
-        if (!a.premium && b.premium) return 1
-      }
-
-      return a.name.localeCompare(b.name)
-    })
-  }, [activeCategory, searchQuery])
+        return a.name.localeCompare(b.name)
+      })
+  }, [activeCategory, allFonts, searchQuery])
 
   /*
    * Nothing selected / wrong object type.
@@ -114,8 +167,6 @@ export default function FontPicker() {
   if (!activeObject || activeObject.type !== "i-text") {
     return null
   }
-
-  const textObj = activeObject as IText
 
   /*
    * Change font in Fabric.
@@ -131,6 +182,12 @@ export default function FontPicker() {
    */
   const clearSearch = () => {
     setSearchQuery("")
+  }
+
+  const handleUpload = async (file: File | undefined) => {
+    if (!file) return
+    const uploaded = await uploadCustomFont(file)
+    if (uploaded) setActiveCategory("Uploaded")
   }
 
   /*
@@ -172,6 +229,37 @@ export default function FontPicker() {
           >
             <X size={14} />
           </button>
+        )}
+      </div>
+
+      <div className="mb-3 shrink-0">
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+          className="hidden"
+          onChange={(event) => {
+            void handleUpload(event.target.files?.[0])
+            event.target.value = ""
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => uploadInputRef.current?.click()}
+          disabled={customFontsLoading}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#D6B47A]/30 bg-[#D6B47A]/[0.06] px-3 py-2.5 text-[11px] font-medium text-[#D6B47A] transition-colors hover:border-[#D6B47A]/50 hover:bg-[#D6B47A]/[0.1] disabled:cursor-wait disabled:opacity-60"
+        >
+          {customFontsLoading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Upload size={14} />
+          )}
+          {customFontsLoading ? "Loading font..." : "Upload a font"}
+        </button>
+        {customFontError && (
+          <p className="mt-1.5 text-[10px] leading-relaxed text-rose-300/80">
+            {customFontError}
+          </p>
         )}
       </div>
 
@@ -353,6 +441,34 @@ export default function FontPicker() {
                     )}
                   </div>
                 </div>
+
+                {font.customFontId && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Remove uploaded font"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      if (confirm(`Remove ${font.name} from uploaded fonts?`)) {
+                        void removeCustomFont(font.customFontId!)
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (
+                          confirm(`Remove ${font.name} from uploaded fonts?`)
+                        ) {
+                          void removeCustomFont(font.customFontId!)
+                        }
+                      }
+                    }}
+                    className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/30 transition-colors hover:bg-rose-400/10 hover:text-rose-300"
+                  >
+                    <Trash2 size={13} />
+                  </span>
+                )}
 
                 {/* Selected state */}
                 {isActive && (
