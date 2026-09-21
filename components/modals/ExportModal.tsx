@@ -60,7 +60,7 @@ export default function ExportModal() {
 
       // 4. Programmatic download link trigger
       const link = document.createElement("a")
-      link.download = `cinemate-${Date.now()}.${format === "jpg" ? "jpg" : "png"}`
+      link.download = `Subtext-${Date.now()}.${format === "jpg" ? "jpg" : "png"}`
       link.href = dataUrl
       document.body.appendChild(link)
       link.click()

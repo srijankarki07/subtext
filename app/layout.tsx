@@ -393,7 +393,7 @@ const azeretMono = Azeret_Mono({
 // ============================================================
 
 export const metadata: Metadata = {
-  title: "Cinemate",
+  title: "Subtext",
   description:
     "Cinematic design, zero friction. Built for creators. Apply scientific contrast formatting, true film grain, and cinematic typography in seconds. No login required.",
 }

@@ -39,7 +39,7 @@ export interface FontDef {
 }
 
 /**
- * All fonts available to the Cinemate editor.
+ * All fonts available to the Subtext editor.
  *
  * Keep `id`, `cssVariable`, and `fabricFamily` stable once fonts
  * are being persisted in user projects.
