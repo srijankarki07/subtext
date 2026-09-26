@@ -72,7 +72,9 @@ export function withoutEditorChrome<T>(canvas: Canvas, render: () => T): T {
   try {
     return render()
   } finally {
-    hidden.forEach(({ object, wasVisible }) => object.set("visible", wasVisible))
+    hidden.forEach(({ object, wasVisible }) =>
+      object.set("visible", wasVisible)
+    )
   }
 }
 
@@ -95,4 +97,21 @@ export function bindBlurHandleListeners(canvas: Canvas): void {
   })
 
   applyBlurClips(canvas)
+}
+
+/**
+ * A text object's weight, as a number.
+ *
+ * Fabric accepts either — the templates say `fontWeight: "bold"` and the
+ * inspector's slider works in hundreds — so every reader has to normalise, and
+ * two readers normalising differently is how a Bold button ends up looking
+ * unpressed on text that is visibly bold. It was doing exactly that: the toolbar
+ * compared the raw value to 700, got `NaN` from `"bold"`, and reported "not
+ * bold" for bold text.
+ */
+export function readFontWeight(value: unknown): number {
+  if (typeof value === "number") return value
+  if (value === "bold") return 700
+  if (value === "normal") return 400
+  return parseInt(String(value), 10) || 400
 }
