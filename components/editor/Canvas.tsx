@@ -495,6 +495,12 @@ export default function Canvas() {
       }}
     >
       {/*
+        Fixed-positioned, so it lives outside the artboard box: that box is
+        `overflow-hidden`, and a toolbar inside it is clipped at the artwork's edge.
+      */}
+      <SelectionToolbar />
+
+      {/*
         The artboard box. Two things here are load-bearing:
 
         1. `m-auto` rather than flex centring on the parent: centring an
@@ -543,11 +549,6 @@ export default function Canvas() {
             </span>
           </div>
         )}
-
-        {/* The floating actions for the current selection. Inside this container
-            rather than the artboard box, because it must be able to sit above the
-            artboard's top edge without being clipped by it. */}
-        <SelectionToolbar containerRef={containerRef} />
 
         {/* 3. COMPOSITION GUIDES
             Thirds, centre and safe area, plus the lines that fire while
