@@ -26,7 +26,7 @@ function DialogContent({
       <DialogPrimitive.Backdrop
         data-slot="dialog-backdrop"
         className={cn(
-          "fixed inset-0 min-h-dvh bg-black/25 backdrop-blur-[2px]",
+          "z-dialog fixed inset-0 min-h-dvh bg-black/25 backdrop-blur-[2px]",
           "transition-opacity duration-150 ease-out",
           "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0"
         )}
@@ -34,7 +34,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2",
+          "z-dialog fixed top-1/2 left-1/2 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2",
           "rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl",
           "outline-none transition-[opacity,transform] duration-150 ease-out",
           "data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",

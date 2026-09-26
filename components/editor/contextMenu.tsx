@@ -137,7 +137,7 @@ export default function ContextMenu() {
         width: MENU_WIDTH,
         visibility: position ? "visible" : "hidden",
       }}
-      className="fixed z-[150] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+      className="z-context-menu fixed rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
     >
       {isImage && (
         <>

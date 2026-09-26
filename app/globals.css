@@ -217,6 +217,36 @@
 
 @layer utilities {
   /*
+   * Layering scale.
+   *
+   * The app had nine ad-hoc z-index values and no ordering rule, which is how
+   * the export dialog ended up painting *below* the canvas's empty-state
+   * overlay: the dialog had no z-index at all, so a `z-40` sibling won.
+   * Use these named layers instead of literals.
+   */
+  .z-canvas-hint {
+    z-index: 30; /* transient canvas messages, e.g. the eyedropper prompt */
+  }
+  .z-canvas-overlay {
+    z-index: 40; /* empty state, grain, drop target — cover the artboard */
+  }
+  .z-popover {
+    z-index: 50; /* popovers and menus anchored to controls */
+  }
+  .z-sheet {
+    z-index: 100; /* mobile bottom sheet */
+  }
+  .z-context-menu {
+    z-index: 150; /* right-click menu, above panels and the mobile nav */
+  }
+  .z-dialog {
+    z-index: 200; /* modal dialogs: above every panel and canvas overlay */
+  }
+  .z-cursor-preview {
+    z-index: 300; /* the eyedropper magnifier, which follows the pointer */
+  }
+
+  /*
    * A visible-but-quiet scrollbar. The previous version set
    * `scrollbar-width: none` for Firefox while drawing a 5px thumb for WebKit,
    * so Firefox scroll regions gave no affordance at all.
