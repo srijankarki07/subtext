@@ -33,6 +33,7 @@ export const DOCUMENT_PROPERTIES = [
   "overlayIds",
   "blurRing",
   "blurFeather",
+  "assetId",
   "selectable",
   "evented",
   "lockMovementX",

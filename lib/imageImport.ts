@@ -1,5 +1,6 @@
 import { FabricImage, type Canvas } from "fabric"
 
+import { createAssetId, deleteAsset, putAsset } from "@/lib/assets"
 import { extractPalette } from "@/lib/colorUtils"
 
 /**
@@ -32,6 +33,18 @@ function readAsDataUrl(file: File): Promise<string> {
   })
 }
 
+/**
+ * Stores the photo in IndexedDB and returns the id the document will reference.
+ *
+ * The document itself must not carry the pixels: Fabric would write them into
+ * every history snapshot and into the `localStorage` payload.
+ */
+async function storeAsset(file: File): Promise<string> {
+  const id = createAssetId()
+  await putAsset(id, file.slice(0, file.size, file.type))
+  return id
+}
+
 export interface ImportedImage {
   image: FabricImage
   /** Colours extracted from the image, for the palette and contrast engine. */
@@ -52,8 +65,12 @@ export async function importImage(
 ): Promise<ImportedImage | null> {
   if (!isImageFile(file)) return null
 
-  const dataUrl = await readAsDataUrl(file)
+  const [dataUrl, assetId] = await Promise.all([
+    readAsDataUrl(file),
+    storeAsset(file),
+  ])
   const image = await FabricImage.fromURL(dataUrl)
+  ;(image as any).assetId = assetId
 
   const scale = Math.min(
     canvas.getWidth() / (image.width || 1),
@@ -113,8 +130,12 @@ export async function replaceImage(
     return added ? { palette: added.palette } : null
   }
 
-  const dataUrl = await readAsDataUrl(file)
+  const [dataUrl, assetId] = await Promise.all([
+    readAsDataUrl(file),
+    storeAsset(file),
+  ])
   const next = await FabricImage.fromURL(dataUrl)
+  ;(next as any).assetId = assetId
 
   const footprintWidth = previous.getScaledWidth()
   const footprintHeight = previous.getScaledHeight()
@@ -155,9 +176,23 @@ export async function replaceImage(
     .forEach((overlay: any) => {
       overlay.setElement(next.getElement())
       overlay.set({ scaleX: scale, scaleY: scale })
+      // The overlays are part of the same document, so they reference the same
+      // asset and must survive a save without the photo being re-stored.
+      overlay.assetId = assetId
     })
 
   if ((next.filters ?? []).length > 0) await next.applyFilters()
+
+  // The previous photo is no longer referenced by anything — the overlays were
+  // just repointed — so its bytes would otherwise sit in the asset store for
+  // good, one orphan per replacement.
+  const previousAssetId = (previous as any).assetId as string | undefined
+  if (previousAssetId && previousAssetId !== assetId) {
+    const stillReferenced = canvas
+      .getObjects()
+      .some((object: any) => object.assetId === previousAssetId)
+    if (!stillReferenced) await deleteAsset(previousAssetId)
+  }
 
   const palette = await extractPalette(dataUrl, colorCount)
   return { palette }

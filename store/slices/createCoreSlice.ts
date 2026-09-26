@@ -4,6 +4,8 @@ import {
   bindBlurHandleListeners,
   withoutEditorChrome,
 } from "@/lib/fabricDocument"
+import { deleteAsset } from "@/lib/assets"
+import { dehydrateCanvas, loadDocument } from "@/lib/snapshot"
 import { applyGrain } from "@/lib/grain"
 import {
   importImage,
@@ -168,10 +170,11 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.requestRenderAll()
 
     try {
-      // In Fabric v6, toObject() accepts custom property arrays, whereas toJSON() takes 0 arguments
-      const canvasJson = canvas.toObject(
-        DOCUMENT_PROPERTIES as unknown as string[]
-      )
+      // Dehydrated: the photo's pixels live in IndexedDB under its asset id, so
+      // what goes to localStorage is a few kilobytes of canvas JSON rather than
+      // an embedded copy of a multi-megabyte photo — which is what made saving
+      // a real photo fail on the storage quota.
+      const canvasJson = dehydrateCanvas(canvas)
 
       const payload = {
         canvasJson,
@@ -255,8 +258,17 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         documentTitle: documentTitle ?? "Untitled",
       })
 
-      // 3. Load Canvas Objects
-      await canvas.loadFromJSON(canvasJson)
+      // 3. Load Canvas Objects, restoring the photo from its stored asset first
+      const missingAssets = await loadDocument(canvas, canvasJson)
+      if (missingAssets > 0) {
+        set({
+          alertDialog: {
+            title: "Photo missing",
+            message:
+              "This project referenced a photo that is no longer in browser storage, so it could not be restored. The rest of the layout is intact.",
+          },
+        })
+      }
 
       // 4. Re-bind draggable event listeners for any blur handles
       bindBlurHandleListeners(canvas)
@@ -275,6 +287,21 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
   clearSavedProject: () => {
     if (typeof window === "undefined") return
+
+    // Read the payload first: deleting the project should delete the photos it
+    // stored, or they sit in IndexedDB for good with nothing referencing them.
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      const assets: string[] = raw
+        ? (JSON.parse(raw).canvasJson?.objects ?? [])
+            .map((object: any) => object.assetId)
+            .filter((id: unknown): id is string => typeof id === "string")
+        : []
+      assets.forEach((id) => void deleteAsset(id))
+    } catch (error) {
+      console.error("Could not read the saved project's assets:", error)
+    }
+
     localStorage.removeItem(STORAGE_KEY)
     set({ hasSavedProject: false, lastSavedAt: null })
   },
