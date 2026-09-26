@@ -41,6 +41,12 @@ PLAN.md
 design.md
 project-plan.jsx
 image.png
+image-*.png
+issue.md
+
+# design references. `public/` is served, so anything here ships on every deploy;
+# these are material to build from, not assets to serve. 560 KB across four files.
+/public/ref
 
 # one-off codemod scripts archived from the repo root
 /scratch
