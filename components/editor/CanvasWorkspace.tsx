@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react"
 import { Maximize, Minus, Plus } from "lucide-react"
 
 import { useEditorStore } from "@/store/useEditorStore"
+import GuideControls from "@/components/editor/GuideControls"
 import { cn } from "@/lib/utils"
 
 const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
@@ -101,6 +102,8 @@ function ZoomControls() {
       >
         <Maximize size={13} aria-hidden="true" />
       </button>
+
+      <GuideControls className={button} />
 
       <span className="px-1.5 font-mono text-[10px] text-[var(--color-on-workspace-faint)] tabular-nums">
         {artboard.width}×{artboard.height}
