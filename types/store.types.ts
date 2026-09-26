@@ -197,8 +197,14 @@ export interface CoreSlice {
   lastSavedAt: string | null
   clipboardObject: FabricObject | null
 
+  /** The workspace name. Persisted with the project and used for export filenames. */
+  documentTitle: string
+  /** True when the document has changed since the last save. */
+  isDirty: boolean
+
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
+  setDocumentTitle: (title: string) => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void

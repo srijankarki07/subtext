@@ -129,7 +129,16 @@ function ColorPopover({
   }
 
   const current = value?.toUpperCase() ?? ""
-  const triggerElement = trigger ?? <ColorSwatch color={value} size="lg" />
+  // The default trigger is a real <button>; a bare swatch <span> would make
+  // Base UI drop native button semantics from the trigger.
+  const triggerElement = trigger ?? (
+    <button
+      type="button"
+      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
+      <ColorSwatch color={value} />
+    </button>
+  )
 
   return (
     <Popover>

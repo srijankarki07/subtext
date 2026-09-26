@@ -1,6 +1,5 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -12,56 +11,59 @@ import {
   MoveRight,
   Trash2,
 } from "lucide-react"
-import { AlignmentButton } from "../functions"
 
+import { AlignmentButton } from "@/components/functions"
+import { Button } from "@/components/ui/button"
+import { Section } from "@/components/ui/section"
+import { useEditorStore } from "@/store/useEditorStore"
+
+/**
+ * Image properties.
+ *
+ * The sizing tiles are the one place two side-by-side "big" buttons earn their
+ * space: fill vs fit is a genuine either/or that users need to see at a glance.
+ */
 export default function ImagePanel() {
-  const {
-    activeObject,
-    alignObjectToCanvas,
-    fitImageToCanvas,
-    deleteActiveObject,
-  } = useEditorStore()
+  const activeObject = useEditorStore((s) => s.activeObject)
+  const alignObjectToCanvas = useEditorStore((s) => s.alignObjectToCanvas)
+  const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
+  const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
 
   if (!activeObject || activeObject.type !== "image") {
     return null
   }
 
+  const sizeTile =
+    "flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card py-3.5 text-[var(--text-secondary)] outline-none transition-colors hover:bg-black/[0.03] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]"
+
   return (
-    <div className="flex flex-col gap-6 p-1 pb-24">
-      {/* 1. ASPECT RATIO SIZING */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-            Image Sizing
-          </h3>
-        </div>
+    <div className="flex flex-col gap-6">
+      <Section
+        title="Sizing"
+        description="Fill crops to the artboard; fit keeps the whole image."
+      >
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => fitImageToCanvas("fill")}
-            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
+            className={sizeTile}
           >
-            <Maximize size={18} />
-            <span className="text-[11px] font-medium">Fill Canvas</span>
+            <Maximize size={17} aria-hidden="true" />
+            <span className="text-[12px] font-medium">Fill canvas</span>
           </button>
-
           <button
+            type="button"
             onClick={() => fitImageToCanvas("fit")}
-            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
+            className={sizeTile}
           >
-            <Minimize size={18} />
-            <span className="text-[11px] font-medium">Fit to Canvas</span>
+            <Minimize size={17} aria-hidden="true" />
+            <span className="text-[12px] font-medium">Fit to canvas</span>
           </button>
         </div>
-      </div>
+      </Section>
 
-      {/* 2. CANVAS ALIGNMENT */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-            Alignment
-          </h3>
-        </div>
-        <div className="grid grid-cols-6 gap-1 rounded-md border border-white/[0.05] bg-white/[0.04] p-1.5">
+      <Section title="Alignment">
+        <div className="grid grid-cols-6 gap-1 rounded-lg bg-black/[0.04] p-1">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
             label="Align left"
@@ -93,18 +95,16 @@ export default function ImagePanel() {
             onClick={() => alignObjectToCanvas("bottom")}
           />
         </div>
-      </div>
+      </Section>
 
-      {/* 3. DELETE */}
-      <div className="border-t border-white/[0.08] pt-2">
-        <button
-          onClick={() => deleteActiveObject()}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
-        >
-          <Trash2 size={16} />
-          Remove Image
-        </button>
-      </div>
+      <Button
+        variant="destructive"
+        className="w-full"
+        onClick={() => deleteActiveObject()}
+      >
+        <Trash2 size={15} />
+        Remove image
+      </Button>
     </div>
   )
 }

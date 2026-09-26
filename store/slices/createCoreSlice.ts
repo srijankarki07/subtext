@@ -42,11 +42,15 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   hasSavedProject: false,
   lastSavedAt: null,
   clipboardObject: null,
+  documentTitle: "Untitled",
+  isDirty: false,
 
   setCanvas: (canvas) => {
     set({ canvas })
     get().checkSavedProject()
   },
+
+  setDocumentTitle: (documentTitle) => set({ documentTitle }),
 
   checkSavedProject: () => {
     if (typeof window === "undefined") return
@@ -64,6 +68,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       blurZones,
       letterboxes,
       imagePalette,
+      documentTitle,
     } = get()
     if (!canvas) return false
 
@@ -85,6 +90,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         blurZones,
         letterboxes,
         imagePalette,
+        documentTitle,
         savedAt: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -92,11 +98,19 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       }
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-      set({ hasSavedProject: true, lastSavedAt: payload.savedAt })
+      set({ hasSavedProject: true, lastSavedAt: payload.savedAt, isDirty: false })
       return true
     } catch (error) {
       console.error("Failed to save project to localStorage:", error)
-      alert("Storage quota exceeded. Consider compressing uploaded images.")
+      // Was a raw window.alert(), a third dialog implementation appearing in
+      // browser chrome while the styled alert dialog existed right here.
+      set({
+        alertDialog: {
+          title: "Could not save",
+          message:
+            "This project is too large for browser storage. Try a smaller image, then save again.",
+        },
+      })
       return false
     } finally {
       if (activeObj) {
@@ -126,6 +140,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         blurZones,
         letterboxes,
         imagePalette,
+        documentTitle,
       } = data
 
       // 1. Restore Artboard & CSS scaling
@@ -141,6 +156,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         blurZones: blurZones ?? [],
         letterboxes: letterboxes ?? [],
         imagePalette: imagePalette ?? [],
+        documentTitle: documentTitle ?? "Untitled",
       })
 
       // 3. Load Canvas Objects
@@ -173,6 +189,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
       canvas.requestRenderAll()
       saveHistoryState()
+      // loadFromJSON fires object:added, which marks the document dirty; the
+      // freshly loaded document is by definition saved.
+      set({ isDirty: false })
       return true
     } catch (error) {
       console.error("Failed to load project from localStorage:", error)

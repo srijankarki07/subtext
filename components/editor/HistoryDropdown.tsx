@@ -30,20 +30,25 @@ export default function HistoryDropdown() {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
+      {/* The trigger must be the native button itself — wrapping it in a div
+          made Base UI warn that button semantics were being dropped. */}
       <PopoverTrigger
         render={
-          <div className="relative">
-            <IconButton
-              icon={<History size={15} />}
-              label="Version history"
-              active={isOpen}
-            />
-            {history.length > 0 && (
-              <span className="pointer-events-none absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold text-primary-foreground">
-                {historyIndex + 1}
-              </span>
-            )}
-          </div>
+          <IconButton
+            icon={
+              <>
+                <History size={15} />
+                {history.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold text-primary-foreground">
+                    {historyIndex + 1}
+                  </span>
+                )}
+              </>
+            }
+            label="Version history"
+            active={isOpen}
+            className="relative overflow-visible"
+          />
         }
       />
 

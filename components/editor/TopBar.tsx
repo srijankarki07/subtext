@@ -31,18 +31,18 @@ export default function TopBar({
   isInspectorOpen: boolean
   onToggleInspector: () => void
 }) {
-  const {
-    setConfirmDialog,
-    setAspectRatio,
-    setIsExportModalOpen,
-    saveProjectToStorage,
-    loadProjectFromStorage,
-    hasSavedProject,
-    lastSavedAt,
-  } = useEditorStore()
+  const setConfirmDialog = useEditorStore((s) => s.setConfirmDialog)
+  const setAspectRatio = useEditorStore((s) => s.setAspectRatio)
+  const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
+  const saveProjectToStorage = useEditorStore((s) => s.saveProjectToStorage)
+  const loadProjectFromStorage = useEditorStore((s) => s.loadProjectFromStorage)
+  const hasSavedProject = useEditorStore((s) => s.hasSavedProject)
+  const lastSavedAt = useEditorStore((s) => s.lastSavedAt)
+  const documentTitle = useEditorStore((s) => s.documentTitle)
+  const setDocumentTitle = useEditorStore((s) => s.setDocumentTitle)
+  const isDirty = useEditorStore((s) => s.isDirty)
 
   const [justSaved, setJustSaved] = useState(false)
-  const [documentTitle, setDocumentTitle] = useState("Untitled")
   const [ratioSelection, setRatioSelection] = useState("")
   const [customW, setCustomW] = useState(1080)
   const [customH, setCustomH] = useState(1080)
@@ -86,7 +86,10 @@ export default function TopBar({
     if (customW > 100 && customH > 100) setAspectRatio(customW, customH)
   }
 
-  const saved = justSaved || Boolean(lastSavedAt)
+  // Honest state: `lastSavedAt` only ever said "a save happened at some point",
+  // so the badge stayed green after further edits.
+  const unsaved = isDirty || (!hasSavedProject && !justSaved)
+  const saved = !unsaved
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-3 select-none sm:px-4">
@@ -106,17 +109,12 @@ export default function TopBar({
             "outline-none transition-colors hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring focus:text-foreground sm:w-[140px]"
           )}
         />
-        <span
-          className={cn(
-            "hidden items-center gap-1.5 text-[11px] sm:flex",
-            saved ? "text-[var(--text-muted)]" : "text-[var(--text-muted)]"
-          )}
-        >
+        <span className="hidden items-center gap-1.5 text-[11px] text-[var(--text-muted)] sm:flex">
           {/* Status is never colour-only: the dot is paired with its label. */}
           <span
             className={cn(
               "size-1.5 rounded-full",
-              saved ? "bg-emerald-600" : "bg-amber-500"
+              saved ? "bg-emerald-600" : "bg-[var(--color-saffron)]"
             )}
           />
           {saved ? "Saved" : "Unsaved"}

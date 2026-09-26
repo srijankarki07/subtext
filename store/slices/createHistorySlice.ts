@@ -98,6 +98,10 @@ export const createHistorySlice: StateCreator<
         historyIndex: newIndex,
         canUndo: newIndex > 0,
         canRedo: false,
+        // A new history entry means the document actually changed. The
+        // duplicate check above has already returned for no-op edits, so this
+        // stays honest. Loading and saving clear it again.
+        isDirty: true,
       })
     } catch (e) {
       console.error("Failed to save state history:", e)
