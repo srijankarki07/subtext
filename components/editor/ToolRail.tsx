@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  Braces,
   ImagePlus,
   Layers3,
   LayoutTemplate,
@@ -10,17 +9,45 @@ import {
   Type,
 } from "lucide-react"
 
-export type EditorTool =
-  "select" | "text" | "media" | "templates" | "cinema" | "layers"
+import { Tooltip } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
-const tools = [
-  { id: "select" as const, label: "Select", icon: MousePointer2 },
-  { id: "text" as const, label: "Text", icon: Type },
-  { id: "media" as const, label: "Media", icon: ImagePlus },
-  { id: "templates" as const, label: "Templates", icon: LayoutTemplate },
-  { id: "cinema" as const, label: "Cinema", icon: MonitorPlay },
-  { id: "layers" as const, label: "Layers", icon: Layers3 },
-]
+/**
+ * The tool spine.
+ *
+ * DESIGN/ §6: compact, muted when inactive, a soft selected surface when
+ * active — the rail frames the artwork rather than competing with it.
+ *
+ * The labels use the shared `Tooltip` primitive, which opens on keyboard focus
+ * as well as hover; the previous `group-hover:block` span was invisible to
+ * keyboard users.
+ *
+ * The "Layout" button that used to sit at the bottom has been removed: it had
+ * no `onClick` at all, so it was a control that did nothing. Composition tools
+ * return here as a real panel in a later pass rather than as a dead icon.
+ */
+
+export type EditorTool =
+  | "select"
+  | "text"
+  | "media"
+  | "templates"
+  | "cinema"
+  | "layers"
+
+const TOOLS = [
+  { id: "select", label: "Select", icon: MousePointer2, shortcut: "V" },
+  { id: "text", label: "Text", icon: Type, shortcut: "T" },
+  { id: "media", label: "Media", icon: ImagePlus, shortcut: "M" },
+  { id: "templates", label: "Templates", icon: LayoutTemplate, shortcut: "P" },
+  { id: "cinema", label: "Cinema", icon: MonitorPlay, shortcut: "C" },
+  { id: "layers", label: "Layers", icon: Layers3, shortcut: "L" },
+] satisfies {
+  id: EditorTool
+  label: string
+  icon: typeof MousePointer2
+  shortcut: string
+}[]
 
 export default function ToolRail({
   activeTool,
@@ -30,54 +57,40 @@ export default function ToolRail({
   onToolChange: (tool: EditorTool) => void
 }) {
   return (
-    <aside className="hidden w-16 shrink-0 flex-col items-center border-r border-white/[0.07] bg-[#121210] py-3 lg:flex">
-      <div className="mb-5 flex h-9 w-9 items-center justify-center rounded-md border border-[#D5B477]/25 bg-[#D5B477]/[0.08] font-serif text-[15px] text-[#D5B477]">
+    <aside className="hidden w-16 shrink-0 flex-col items-center border-r border-border bg-background py-3 lg:flex">
+      {/* Wordmark. Neutral on purpose: Export keeps the only chromatic emphasis. */}
+      <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-border bg-card font-serif text-[15px] text-foreground">
         S
       </div>
 
-      <nav
-        className="flex flex-col items-center gap-1.5"
-        aria-label="Editor tools"
-      >
-        {tools.map(({ id, label, icon: Icon }) => {
+      <nav aria-label="Editor tools" className="flex flex-col items-center gap-1">
+        {TOOLS.map(({ id, label, icon: Icon, shortcut }) => {
           const isActive = activeTool === id
 
           return (
-            <button
-              key={id}
-              type="button"
-              aria-label={label}
-              aria-pressed={isActive}
-              title={label}
-              onClick={() => onToolChange(id)}
-              className={`group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-md transition-all duration-150 ${
-                isActive
-                  ? "bg-[#D5B477]/[0.12] text-[#D5B477]"
-                  : "text-[#6E6B63] hover:bg-white/[0.06] hover:text-[#F5F4EF]"
-              }`}
-            >
-              {isActive && (
-                <span className="absolute -left-[13px] h-5 w-0.5 rounded-r-full bg-[#D5B477]" />
-              )}
-              <Icon size={17} strokeWidth={1.7} />
-              <span className="pointer-events-none absolute left-12 z-50 hidden rounded-md border border-white/[0.08] bg-[#181815] px-2 py-1 text-[11px] whitespace-nowrap text-[#F5F4EF] shadow-[0_12px_40px_rgba(0,0,0,0.28)] group-hover:block">
-                {label}
-              </span>
-            </button>
+            <Tooltip key={id} label={label} shortcut={shortcut} side="right">
+              <button
+                type="button"
+                aria-label={label}
+                aria-pressed={isActive}
+                onClick={() => onToolChange(id)}
+                className={cn(
+                  "relative flex size-10 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-[var(--text-muted)] hover:bg-black/[0.05] hover:text-foreground"
+                )}
+              >
+                {isActive && (
+                  <span className="absolute -left-3 h-5 w-0.5 rounded-r-full bg-primary" />
+                )}
+                <Icon size={17} strokeWidth={1.7} />
+              </button>
+            </Tooltip>
           )
         })}
       </nav>
-
-      <div className="mt-auto flex flex-col items-center gap-1.5">
-        <button
-          type="button"
-          aria-label="Layout"
-          title="Layout"
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-[#6E6B63] transition-colors hover:bg-white/[0.06] hover:text-[#F5F4EF]"
-        >
-          <Braces size={17} strokeWidth={1.7} />
-        </button>
-      </div>
     </aside>
   )
 }

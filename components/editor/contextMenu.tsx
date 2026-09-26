@@ -1,13 +1,12 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   ArrowDown,
   ArrowUp,
   ChevronsDown,
   ChevronsUp,
   Copy,
-  Delete,
   Eye,
   EyeOff,
   Lock,
@@ -16,206 +15,248 @@ import {
   Trash2,
   Unlock,
 } from "lucide-react"
-import { useEffect, useRef } from "react"
+
+import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
+
+/**
+ * Right-click menu for the object under the pointer.
+ *
+ * Three fixes over the previous version:
+ * - Position is measured from the rendered menu instead of a hardcoded
+ *   `menuHeight = 280`. The real height varies with the target (image targets
+ *   add two rows), so the clamp was wrong and items could be cut off.
+ * - It reserves space for the mobile tab bar. The menu and the nav were both
+ *   `z-50`, so the nav won on DOM order and painted over the menu's bottom rows.
+ * - Shortcut labels follow the platform instead of always claiming ⌘, and the
+ *   delete row now shows its shortcut.
+ */
+
+const MENU_WIDTH = 224
+const EDGE = 12
+const MOBILE_NAV_HEIGHT = 68
+
+function useIsMac() {
+  const [isMac, setIsMac] = useState(true)
+  useEffect(() => {
+    setIsMac(/mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent))
+  }, [])
+  return isMac
+}
 
 export default function ContextMenu() {
-  const {
-    contextMenu,
-    closeContextMenu,
-    bringToFront,
-    bringForward,
-    sendBackward,
-    sendToBack,
-    duplicateActiveObject,
-    toggleLayerLock,
-    toggleLayerVisibility,
-    deleteActiveObject,
-    fitImageToCanvas,
-  } = useEditorStore()
+  const contextMenu = useEditorStore((s) => s.contextMenu)
+  const closeContextMenu = useEditorStore((s) => s.closeContextMenu)
+  const bringToFront = useEditorStore((s) => s.bringToFront)
+  const bringForward = useEditorStore((s) => s.bringForward)
+  const sendBackward = useEditorStore((s) => s.sendBackward)
+  const sendToBack = useEditorStore((s) => s.sendToBack)
+  const duplicateActiveObject = useEditorStore((s) => s.duplicateActiveObject)
+  const toggleLayerLock = useEditorStore((s) => s.toggleLayerLock)
+  const toggleLayerVisibility = useEditorStore((s) => s.toggleLayerVisibility)
+  const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
+  const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
 
   const menuRef = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(
+    null
+  )
+  const isMac = useIsMac()
+  const mod = isMac ? "⌘" : "Ctrl"
+
+  // Measure the menu, then place it inside the viewport.
+  useLayoutEffect(() => {
+    if (!contextMenu.visible) {
+      setPosition(null)
+      return
+    }
+    const el = menuRef.current
+    if (!el) return
+
+    const { width, height } = el.getBoundingClientRect()
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+    const reservedBottom = isDesktop ? 0 : MOBILE_NAV_HEIGHT
+
+    setPosition({
+      left: Math.max(
+        EDGE,
+        Math.min(contextMenu.x, window.innerWidth - width - EDGE)
+      ),
+      top: Math.max(
+        EDGE,
+        Math.min(
+          contextMenu.y,
+          window.innerHeight - reservedBottom - height - EDGE
+        )
+      ),
+    })
+  }, [contextMenu.visible, contextMenu.x, contextMenu.y, contextMenu.targetObject])
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        closeContextMenu()
-      }
+    if (!contextMenu.visible) return
+    const onPointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) closeContextMenu()
     }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeContextMenu()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeContextMenu()
     }
-
-    if (contextMenu.visible) {
-      window.addEventListener("mousedown", handleClickOutside)
-      window.addEventListener("keydown", handleKeyDown)
-    }
-
+    window.addEventListener("mousedown", onPointerDown)
+    window.addEventListener("keydown", onKeyDown)
     return () => {
-      window.removeEventListener("mousedown", handleClickOutside)
-      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("mousedown", onPointerDown)
+      window.removeEventListener("keydown", onKeyDown)
     }
   }, [contextMenu.visible, closeContextMenu])
 
   if (!contextMenu.visible) return null
 
   const target = contextMenu.targetObject
-  const isLocked = target ? target.lockMovementX : false
+  const isLocked = Boolean(target?.lockMovementX)
   const isVisible = target ? target.visible : true
   const isImage = target?.type === "image"
 
-  // Reposition inside viewport bounds
-  const menuWidth = 220
-  const menuHeight = 280
-  const adjustedX = Math.min(contextMenu.x, window.innerWidth - menuWidth - 16)
-  const adjustedY = Math.min(
-    contextMenu.y,
-    window.innerHeight - menuHeight - 16
-  )
+  const item =
+    "flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-[12px] text-foreground outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+  const hint = "font-mono text-[10px] text-[var(--text-muted)]"
+
+  /** Runs an action and dismisses the menu, like the image rows already did. */
+  const run = (action: () => void) => () => {
+    action()
+    closeContextMenu()
+  }
 
   return (
     <div
       ref={menuRef}
-      style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-50 w-[220px] animate-in rounded border border-white/15 bg-[#1C1C1E]/95 p-1.5 font-sans text-[12px] text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in"
-      onContextMenu={(e) => e.preventDefault()}
+      role="menu"
+      aria-label="Object actions"
+      onContextMenu={(event) => event.preventDefault()}
+      style={{
+        left: position ? `${position.left}px` : 0,
+        top: position ? `${position.top}px` : 0,
+        width: MENU_WIDTH,
+        visibility: position ? "visible" : "hidden",
+      }}
+      className="fixed z-[150] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
     >
       {isImage && (
         <>
           <div className="space-y-0.5">
             <button
-              onClick={() => {
-                fitImageToCanvas("fill")
-                closeContextMenu()
-              }}
-              className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              role="menuitem"
+              onClick={run(() => fitImageToCanvas("fill"))}
+              className={item}
             >
               <span className="flex items-center gap-2.5">
-                <Maximize size={14} className="text-white/60" />
-                Fill Canvas
+                <Maximize size={14} className="text-[var(--text-muted)]" />
+                Fill canvas
               </span>
             </button>
             <button
-              onClick={() => {
-                fitImageToCanvas("fit")
-                closeContextMenu()
-              }}
-              className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              role="menuitem"
+              onClick={run(() => fitImageToCanvas("fit"))}
+              className={item}
             >
               <span className="flex items-center gap-2.5">
-                <Minimize size={14} className="text-white/60" />
-                Fit to Canvas
+                <Minimize size={14} className="text-[var(--text-muted)]" />
+                Fit to canvas
               </span>
             </button>
           </div>
-          <div className="my-1.5 h-px bg-white/10" />
+          <div className="my-1 h-px bg-border" />
         </>
       )}
 
-      {/* Layer Depth Actions */}
       <div className="space-y-0.5">
-        <button
-          onClick={bringToFront}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
+        <button role="menuitem" onClick={run(bringToFront)} className={item}>
           <span className="flex items-center gap-2.5">
-            <ChevronsUp size={14} className="text-white/60" />
-            Bring to Front
+            <ChevronsUp size={14} className="text-[var(--text-muted)]" />
+            Bring to front
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + ]</span>
+          <span className={hint}>{mod} ]</span>
         </button>
-
-        <button
-          onClick={bringForward}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
+        <button role="menuitem" onClick={run(bringForward)} className={item}>
           <span className="flex items-center gap-2.5">
-            <ArrowUp size={14} className="text-white/60" />
-            Bring Forward
+            <ArrowUp size={14} className="text-[var(--text-muted)]" />
+            Bring forward
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + ⌥]</span>
+          <span className={hint}>{mod} ⌥ ]</span>
         </button>
-
-        <button
-          onClick={sendBackward}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
+        <button role="menuitem" onClick={run(sendBackward)} className={item}>
           <span className="flex items-center gap-2.5">
-            <ArrowDown size={14} className="text-white/60" />
-            Send Backward
+            <ArrowDown size={14} className="text-[var(--text-muted)]" />
+            Send backward
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + ⌥[</span>
+          <span className={hint}>{mod} ⌥ [</span>
         </button>
-
-        <button
-          onClick={sendToBack}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
+        <button role="menuitem" onClick={run(sendToBack)} className={item}>
           <span className="flex items-center gap-2.5">
-            <ChevronsDown size={14} className="text-white/60" />
-            Send to Back
+            <ChevronsDown size={14} className="text-[var(--text-muted)]" />
+            Send to back
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + [</span>
+          <span className={hint}>{mod} [</span>
         </button>
       </div>
 
-      <div className="my-1.5 h-px bg-white/10" />
+      <div className="my-1 h-px bg-border" />
 
-      {/* Transform & State Actions */}
       <div className="space-y-0.5">
         <button
-          onClick={duplicateActiveObject}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          role="menuitem"
+          onClick={run(duplicateActiveObject)}
+          className={item}
         >
           <span className="flex items-center gap-2.5">
-            <Copy size={14} className="text-white/60" />
+            <Copy size={14} className="text-[var(--text-muted)]" />
             Duplicate
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + D</span>
+          <span className={hint}>{mod} D</span>
         </button>
 
+        {/* Lock and visibility stay open on purpose so both can be flipped. */}
         <button
+          role="menuitem"
           onClick={() => toggleLayerLock(target)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className={item}
         >
           <span className="flex items-center gap-2.5">
             {isLocked ? (
-              <Lock size={14} className="text-amber-400" />
+              <Lock size={14} className="text-[var(--color-saffron)]" />
             ) : (
-              <Unlock size={14} className="text-white/60" />
+              <Unlock size={14} className="text-[var(--text-muted)]" />
             )}
-            {isLocked ? "Unlock Layer" : "Lock Layer"}
+            {isLocked ? "Unlock layer" : "Lock layer"}
           </span>
-          <span className="font-mono text-[10px] text-white/50">⌘ + L</span>
         </button>
 
         <button
+          role="menuitem"
           onClick={() => toggleLayerVisibility(target)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className={item}
         >
           <span className="flex items-center gap-2.5">
             {isVisible ? (
-              <Eye size={14} className="text-white/60" />
+              <Eye size={14} className="text-[var(--text-muted)]" />
             ) : (
-              <EyeOff size={14} className="text-red-400" />
+              <EyeOff size={14} className="text-destructive" />
             )}
-            {isVisible ? "Hide Layer" : "Show Layer"}
+            {isVisible ? "Hide layer" : "Show layer"}
           </span>
         </button>
       </div>
 
-      <div className="my-1.5 h-px bg-white/10" />
+      <div className="my-1 h-px bg-border" />
 
-      {/* Delete Action */}
       <button
-        onClick={() => deleteActiveObject(target)}
-        className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 font-medium text-red-400 transition-colors hover:bg-red-500/20"
+        role="menuitem"
+        onClick={run(() => deleteActiveObject(target))}
+        className={cn(item, "text-destructive hover:bg-destructive/10")}
       >
         <span className="flex items-center gap-2.5">
           <Trash2 size={14} />
           Delete
         </span>
-        <Delete size={16} className="text-red-400/50" />
+        <span className={cn(hint, "text-destructive/70")}>Del</span>
       </button>
     </div>
   )

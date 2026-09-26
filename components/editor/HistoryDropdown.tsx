@@ -1,128 +1,126 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
-import { Check, Clock, History, Layers } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { Check, History, Layers } from "lucide-react"
 
+import { IconButton } from "@/components/ui/icon-button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
+
+/**
+ * The version timeline.
+ *
+ * Now built on the shared Popover primitive, which fixes several things the
+ * hand-rolled version got wrong: it had click-outside but no Escape, no
+ * viewport clamp (a 288px panel anchored near the right of the toolbar could
+ * be clipped by the app shell's `overflow-hidden` with no way to scroll to it),
+ * and its inner list let wheel scrolling leak to the page behind it.
+ */
 export default function HistoryDropdown() {
   const [isOpen, setIsOpen] = useState(false)
-  const { history, historyIndex, jumpToHistoryIndex } = useEditorStore()
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const history = useEditorStore((s) => s.history)
+  const historyIndex = useEditorStore((s) => s.historyIndex)
+  const jumpToHistoryIndex = useEditorStore((s) => s.jumpToHistoryIndex)
 
-  // Click outside listener to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false)
-      }
-    }
-    if (isOpen) {
-      window.addEventListener("mousedown", handleClickOutside)
-    }
-    return () => window.removeEventListener("mousedown", handleClickOutside)
-  }, [isOpen])
-
-  const handleSelect = async (idx: number) => {
-    await jumpToHistoryIndex(idx)
+  const handleSelect = async (index: number) => {
+    await jumpToHistoryIndex(index)
     setIsOpen(false)
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* TRIGGER BUTTON */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        title="Browse History Stack"
-        className={`relative flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all active:scale-95 ${
-          isOpen
-            ? "bg-[#D6B47A]/20 text-[#D6B47A]"
-            : "text-white/50 hover:bg-white/[0.08] hover:text-white"
-        }`}
-      >
-        <History size={15} />
-        {history.length > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#D6B47A] px-1 font-mono text-[8px] font-bold text-black shadow-sm">
-            {historyIndex + 1}
-          </span>
-        )}
-      </button>
-
-      {/* TIMELINE POPOVER */}
-      {isOpen && (
-        <div className="absolute top-10 left-0 z-[150] w-72 animate-in overflow-hidden rounded-md border border-white/[0.1] bg-[#141414]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in">
-          {/* HEADER */}
-          <div className="mb-2.5 flex items-center justify-between border-b border-white/[0.06] px-1 pb-2">
-            <div className="flex items-center gap-1.5">
-              <Clock size={13} className="text-[#D6B47A]" />
-              <span className="text-[11px] font-semibold text-white/80">
-                Version Timeline
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger
+        render={
+          <div className="relative">
+            <IconButton
+              icon={<History size={15} />}
+              label="Version history"
+              active={isOpen}
+            />
+            {history.length > 0 && (
+              <span className="pointer-events-none absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 font-mono text-[9px] font-bold text-primary-foreground">
+                {historyIndex + 1}
               </span>
-            </div>
-            <span className="font-mono text-[9px] text-white/40">
-              {historyIndex + 1} / {history.length} states
-            </span>
-          </div>
-
-          {/* HISTORY ITEM LIST */}
-          <div className="custom-scrollbar max-h-72 space-y-1 overflow-y-auto pr-1">
-            {history.length === 0 ? (
-              <div className="py-6 text-center text-[11px] text-white/40">
-                No edits recorded yet
-              </div>
-            ) : (
-              history.map((item, idx) => {
-                const isCurrent = idx === historyIndex
-                const isPast = idx < historyIndex
-                const isFuture = idx > historyIndex
-
-                return (
-                  <button
-                    key={item.id || idx}
-                    onClick={() => handleSelect(idx)}
-                    className={`group relative flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-2 text-left transition-all ${
-                      isCurrent
-                        ? "border border-[#D6B47A]/50 bg-[#D6B47A]/10 text-white shadow-[0_0_15px_rgba(214,180,122,0.1)]"
-                        : isFuture
-                          ? "opacity-45 hover:bg-white/[0.04] hover:opacity-100"
-                          : "text-white/80 hover:bg-white/[0.06]"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5 pr-2">
-                      <span
-                        className={`shrink-0 font-mono text-[10px] ${isCurrent ? "font-bold text-[#D6B47A]" : "text-white/30"}`}
-                      >
-                        #{idx + 1}
-                      </span>
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[11px] leading-tight font-medium">
-                          {item.title}
-                        </span>
-                        <div className="mt-0.5 flex items-center gap-2 font-mono text-[9px] text-white/35">
-                          <span>{item.timestamp}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Layers size={9} />
-                            {item.objectCount}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {isCurrent && (
-                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#D6B47A] px-1.5 py-0.5 font-sans text-[8px] font-bold text-black uppercase">
-                        <Check size={9} /> Current
-                      </span>
-                    )}
-                  </button>
-                )
-              })
             )}
           </div>
+        }
+      />
+
+      <PopoverContent align="start" className="w-[288px] p-0">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <span className="text-[12px] font-semibold text-foreground">
+            Version history
+          </span>
+          <span className="font-mono text-[10px] text-[var(--text-muted)] tabular-nums">
+            {history.length === 0 ? "0" : historyIndex + 1} / {history.length}
+          </span>
         </div>
-      )}
-    </div>
+
+        <div className="custom-scrollbar max-h-72 space-y-0.5 overflow-y-auto overscroll-contain p-2">
+          {history.length === 0 ? (
+            <p className="py-6 text-center text-[12px] text-[var(--text-muted)]">
+              No edits recorded yet
+            </p>
+          ) : (
+            history.map((item, index) => {
+              const isCurrent = index === historyIndex
+              const isFuture = index > historyIndex
+
+              return (
+                <button
+                  key={item.id || index}
+                  type="button"
+                  onClick={() => handleSelect(index)}
+                  aria-current={isCurrent || undefined}
+                  className={cn(
+                    "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left outline-none transition-colors",
+                    "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                    isCurrent
+                      ? "bg-primary/10"
+                      : isFuture
+                        ? "opacity-50 hover:bg-black/[0.04] hover:opacity-100"
+                        : "hover:bg-black/[0.04]"
+                  )}
+                >
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      className={cn(
+                        "shrink-0 font-mono text-[10px] tabular-nums",
+                        isCurrent
+                          ? "font-bold text-primary"
+                          : "text-[var(--text-muted)]"
+                      )}
+                    >
+                      #{index + 1}
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-[12px] leading-tight font-medium text-foreground">
+                        {item.title}
+                      </span>
+                      <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+                        <span>{item.timestamp}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="flex items-center gap-1">
+                          <Layers size={9} aria-hidden="true" />
+                          {item.objectCount}
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+
+                  {/* Not colour-only: the current entry is labelled. */}
+                  {isCurrent && (
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">
+                      <Check size={9} aria-hidden="true" /> Current
+                    </span>
+                  )}
+                </button>
+              )
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

@@ -95,6 +95,8 @@
   --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.12);
   --shadow-2xl: 0 16px 48px rgb(0 0 0 / 0.16);
+  /* Separates the artboard from the dark workspace (design doc §8). */
+  --shadow-artboard: 0 12px 40px rgb(0 0 0 / 0.28);
 
   /* ---- the artboard workspace (new; DESIGN/ has no dark surface) ---------- */
   --color-workspace: #141311;
