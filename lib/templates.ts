@@ -80,7 +80,7 @@ export const TEMPLATES: Template[] = [
     texts: [
       {
         type: "quote",
-        fontFamily: "Syncopate",
+        fontFamily: "Unbounded",
         fontSize: 48,
         fontWeight: 700,
         fill: "#0A84FF",
@@ -429,7 +429,7 @@ export const TEMPLATES: Template[] = [
     texts: [
       {
         type: "quote",
-        fontFamily: "Syncopate",
+        fontFamily: "Unbounded",
         fontSize: 60,
         fontWeight: 700,
         fill: "#FF375F",
@@ -456,7 +456,7 @@ export const TEMPLATES: Template[] = [
     texts: [
       {
         type: "quote",
-        fontFamily: "Cooper Black", // Make sure this font is available in your fonts.ts
+        fontFamily: "Abril Fatface",
         fontSize: 54,
         fontWeight: 400,
         fill: "#F5E6D3",
@@ -527,7 +527,7 @@ export const TEMPLATES: Template[] = [
     texts: [
       {
         type: "quote",
-        fontFamily: "Courier Prime",
+        fontFamily: "Space Mono",
         fontSize: 32,
         fontWeight: 400,
         fill: "#111111",
