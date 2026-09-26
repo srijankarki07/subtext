@@ -77,8 +77,27 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   isFit: true,
   viewport: { width: 0, height: 0 },
 
+  /**
+   * Registers the Fabric canvas and immediately applies the current view scale.
+   *
+   * The scale has to be applied here as well as on viewport change. The
+   * workspace measures itself and fits on mount, but `next/dynamic` (ssr:false)
+   * mounts the Fabric canvas *after* that, so the fit ran while `canvas` was
+   * still null and the artboard was left rendering at 100% — overflowing the
+   * whole workspace. Besides looking wrong, that made the empty-state overlay
+   * cover everything, so a click anywhere opened the file picker.
+   */
   setCanvas: (canvas) => {
     set({ canvas })
+
+    const { artboard, zoom, isFit } = get()
+    if (isFit) {
+      get().fitToViewport()
+    } else {
+      applyCanvasZoom(canvas, artboard, zoom)
+      canvas.requestRenderAll()
+    }
+
     get().checkSavedProject()
   },
 
