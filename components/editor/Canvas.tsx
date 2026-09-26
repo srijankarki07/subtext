@@ -24,7 +24,7 @@ export default function Canvas() {
 
   const {
     setCanvas,
-    setActiveObject,
+    setSelection,
     saveHistoryState,
     undo,
     redo,
@@ -96,13 +96,17 @@ export default function Canvas() {
     setCanvas(canvas)
     saveHistoryState("Initial Canvas")
 
-    canvas.on("selection:created", (e) =>
-      setActiveObject(e.selected?.[0] || null)
+    // The whole selection is recorded, not just its first member: the inspector
+    // has to be able to say "three layers selected", and Delete has to take all
+    // three. `getActiveObjects()` also unwraps an ActiveSelection into its
+    // members, which is what those callers want.
+    canvas.on("selection:created", () =>
+      setSelection(canvas.getActiveObjects())
     )
-    canvas.on("selection:updated", (e) =>
-      setActiveObject(e.selected?.[0] || null)
+    canvas.on("selection:updated", () =>
+      setSelection(canvas.getActiveObjects())
     )
-    canvas.on("selection:cleared", () => setActiveObject(null))
+    canvas.on("selection:cleared", () => setSelection([]))
 
     const handleObjectsChanged = (event?: { target?: unknown }) => {
       // Effect layers (vignettes, letterbox bars, gradients) are still objects,
@@ -339,7 +343,7 @@ export default function Canvas() {
     }
   }, [
     setCanvas,
-    setActiveObject,
+    setSelection,
     saveHistoryState,
     undo,
     redo,
