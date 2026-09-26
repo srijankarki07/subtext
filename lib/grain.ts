@@ -119,7 +119,8 @@ export function applyGrain(
   const ctx = target.getContext("2d")
   if (!ctx) return
 
-  const source = seed === GRAIN_SEED ? tile() : createGrainTile(GRAIN_TILE_SIZE, seed)
+  const source =
+    seed === GRAIN_SEED ? tile() : createGrainTile(GRAIN_TILE_SIZE, seed)
   const pattern = ctx.createPattern(source, "repeat")
   if (!pattern) return
 
@@ -145,6 +146,25 @@ export function grainPreviewStyle(
   mixBlendMode: "overlay"
   opacity: number
 } {
+  /*
+   * No tile without a DOM.
+   *
+   * The tile is drawn on a canvas, so this cannot be evaluated while rendering
+   * on the server — and it *is* called during render by the landing page's grade
+   * demo, which server-renders: `document is not defined`, and the page returned
+   * a 500. Returning a transparent overlay keeps the call site simple, and the
+   * callers render the overlay only after mount anyway, so the server pass never
+   * paints it.
+   */
+  if (typeof document === "undefined") {
+    return {
+      backgroundImage: "none",
+      backgroundSize: "auto",
+      mixBlendMode: "overlay",
+      opacity: 0,
+    }
+  }
+
   return {
     backgroundImage: `url(${grainTileDataUrl()})`,
     // The overlay element is the artboard scaled by `zoom`, so dividing the

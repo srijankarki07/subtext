@@ -36,6 +36,17 @@ export const DOCUMENT_PROPERTIES = [
   "assetId",
   "selectable",
   "evented",
+  /*
+   * The app's own lock, deliberately separate from Fabric's `lockMovementX`.
+   *
+   * Fabric sets `lockMovementX` on a text object *while it is being edited*
+   * (`_setEditingProps`), and the app was reading that same property as "the user
+   * locked this layer" — so a dozen guards silently refused to act on text that
+   * was merely being typed into: you could not copy it, align it, delete it, or
+   * style a *word* of it, because styling a range only happens during an edit and
+   * the guard bailed out on the flag Fabric had just set.
+   */
+  "locked",
   "lockMovementX",
   "lockMovementY",
   "lockScalingX",

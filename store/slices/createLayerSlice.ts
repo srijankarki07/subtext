@@ -76,10 +76,12 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
     const target = obj || activeObject
     if (!canvas || !target) return
 
-    const isLocked = !target.lockMovementX
+    // Read and write the app's own flag; Fabric's locks are how it is enforced.
+    const isLocked = !(target as { locked?: boolean }).locked
 
     // Exhaustively disable all interactions to ensure the layer acts strictly as a static background
     target.set({
+      locked: isLocked,
       lockMovementX: isLocked,
       lockMovementY: isLocked,
       lockScalingX: isLocked,
@@ -113,7 +115,12 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
 
   alignObjectToCanvas: (alignment) => {
     const { canvas, activeObject, saveHistoryState } = get()
-    if (!canvas || !activeObject || activeObject.lockMovementX) return
+    if (
+      !canvas ||
+      !activeObject ||
+      (activeObject as { locked?: boolean }).locked
+    )
+      return
 
     const canvasWidth = canvas.getWidth()
     const canvasHeight = canvas.getHeight()
@@ -196,7 +203,7 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
       !canvas ||
       !activeObject ||
       activeObject.type !== "image" ||
-      activeObject.lockMovementX
+      (activeObject as { locked?: boolean }).locked
     )
       return
 

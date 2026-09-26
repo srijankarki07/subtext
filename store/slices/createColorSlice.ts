@@ -36,8 +36,14 @@ function readRegion(
 
   const left = Math.max(0, Math.floor(rect.left * retina))
   const top = Math.max(0, Math.floor(rect.top * retina))
-  const width = Math.max(1, Math.min(Math.ceil(rect.width * retina), canvasWidth - left))
-  const height = Math.max(1, Math.min(Math.ceil(rect.height * retina), canvasHeight - top))
+  const width = Math.max(
+    1,
+    Math.min(Math.ceil(rect.width * retina), canvasWidth - left)
+  )
+  const height = Math.max(
+    1,
+    Math.min(Math.ceil(rect.height * retina), canvasHeight - top)
+  )
 
   const data = ctx.getImageData(left, top, width, height).data
 
@@ -68,7 +74,7 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
       !canvas ||
       !activeObject ||
       activeObject.type !== "i-text" ||
-      activeObject.lockMovementX
+      (activeObject as { locked?: boolean }).locked
     )
       return
 
@@ -332,7 +338,8 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
       strokeWidth,
       shadowColor: shadow?.color,
       shadowBlur: shadow?.blur,
-      shadowOffset: Math.abs(shadow?.offsetX ?? 0) + Math.abs(shadow?.offsetY ?? 0),
+      shadowOffset:
+        Math.abs(shadow?.offsetX ?? 0) + Math.abs(shadow?.offsetY ?? 0),
       fontSize,
       fontWeight,
     }

@@ -237,7 +237,7 @@ export default function LayersPanel() {
           {layers.map((layer) => {
             const actualIndex = objects.indexOf(layer.obj)
             const isSelected = selectedObjects.includes(layer.obj)
-            const isLocked = Boolean(layer.obj.lockMovementX)
+            const isLocked = Boolean(layer.obj.locked)
             const Icon = layer.icon
 
             return (
