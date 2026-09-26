@@ -136,6 +136,28 @@ export interface EffectSlice {
   grainIntensity: number
   gradientOpacity: number
 
+  /*
+   * Duotone lives here rather than in the panel's own state. It was local, so
+   * leaving the Cinema tool reset the controls while the image kept its grade —
+   * the sliders then disagreed with the artwork, and the next nudge applied a
+   * delta from a stale base.
+   */
+  duotoneLight: string
+  duotoneDark: string
+  duotoneIntensity: number
+  setDuotoneColour: (which: "light" | "dark", hex: string) => void
+  setDuotoneIntensity: (intensity: number) => void
+
+  /* Image adjustments, for the same reason as the duotone settings above. */
+  brightness: number
+  contrast: number
+  saturation: number
+  warmth: number
+  setAdjustment: (
+    which: "brightness" | "contrast" | "saturation" | "warmth",
+    value: number
+  ) => void
+
   // Arrays to hold multiple independent effect layers
   vignettes: VignetteState[]
   blurZones: BlurZoneState[]
@@ -152,7 +174,11 @@ export interface EffectSlice {
   applyImageFilter: (type: string, options: any) => void
   applyPreset: (matrix: number[]) => void
   applyWarmth: (value: number) => void
-  applyDuotone: (lightHex: string, darkHex: string) => void
+  applyDuotone: (
+    lightHex: string,
+    darkHex: string,
+    intensity?: number
+  ) => void
   resetEffect: (
     category: "adjustments" | "cinematic" | "atmospherics" | "all"
   ) => void
