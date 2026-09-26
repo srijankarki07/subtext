@@ -64,14 +64,14 @@ const TILES = [
     icon: Layers3,
     title: "Real layers",
     body: "Reorder by dragging, group what belongs together, and undo anything — thirty steps deep.",
-    span: "",
+    span: "lg:col-span-2",
     mock: "layers",
   },
   {
     icon: Lock,
     title: "Nothing leaves the browser",
     body: "No account, no upload, no server. Your photo is read in the tab you are looking at and stored on your own device.",
-    span: "lg:col-span-2",
+    span: "lg:col-span-4",
     mock: "local",
   },
 ]
@@ -104,7 +104,7 @@ export default function Bento() {
               slack between the copy and the diagram, which reads as breathing
               room — with `grow` it pooled underneath as a hole.
             */}
-            <div className="mt-auto pt-5" aria-hidden="true">
+            <div className="mt-5 pt-1" aria-hidden="true">
               <Mock kind={tile.mock} />
             </div>
           </article>
@@ -118,23 +118,60 @@ export default function Bento() {
 function Mock({ kind }: { kind: string }) {
   if (kind === "metrics") {
     return (
-      <div className="flex flex-col gap-2 rounded-xl bg-subtle p-3">
+      /*
+       * A miniature of the panel the editor actually shows: a score, a verdict,
+       * and the two readings the disagreement is between. The previous version
+       * was three anonymous bars in a grey box — a chart of nothing, and at that
+       * size it read as a loading skeleton.
+       */
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-subtle p-3.5">
+        <div className="flex items-end justify-between gap-3">
+          <span className="text-[26px] leading-none font-bold tracking-[-0.03em] tabular-nums">
+            84
+            <span className="ml-0.5 text-[11px] font-medium text-[var(--text-muted)]">
+              /100
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600/12 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
+            <span
+              aria-hidden="true"
+              className="size-1 rounded-full bg-emerald-600"
+            />
+            AA PASS
+          </span>
+        </div>
+
         {[
-          { label: "Worst case", width: "26%", tone: "bg-destructive" },
-          { label: "Typical", width: "88%", tone: "bg-emerald-500" },
-          { label: "Area mean", width: "74%", tone: "bg-emerald-500/60" },
+          {
+            label: "Worst case",
+            value: "3.96:1",
+            swatch: "#6E6A72",
+            tone: "text-destructive",
+          },
+          {
+            label: "Typical",
+            value: "10.9:1",
+            swatch: "#C9C7C2",
+            tone: "text-foreground",
+          },
         ].map((row) => (
-          <div key={row.label} className="flex items-center gap-2.5">
-            <span className="w-[68px] shrink-0 text-[10px] text-[var(--text-muted)]">
+          <span
+            key={row.label}
+            className="flex items-center justify-between gap-3"
+          >
+            <span className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
+              <span
+                className="size-2.5 rounded-[2px] ring-1 ring-black/10"
+                style={{ background: row.swatch }}
+              />
               {row.label}
             </span>
-            <span className="h-1.5 grow overflow-hidden rounded-full bg-[var(--edge-strong)]/40">
-              <span
-                className={cn("block h-full rounded-full", row.tone)}
-                style={{ width: row.width }}
-              />
+            <span
+              className={cn("font-mono text-[10px] tabular-nums", row.tone)}
+            >
+              {row.value}
             </span>
-          </div>
+          </span>
         ))}
       </div>
     )
@@ -191,9 +228,9 @@ function Mock({ kind }: { kind: string }) {
     return (
       <div className="flex items-end gap-2 rounded-xl bg-subtle p-3">
         {[
-          { label: "Cinematic", w: 30, h: 44, tone: "#2A1F3D" },
-          { label: "Editorial", w: 30, h: 38, tone: "#C9C7C2" },
-          { label: "Bold", w: 30, h: 30, tone: "#B5654A" },
+          { label: "Cinematic", w: 32, h: 52, tone: "#241A38" },
+          { label: "Editorial", w: 32, h: 46, tone: "#C9C7C2" },
+          { label: "Bold", w: 32, h: 40, tone: "#7A2E4A" },
         ].map((frame) => (
           <div key={frame.label} className="flex flex-col items-center gap-1.5">
             <span

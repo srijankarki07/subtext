@@ -18,6 +18,17 @@ import type { GalleryItem } from "@/lib/gallery.generated"
  * browsing templates feels like.
  */
 
+/**
+ * The inner frame's height, in pixels, and the only number the layout needs.
+ *
+ * The width is derived from it and the image's aspect ratio, so the frame is
+ * exactly the shape of what it holds — which means `object-cover` has nothing to
+ * crop. If these two ever disagree the image is quietly clipped, so the outer box
+ * is sized from the same constant rather than from a class that could drift.
+ */
+const FRAME_HEIGHT = 300
+const FRAME_PADDING = 8
+
 export default function TemplateShowcase({ items }: { items: GalleryItem[] }) {
   const [index, setIndex] = useState(0)
   const reduced = useReducedMotion()
@@ -35,25 +46,80 @@ export default function TemplateShowcase({ items }: { items: GalleryItem[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-module-dark-border bg-[#121218]">
+      {/*
+        The frame takes the shape of whatever it is showing.
+        
+        It used to be a fixed 4:3 box with the image `object-contain` inside, so a
+        16:9 composition sat in a band of empty panel with margins top and bottom
+        — the picture looked parked rather than presented. `object-cover` would
+        have filled it by cropping, which is worse here: these are complete
+        compositions, and cutting the edges off one to fit a template is exactly
+        what the tool is for avoiding.
+        
+        So the frame morphs instead. Its *height* is fixed and only its width
+        animates, which is what keeps the morph from reflowing everything below
+        it every few seconds.
+      */}
+      <div
+        className="relative flex items-center justify-center overflow-hidden rounded-xl border border-module-dark-border bg-[#0f0f13]"
+        style={{ height: FRAME_HEIGHT + FRAME_PADDING * 2 }}
+      >
         <AnimatePresence mode="sync">
           <motion.div
             key={current.file}
-            initial={reduced ? undefined : { opacity: 0, scale: 1.015 }}
-            animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+            initial={reduced ? undefined : { opacity: 0 }}
+            animate={reduced ? undefined : { opacity: 1 }}
             exit={reduced ? undefined : { opacity: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex items-center justify-center p-3"
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex items-center justify-center"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`/gallery/${current.file}`}
-              width={current.width}
-              height={current.height}
-              alt={`${current.note}. Made with the ${current.template} template.`}
-              loading="lazy"
-              className="max-h-full w-auto max-w-full rounded-md object-contain shadow-2xl"
-            />
+            {/*
+              A blurred copy of the same frame fills the panel behind it.
+
+              The frame keeps the image's exact shape so nothing is cropped — but
+              that leaves the panel's sides empty for a portrait or square
+              composition, and the section read as a picture floating in a black
+              box. Scaling one copy to cover and blurring it fills that space with
+              the composition's own colour, which is both how video players solve
+              this and the only way to fill the container without cropping the
+              artwork or distorting it.
+            */}
+            <motion.div
+              key={`${current.file}-backdrop`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.55 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9 }}
+              className="pointer-events-none absolute inset-0"
+              aria-hidden="true"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/gallery/${current.file}`}
+                alt=""
+                className="size-full scale-125 object-cover blur-2xl"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={false}
+              animate={{
+                width: FRAME_HEIGHT * (current.width / current.height),
+              }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="relative overflow-hidden rounded-md shadow-2xl"
+              style={{ height: FRAME_HEIGHT }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/gallery/${current.file}`}
+                width={current.width}
+                height={current.height}
+                alt={`${current.note}. Made with the ${current.template} template.`}
+                loading="lazy"
+                className="size-full object-cover"
+              />
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>

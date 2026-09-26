@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Subtext">
+  <!--
+    The brand mark as a favicon.
+
+    Three decisions worth recording:
+
+    1. **Square, with its own background.** The mark is 785×506, and a tab icon
+       is drawn at 16–32px in whatever colour the browser chrome happens to be.
+       A bare shape in `currentColor` would vanish against a dark tab bar, and a
+       1.55:1 mark becomes a smudge at 16px — so it sits on a square of the brand
+       blue with the eyes knocked out of it in the same blue.
+    2. **The eyes are the background colour, not black.** The component draws them
+       black because it is meant for light surfaces; here they are cut out of the
+       blue so the mark keeps its two dots at any size.
+    3. **The transform is a fit, not a guess.** The group scales the 785×506 mark
+       to 400px wide and centres it in the 512 box, leaving a 56px margin.
+  -->
+  <rect width="512" height="512" rx="112" fill="#0075DE" />
+  <g transform="translate(56 127) scale(0.5096)">
+    <path
+      d="M392.688 104.141C299.504 104.141 291.288 234.316 261.147 234.316C231.007 234.316 230.996 0 121.38 0C-30.726 0 -49.9098 505.63 121.38 505.63C196.742 505.63 218.672 442.598 252.926 442.598C287.179 442.598 322.801 505.63 392.688 505.63C462.575 505.63 496.832 442.598 531.085 442.598C565.339 442.598 587.269 505.63 662.631 505.63C833.921 505.63 814.737 0 662.631 0C553.015 0 553.004 234.316 522.864 234.316C492.723 234.316 485.872 104.141 392.688 104.141Z"
+      fill="#FFFFFF"
+    />
+    <circle cx="515.226" cy="332.977" r="46.5892" fill="#0075DE" />
+    <circle cx="268.575" cy="332.976" r="46.5892" fill="#0075DE" />
+  </g>
+</svg>

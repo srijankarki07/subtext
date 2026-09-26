@@ -35,6 +35,8 @@ export default function LiveSnap() {
   const [offset, setOffset] = useState(0)
   const [guides, setGuides] = useState<SnapLine[]>([])
   const [snapped, setSnapped] = useState(false)
+  /** What the solver actually returned, in canvas units. */
+  const [applied, setApplied] = useState(0)
   const reduced = useReducedMotion()
   const raf = useRef(0)
 
@@ -56,6 +58,7 @@ export default function LiveSnap() {
       setOffset(96 + outcome.dx)
       setGuides(outcome.guides)
       setSnapped(outcome.dx !== 0)
+      setApplied(outcome.dx)
       return
     }
 
@@ -83,6 +86,7 @@ export default function LiveSnap() {
       setOffset(raw + outcome.dx)
       setGuides(outcome.guides)
       setSnapped(outcome.dx !== 0)
+      setApplied(outcome.dx)
       raf.current = requestAnimationFrame(loop)
     }
 
@@ -150,10 +154,21 @@ export default function LiveSnap() {
         </div>
       </div>
 
-      {/* The readout is the honest part: it says what the solver returned. */}
+      {/*
+        The readout reports what the solver returned, not what it would be nice
+        for it to mean.
+
+        It used to print the card's *centre* offset from the artboard centre and
+        call that "centred" — so a snap that caught the card's right edge, which
+        is correct behaviour, showed as -50 and read as a bug. The number here is
+        the correction the solver applied this frame, and the label says which
+        line matched.
+      */}
       <p className="text-center font-mono text-[11px] text-on-module-muted tabular-nums">
         {snapped
-          ? `dx ${guides.length ? (CARD_W / 2 + offset - ARTBOARD / 2).toFixed(1) : "0.0"} → centred`
+          ? `pulled ${applied > 0 ? "+" : ""}${applied.toFixed(1)}px onto the ${
+              guides[0]?.kind === "edge" ? "frame edge" : "centre line"
+            }`
           : "free — outside the 6px pull"}
       </p>
     </div>

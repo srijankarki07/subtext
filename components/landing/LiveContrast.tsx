@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { CheckCircle2, TriangleAlert } from "lucide-react"
 
+import { applyGrain } from "@/lib/grain"
 import {
   analyseRegion,
   buildReport,
@@ -32,7 +33,16 @@ import { cn } from "@/lib/utils"
  *   demonstrates — it just does not move.
  */
 
-/** Roughly a 16:10 frame at 2× for crisp text and swatches. */
+/**
+ * The frame's starting size, and its pixel density.
+ *
+ * The canvas is not locked to this: it takes its backing-store size from its own
+ * box on every redraw (see `resize`), so it can fill whatever the layout gives
+ * it without being stretched. An earlier version pinned the box to this ratio and
+ * set `height: 100%` on it, which fought the grid — the aspect ratio won the
+ * width back and squeezed the readout panel into a column too narrow for its own
+ * labels.
+ */
 const CANVAS_W = 340
 const CANVAS_H = 214
 const DPR = 2
@@ -139,20 +149,39 @@ export default function LiveContrast() {
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
+    /**
+     * Matches the backing store to the element's box, so the drawing always has
+     * the right number of pixels for the space it is in.
+     */
+    const resize = (canvas: HTMLCanvasElement) => {
+      const width = Math.max(1, Math.round(canvas.clientWidth * DPR))
+      const height = Math.max(1, Math.round(canvas.clientHeight * DPR))
+      if (canvas.width === width && canvas.height === height) return false
+      canvas.width = width
+      canvas.height = height
+      return true
+    }
+
     /** Paints the drifting backdrop: a base wash plus two moving light sources. */
     const draw = (t: number) => {
       const canvas = canvasRef.current
       if (!canvas) return
+      resize(canvas)
       const ctx = canvas.getContext("2d", { willReadFrequently: true })
       if (!ctx) return
 
       const w = canvas.width
       const h = canvas.height
 
-      const base = ctx.createLinearGradient(0, 0, w * 0.4, h)
-      base.addColorStop(0, "#14121F")
-      base.addColorStop(0.55, "#3A2740")
-      base.addColorStop(1, "#101018")
+      // Deep ground, a mid tone with real chroma, and a warm light — the same
+      // construction as the generated backdrops, so the demo belongs to the
+      // gallery rather than looking like a diagram of one. The first version of
+      // this painted a muddy brown wash; depth comes from having an actual dark.
+      const base = ctx.createLinearGradient(0, h, w * 0.55, 0)
+      base.addColorStop(0, "#0B0A14")
+      base.addColorStop(0.45, "#241A38")
+      base.addColorStop(0.78, "#4A2050")
+      base.addColorStop(1, "#140F22")
       ctx.fillStyle = base
       ctx.fillRect(0, 0, w, h)
 
@@ -167,9 +196,10 @@ export default function LiveContrast() {
         h * 0.44,
         w * 0.46
       )
-      bright.addColorStop(0, "rgba(255, 233, 196, 0.95)")
-      bright.addColorStop(0.5, "rgba(224, 168, 120, 0.45)")
-      bright.addColorStop(1, "rgba(224, 168, 120, 0)")
+      bright.addColorStop(0, "rgba(255, 236, 206, 0.92)")
+      bright.addColorStop(0.35, "rgba(246, 168, 120, 0.55)")
+      bright.addColorStop(0.7, "rgba(199, 92, 128, 0.28)")
+      bright.addColorStop(1, "rgba(150, 60, 120, 0)")
       ctx.fillStyle = bright
       ctx.fillRect(0, 0, w, h)
 
@@ -182,10 +212,18 @@ export default function LiveContrast() {
         h * (0.9 - sweep * 0.5),
         w * 0.34
       )
-      cool.addColorStop(0, "rgba(74, 118, 178, 0.5)")
-      cool.addColorStop(1, "rgba(74, 118, 178, 0)")
+      cool.addColorStop(0, "rgba(64, 156, 178, 0.55)")
+      cool.addColorStop(1, "rgba(64, 156, 178, 0)")
       ctx.fillStyle = cool
       ctx.fillRect(0, 0, w, h)
+
+      /*
+       * Grain, composited by the editor's own `applyGrain` — the same tile, the
+       * same `overlay` blend mode, the same amplitude the export uses. It is
+       * also the cheap option: a per-pixel random pass here would have to run on
+       * every redraw and would shimmer, where this draws one cached pattern.
+       */
+      applyGrain(canvas, 40)
     }
 
     if (reduced) {
@@ -217,13 +255,31 @@ export default function LiveContrast() {
   const failing = report?.badge === "FAIL"
 
   return (
-    <div className="grid items-center gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10">
+    /*
+     * The two panels are the same rectangle: `items-stretch` makes the frame fill
+     * whatever height the readout needs, rather than either being fixed.
+     *
+     * A fixed row height was the obvious way to do this and it clipped — the
+     * readout needs 466px at 1440 and 501px at 1024, because narrower columns
+     * wrap its labels onto more lines, so any single number is wrong at one end.
+     * Measured, not guessed: the row is as tall as its content and the frame
+     * follows.
+     */
+    <div className="grid items-stretch gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10">
       {/* ---------------------------------------------------------- the frame */}
-      <div className="relative">
-        <div
-          className="relative overflow-hidden rounded-2xl border border-module-dark-border"
-          style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
-        >
+      {/*
+        `min-w-0` is load-bearing. A grid track is `min-width: auto` by default,
+        so anything with a min-content width wider than its share drags the
+        column out and crushes the other one — which is exactly what happened
+        when the frame carried an `aspect-ratio` and `h-full` together: the ratio
+        asked for 667px, the column gave it, and the readout was left a sliver.
+      */}
+      <div className="relative aspect-[16/10] min-w-0 lg:aspect-auto lg:h-full">
+        {/*
+          The frame is whatever shape the row is; the canvas matches it. On small
+          screens there is no row height to fill, so it keeps a sensible ratio.
+        */}
+        <div className="relative size-full overflow-hidden rounded-2xl border border-module-dark-border">
           <canvas
             ref={canvasRef}
             width={CANVAS_W * DPR}
@@ -261,7 +317,7 @@ export default function LiveContrast() {
       </div>
 
       {/* -------------------------------------------------------- the readout */}
-      <div className="rounded-2xl border border-module-dark-border bg-module-dark-raised p-5 sm:p-6">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-module-dark-border bg-module-dark-raised p-5 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
             <div className="text-[40px] leading-none font-bold tracking-[-0.03em] tabular-nums">
@@ -321,7 +377,7 @@ export default function LiveContrast() {
         </p>
 
         {frame && frame.candidates.length > 0 && (
-          <div className="mt-5">
+          <div className="mt-auto pt-5">
             <p className="text-[12px] font-medium text-on-module">
               Suggested colours
             </p>
