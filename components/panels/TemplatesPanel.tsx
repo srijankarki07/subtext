@@ -29,10 +29,10 @@ function TemplateThumbnailCard({
   return (
     <button
       onClick={onClick}
-      className="group relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#141414] p-2 text-left transition-all hover:border-[#D6B47A]/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] active:scale-[0.98]"
+      className="cursor-pointer group relative flex w-full flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] p-2 text-left transition-all hover:border-[#D6B47A]/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] active:scale-[0.98]"
     >
       {/* 1. MINI ARTBOARD CANVAS PREVIEW (4:5 Aspect Ratio) */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg border border-white/[0.04] bg-[#1C1C1E]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md border border-white/[0.04] bg-[#1C1C1E]">
         {/* Atmosphere tint */}
         <div
           className={`absolute inset-0 opacity-20 ${
@@ -157,10 +157,10 @@ export default function TemplatesPanel() {
   return (
     <div className="flex h-full flex-col font-sans">
       {/* 1. TOP SEGMENTED CONTROL: LAYOUTS vs COLOR GRADES */}
-      <div className="mb-3 flex shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+      <div className="mb-3 flex shrink-0 rounded-md border border-white/[0.08] bg-white/[0.03] p-1">
         <button
           onClick={() => setActiveSubTab("layouts")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold transition-all ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-[11px] font-semibold transition-all ${
             activeSubTab === "layouts"
               ? "bg-white text-black shadow-md"
               : "text-white/40 hover:text-white"
@@ -171,7 +171,7 @@ export default function TemplatesPanel() {
         </button>
         <button
           onClick={() => setActiveSubTab("luts")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-semibold transition-all ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-[11px] font-semibold transition-all ${
             activeSubTab === "luts"
               ? "bg-white text-black shadow-md"
               : "text-white/40 hover:text-white"
@@ -184,7 +184,7 @@ export default function TemplatesPanel() {
 
       {/* 2. DYNAMIC (i) INFO BANNER */}
       {showInfo && (
-        <div className="relative mb-3 shrink-0 rounded-xl border border-blue-500/20 bg-blue-500/[0.07] p-3 text-[11px] leading-relaxed text-blue-200/90">
+        <div className="relative mb-3 shrink-0 rounded-md border border-blue-500/20 bg-blue-500/[0.07] p-3 text-[11px] leading-relaxed text-blue-200/90">
           <div className="flex items-start gap-2.5">
             <Info size={15} className="mt-0.5 shrink-0 text-blue-400" />
             <div className="flex-1 pr-4">
@@ -271,7 +271,7 @@ export default function TemplatesPanel() {
                 <button
                   key={meta.name}
                   onClick={() => handleApplyLut(meta.name)}
-                  className={`group relative flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all active:scale-[0.98] ${
+                  className={`group relative flex w-full items-center justify-between rounded-md border p-3 text-left transition-all active:scale-[0.98] ${
                     isActive
                       ? "border-[#D6B47A]/60 bg-[#D6B47A]/10 shadow-[0_0_15px_rgba(214,180,122,0.1)]"
                       : "border-white/[0.05] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.05]"
@@ -279,7 +279,7 @@ export default function TemplatesPanel() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="h-7 w-7 shrink-0 rounded-lg border border-white/10 shadow-inner"
+                      className="h-7 w-7 shrink-0 rounded-md border border-white/10 shadow-inner"
                       style={{ backgroundColor: meta.accentColor }}
                     />
                     <div>

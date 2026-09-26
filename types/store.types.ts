@@ -18,26 +18,6 @@ export interface ContextMenuState {
   targetObject: FabricObject | null
 }
 
-/**
- * CORE SLICE: Manages the canvas initialization, global selections,
- * artboard dimensions, and adding/removing base objects.
- */
-export interface CoreSlice {
-  canvas: Canvas | null
-  activeObject: FabricObject | null
-  activeMobileTab: MobileTab
-  artboard: { width: number; height: number }
-
-  setCanvas: (canvas: Canvas) => void
-  setActiveObject: (obj: FabricObject | null) => void
-  setActiveMobileTab: (tab: MobileTab) => void
-  setAspectRatio: (width: number, height: number) => void
-  addText: (type: TextBlockType) => void
-  addImage: () => void
-  deleteActiveObject: (targetObj?: FabricObject | null) => void
-  clearCanvas: () => void
-}
-
 export interface FontSlice {
   customFonts: CustomFontMetadata[]
   customFontsLoading: boolean
@@ -203,7 +183,23 @@ export interface ContextMenuState {
  * CORE SLICE: Manages the canvas initialization, global selections,
  * artboard dimensions, and adding/removing base objects.
  */
+
+export interface DialogConfig {
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  onConfirm?: () => void
+  onCancel?: () => void
+  onClose?: () => void
+}
+
 export interface CoreSlice {
+  confirmDialog: DialogConfig | null
+  alertDialog: DialogConfig | null
+  setConfirmDialog: (config: DialogConfig | null) => void
+  setAlertDialog: (config: DialogConfig | null) => void
+
   canvas: Canvas | null
   activeObject: FabricObject | null
   activeMobileTab: MobileTab

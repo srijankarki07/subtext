@@ -36,7 +36,7 @@ export default function HistoryDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         title="Browse History Stack"
-        className={`relative flex cursor-pointer items-center justify-center rounded-lg p-1.5 transition-all active:scale-95 ${
+        className={`relative flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all active:scale-95 ${
           isOpen
             ? "bg-[#D6B47A]/20 text-[#D6B47A]"
             : "text-white/50 hover:bg-white/[0.08] hover:text-white"
@@ -52,7 +52,7 @@ export default function HistoryDropdown() {
 
       {/* TIMELINE POPOVER */}
       {isOpen && (
-        <div className="absolute top-10 left-0 z-[150] w-72 animate-in overflow-hidden rounded-lg border border-white/[0.1] bg-[#141414]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in">
+        <div className="absolute top-10 left-0 z-[150] w-72 animate-in overflow-hidden rounded-md border border-white/[0.1] bg-[#141414]/95 p-3 font-sans text-white shadow-2xl backdrop-blur-2xl duration-150 zoom-in-95 fade-in">
           {/* HEADER */}
           <div className="mb-2.5 flex items-center justify-between border-b border-white/[0.06] px-1 pb-2">
             <div className="flex items-center gap-1.5">

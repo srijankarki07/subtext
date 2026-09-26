@@ -113,7 +113,7 @@ export default function TextPanel() {
             Canvas Alignment
           </h3>
         </div>
-        <div className="grid grid-cols-6 gap-1 rounded-xl border border-white/[0.05] bg-white/[0.04] p-1.5">
+        <div className="grid grid-cols-6 gap-1 rounded-md border border-white/[0.05] bg-white/[0.04] p-1.5">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
             onClick={() => alignObjectToCanvas("left")}
@@ -151,7 +151,7 @@ export default function TextPanel() {
             Partial select supported
           </span>
         </div>
-        <div className="flex items-center justify-between rounded-xl bg-white/[0.04] p-1">
+        <div className="flex items-center justify-between rounded-md bg-white/[0.04] p-1">
           <div className="flex gap-1">
             <FormatButton
               icon={<AlignLeft size={16} />}
@@ -370,7 +370,7 @@ export default function TextPanel() {
       <div className="pt-2">
         <button
           onClick={() => deleteActiveObject()}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
         >
           <Trash2 size={16} />
           Delete Element

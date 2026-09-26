@@ -142,7 +142,7 @@ export default function EffectsPanel() {
         {vignettes.map((v) => (
           <div
             key={v.id}
-            className="relative space-y-3 rounded-xl border border-white/[0.1] bg-white/[0.03] p-3"
+            className="relative space-y-3 rounded-md border border-white/[0.1] bg-white/[0.03] p-3"
           >
             <div className="flex items-center justify-between text-[11px] font-medium text-white/80">
               <span className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export default function EffectsPanel() {
 
             <button
               onClick={() => removeVignette(v.id)}
-              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
+              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
             >
               <Trash2 size={12} /> Remove Vignette
             </button>
@@ -203,7 +203,7 @@ export default function EffectsPanel() {
 
         <button
           onClick={() => addVignette()}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
         >
           <Plus size={14} /> Add Vignette Layer
         </button>
@@ -308,7 +308,7 @@ export default function EffectsPanel() {
           {letterboxes.map((l) => (
             <div
               key={l.id}
-              className="flex items-center justify-between rounded-lg bg-white/[0.04] p-2"
+              className="flex items-center justify-between rounded-md bg-white/[0.04] p-2"
             >
               <span className="text-[10px] text-white/50">
                 Draggable bars on canvas
@@ -356,7 +356,7 @@ export default function EffectsPanel() {
           {blurZones.map((b) => (
             <div
               key={b.id}
-              className="relative space-y-3 rounded-lg border border-white/10 bg-white/[0.04] p-3"
+              className="relative space-y-3 rounded-md border border-white/10 bg-white/[0.04] p-3"
             >
               <AppleSlider
                 label="Blur Radius"
@@ -367,7 +367,7 @@ export default function EffectsPanel() {
               />
               <button
                 onClick={() => removeBlurZone(b.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
+                className="flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] text-red-400/80 transition-colors hover:bg-red-500/10"
               >
                 <Trash2 size={12} /> Remove Blur Zone
               </button>
@@ -376,7 +376,7 @@ export default function EffectsPanel() {
 
           <button
             onClick={addBlurZone}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-white/20 bg-white/[0.02] py-2 text-[11px] text-white/60 transition-all hover:bg-white/[0.05] hover:text-white"
           >
             <Plus size={14} /> Add Selective Blur Box
           </button>

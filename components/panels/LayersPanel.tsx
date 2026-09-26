@@ -115,7 +115,7 @@ export default function LayersPanel() {
                 canvas?.requestRenderAll()
                 useEditorStore.getState().setActiveObject(obj)
               }}
-              className={`flex cursor-pointer items-center justify-between rounded-2xl border p-3 transition-all ${
+              className={`flex cursor-pointer items-center justify-between rounded-md border p-3 transition-all ${
                 isSelected
                   ? "border-white/20 bg-white/[0.08] text-white shadow-lg"
                   : "border-white/[0.05] bg-white/[0.02] text-white/60 hover:bg-white/[0.04]"
@@ -152,7 +152,7 @@ export default function LayersPanel() {
                   type="button"
                   onClick={() => toggleLayerVisibility(obj)}
                   title={obj.visible ? "Hide Layer" : "Show Layer"}
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  className="cursor-pointer rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   {obj.visible ? (
                     <Eye size={14} />
@@ -166,7 +166,7 @@ export default function LayersPanel() {
                   type="button"
                   onClick={() => toggleLayerLock(obj)}
                   title={obj.lockMovementX ? "Unlock Layer" : "Lock Layer"}
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  className="cursor-pointer rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   {obj.lockMovementX ? (
                     <Lock size={14} className="text-amber-400" />
@@ -183,7 +183,7 @@ export default function LayersPanel() {
                   disabled={actualIndex === objects.length - 1}
                   onClick={() => moveLayerToIndex(actualIndex, actualIndex + 1)}
                   title="Move Up"
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+                  className="cursor-pointer rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
                 >
                   <ArrowUp size={14} />
                 </button>
@@ -194,7 +194,7 @@ export default function LayersPanel() {
                   disabled={actualIndex === 0}
                   onClick={() => moveLayerToIndex(actualIndex, actualIndex - 1)}
                   title="Move Down"
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+                  className="cursor-pointer rounded-md p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
                 >
                   <ArrowDown size={14} />
                 </button>
@@ -210,7 +210,7 @@ export default function LayersPanel() {
           <button
             type="button"
             onClick={() => deleteActiveObject()}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
           >
             <Trash2 size={16} />
             Delete Selected Layer

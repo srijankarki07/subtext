@@ -88,7 +88,7 @@ export default function ContextMenu() {
                 fitImageToCanvas("fill")
                 closeContextMenu()
               }}
-              className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <span className="flex items-center gap-2.5">
                 <Maximize size={14} className="text-white/60" />
@@ -100,7 +100,7 @@ export default function ContextMenu() {
                 fitImageToCanvas("fit")
                 closeContextMenu()
               }}
-              className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <span className="flex items-center gap-2.5">
                 <Minimize size={14} className="text-white/60" />
@@ -116,7 +116,7 @@ export default function ContextMenu() {
       <div className="space-y-0.5">
         <button
           onClick={bringToFront}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             <ChevronsUp size={14} className="text-white/60" />
@@ -127,7 +127,7 @@ export default function ContextMenu() {
 
         <button
           onClick={bringForward}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             <ArrowUp size={14} className="text-white/60" />
@@ -138,7 +138,7 @@ export default function ContextMenu() {
 
         <button
           onClick={sendBackward}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             <ArrowDown size={14} className="text-white/60" />
@@ -149,7 +149,7 @@ export default function ContextMenu() {
 
         <button
           onClick={sendToBack}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             <ChevronsDown size={14} className="text-white/60" />
@@ -165,7 +165,7 @@ export default function ContextMenu() {
       <div className="space-y-0.5">
         <button
           onClick={duplicateActiveObject}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             <Copy size={14} className="text-white/60" />
@@ -176,7 +176,7 @@ export default function ContextMenu() {
 
         <button
           onClick={() => toggleLayerLock(target)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             {isLocked ? (
@@ -191,7 +191,7 @@ export default function ContextMenu() {
 
         <button
           onClick={() => toggleLayerVisibility(target)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           <span className="flex items-center gap-2.5">
             {isVisible ? (
@@ -209,7 +209,7 @@ export default function ContextMenu() {
       {/* Delete Action */}
       <button
         onClick={() => deleteActiveObject(target)}
-        className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 font-medium text-red-400 transition-colors hover:bg-red-500/20"
+        className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 font-medium text-red-400 transition-colors hover:bg-red-500/20"
       >
         <span className="flex items-center gap-2.5">
           <Trash2 size={14} />

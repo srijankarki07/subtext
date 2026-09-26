@@ -87,7 +87,7 @@ export default function ColorPanel() {
             {/* Smart Auto-Color Button */}
             <button
               onClick={autoColorText}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
+              className="cursor-pointer mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
             >
               <PaintBucket size={16} className="fill-white/20" />
               Smart Auto-Color
@@ -106,7 +106,7 @@ export default function ColorPanel() {
         </div>
 
         {imagePalette.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 text-center text-[13px] text-white/40">
+          <div className="rounded-md border border-white/[0.05] bg-white/[0.02] p-4 text-center text-[13px] text-white/40">
             Upload an image to extract colors.
           </div>
         ) : (
@@ -118,7 +118,7 @@ export default function ColorPanel() {
                 className="group relative flex flex-col items-center gap-2"
               >
                 <div
-                  className="aspect-square w-full rounded-2xl border border-white/10 shadow-inner transition-transform hover:scale-105 active:scale-90"
+                  className="aspect-square w-full rounded-md border border-white/10 shadow-inner transition-transform hover:scale-105 active:scale-90"
                   style={{ backgroundColor: color }}
                 />
                 <span className="font-mono text-[10px] text-white/40 uppercase transition-colors group-hover:text-white/80">

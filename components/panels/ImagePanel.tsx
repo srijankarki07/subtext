@@ -38,7 +38,7 @@ export default function ImagePanel() {
         <div className="flex gap-2">
           <button
             onClick={() => fitImageToCanvas("fill")}
-            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
+            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
           >
             <Maximize size={18} />
             <span className="text-[11px] font-medium">Fill Canvas</span>
@@ -46,7 +46,7 @@ export default function ImagePanel() {
 
           <button
             onClick={() => fitImageToCanvas("fit")}
-            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
+            className="flex flex-1 flex-col items-center justify-center gap-2 rounded-md border border-white/[0.05] bg-white/[0.02] py-4 text-white/70 transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
           >
             <Minimize size={18} />
             <span className="text-[11px] font-medium">Fit to Canvas</span>
@@ -61,7 +61,7 @@ export default function ImagePanel() {
             Alignment
           </h3>
         </div>
-        <div className="grid grid-cols-6 gap-1 rounded-xl border border-white/[0.05] bg-white/[0.04] p-1.5">
+        <div className="grid grid-cols-6 gap-1 rounded-md border border-white/[0.05] bg-white/[0.04] p-1.5">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
             onClick={() => alignObjectToCanvas("left")}
@@ -93,7 +93,7 @@ export default function ImagePanel() {
       <div className="border-t border-white/[0.08] pt-2">
         <button
           onClick={() => deleteActiveObject()}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
         >
           <Trash2 size={16} />
           Remove Image

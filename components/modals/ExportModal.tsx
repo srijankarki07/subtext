@@ -18,6 +18,7 @@ export default function ExportModal() {
     setIsExportModalOpen,
     canvas,
     copyCanvasToClipboard,
+    setAlertDialog,
   } = useEditorStore()
 
   const [format, setFormat] = useState<"png" | "jpg">("png")
@@ -85,7 +86,10 @@ export default function ExportModal() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     } else {
-      alert("Unable to copy to clipboard. Please check browser permissions.")
+      setAlertDialog({
+        title: "Copy Failed",
+        message: "Unable to copy to clipboard. Please check browser permissions."
+      })
     }
   }
 

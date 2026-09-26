@@ -430,18 +430,28 @@ export default function Canvas() {
         </div>
       )}
 
-      {/* 5. CANVAS EMPTY STATE BUTTON */}
+      {/* 5. CANVAS EMPTY STATE */}
       {!hasImage && (
-        <div className="pointer-events-none absolute right-0 bottom-4 left-0 z-40 flex justify-center">
+        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center text-center">
+          <h2 className="text-[15px] font-medium text-[#F5F4EF]">
+            Start with an image
+          </h2>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-[#6E6B63]">
+            Drop a photo here or choose a file
+          </p>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-xs text-white/40 transition-all hover:border-white/25 hover:bg-black/60 hover:text-white"
+            className="pointer-events-auto mt-4 cursor-pointer text-[12px] font-semibold text-[#D5B477] transition-colors hover:text-[#E4C88F]"
           >
-            <ImagePlus size={13} />
-            Upload photo · or drag & drop
+            [ Upload photo ]
           </button>
+          <span className="mt-4 text-[10px] text-[#6E6B63]">
+            Your image stays in your browser.
+          </span>
         </div>
       )}
+
+
     </div>
   )
 }

@@ -45,6 +45,7 @@ export default function FontPicker() {
     customFontError,
     uploadCustomFont,
     removeCustomFont,
+    setConfirmDialog,
   } = useEditorStore()
 
   const [activeCategory, setActiveCategory] = useState<FontFilter>("All")
@@ -162,6 +163,19 @@ export default function FontPicker() {
   }, [activeCategory, allFonts, searchQuery])
 
   /*
+   * If the selected font is hidden because of the current
+   * category/search, we don't want the UI to become confusing.
+   *
+   * Resetting to "All" is optional. I recommend NOT doing it
+   * automatically because it would be surprising to the user.
+   */
+  useEffect(() => {
+    // Intentionally empty.
+    // Kept here as a convenient place for future font-selection
+    // synchronization with external Fabric events.
+  }, [currentFontFamily])
+
+  /*
    * Nothing selected / wrong object type.
    */
   if (!activeObject || activeObject.type !== "i-text") {
@@ -190,18 +204,7 @@ export default function FontPicker() {
     if (uploaded) setActiveCategory("Uploaded")
   }
 
-  /*
-   * If the selected font is hidden because of the current
-   * category/search, we don't want the UI to become confusing.
-   *
-   * Resetting to "All" is optional. I recommend NOT doing it
-   * automatically because it would be surprising to the user.
-   */
-  useEffect(() => {
-    // Intentionally empty.
-    // Kept here as a convenient place for future font-selection
-    // synchronization with external Fabric events.
-  }, [currentFontFamily])
+  
 
   return (
     <div className="flex h-full min-h-0 flex-col pt-2">
@@ -217,7 +220,7 @@ export default function FontPicker() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search fonts..."
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pr-9 pl-9 text-[13px] text-white placeholder-white/40 transition-all focus:border-white/20 focus:bg-white/[0.06] focus:outline-none"
+          className="w-full rounded-md border border-white/[0.08] bg-white/[0.04] py-2.5 pr-9 pl-9 text-[13px] text-white placeholder-white/40 transition-all focus:border-white/20 focus:bg-white/[0.06] focus:outline-none"
         />
 
         {searchQuery && (
@@ -247,7 +250,7 @@ export default function FontPicker() {
           type="button"
           onClick={() => uploadInputRef.current?.click()}
           disabled={customFontsLoading}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#D6B47A]/30 bg-[#D6B47A]/[0.06] px-3 py-2.5 text-[11px] font-medium text-[#D6B47A] transition-colors hover:border-[#D6B47A]/50 hover:bg-[#D6B47A]/[0.1] disabled:cursor-wait disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-[#D6B47A]/30 bg-[#D6B47A]/[0.06] px-3 py-2.5 text-[11px] font-medium text-[#D6B47A] transition-colors hover:border-[#D6B47A]/50 hover:bg-[#D6B47A]/[0.1] disabled:cursor-wait disabled:opacity-60"
         >
           {customFontsLoading ? (
             <Loader2 size={14} className="animate-spin" />
@@ -266,7 +269,7 @@ export default function FontPicker() {
       {/* CURRENT FONT */}
 
       {currentFont && (
-        <div className="mb-3 shrink-0 rounded-lg border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-white/[0.04] to-transparent p-3.5 shadow-[0_0_25px_rgba(59,130,246,0.05)]">
+        <div className="mb-3 shrink-0 rounded-md border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-white/[0.04] to-transparent p-3.5 shadow-[0_0_25px_rgba(59,130,246,0.05)]">
           {/* Header */}
           <div className="mb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -449,9 +452,12 @@ export default function FontPicker() {
                     title="Remove uploaded font"
                     onClick={(event) => {
                       event.stopPropagation()
-                      if (confirm(`Remove ${font.name} from uploaded fonts?`)) {
-                        void removeCustomFont(font.customFontId!)
-                      }
+                      setConfirmDialog({
+                        title: "Remove Font",
+                        message: `Remove ${font.name} from uploaded fonts?`,
+                        confirmText: "Remove",
+                        onConfirm: () => void removeCustomFont(font.customFontId!)
+                      })
                     }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
