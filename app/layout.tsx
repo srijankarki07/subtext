@@ -61,7 +61,6 @@ import {
   Yeseva_One,
 } from "next/font/google"
 
-import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Metadata } from "next"
 import "./globals.css"
@@ -72,12 +71,15 @@ import "./globals.css"
 
 const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-sans",
+  // Deliberately not "--font-sans": that name is Tailwind's own theme token,
+  // and the two definitions collided (globals.css had a circular
+  // `--font-sans: var(--font-sans)` as a result).
+  variable: "--font-geist-sans",
 })
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
 })
 
 // ============================================================
@@ -485,13 +487,12 @@ export default function RootLayout({
           spaceMono.variable,
           azeretMono.variable,
 
-          // Existing body styling
-          "bg-black",
-          "text-white",
+          // Surface colours come from the theme tokens in globals.css so the
+          // warm-paper palette has a single source of truth.
           "antialiased"
         )}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        {children}
       </body>
     </html>
   )
