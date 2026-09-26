@@ -1,12 +1,59 @@
 import { CINEMATIC_PRESETS } from "@/lib/filters"
-import { DOCUMENT_PROPERTIES, bindBlurHandleListeners } from "@/lib/fabricDocument"
+import {
+  DOCUMENT_PROPERTIES,
+  bindBlurHandleListeners,
+} from "@/lib/fabricDocument"
 import { importImage, pickImageFile } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
-import { IText, Shadow } from "fabric"
+import { Canvas, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
 const STORAGE_KEY = "Subtext_saved_project"
+
+/**
+ * Zoom limits. Below the minimum the artboard is unreachable; above the
+ * maximum it is a blurry upscale with no extra detail to show.
+ */
+export const MIN_ZOOM = 0.05
+export const MAX_ZOOM = 3
+
+const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
+
+/**
+ * Applies the artboard's on-screen scale.
+ *
+ * This is a CSS-only resize: the Fabric backstore keeps the artboard's logical
+ * size, so object coordinates, hit testing and `toDataURL` all stay in document
+ * units. `setDimensions(..., { cssOnly: true })` sizes the visible canvas, the
+ * selection canvas and the `.canvas-container` together, which is what lets the
+ * workspace scroll a zoomed-in artboard.
+ */
+function applyCanvasZoom(
+  canvas: Canvas | null,
+  artboard: { width: number; height: number },
+  zoom: number
+) {
+  if (!canvas) return
+  canvas.setDimensions(
+    {
+      width: `${Math.round(artboard.width * zoom)}px`,
+      height: `${Math.round(artboard.height * zoom)}px`,
+    },
+    { cssOnly: true }
+  )
+}
+
+/** The largest scale at which the whole artboard fits the available space. */
+function fitScale(
+  viewport: { width: number; height: number },
+  artboard: { width: number; height: number }
+) {
+  if (viewport.width <= 0 || viewport.height <= 0) return 1
+  return clampZoom(
+    Math.min(viewport.width / artboard.width, viewport.height / artboard.height)
+  )
+}
 
 export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   set,
@@ -26,6 +73,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   clipboardObject: null,
   documentTitle: "Untitled",
   isDirty: false,
+  zoom: 1,
+  isFit: true,
+  viewport: { width: 0, height: 0 },
 
   setCanvas: (canvas) => {
     set({ canvas })
@@ -33,6 +83,39 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   setDocumentTitle: (documentTitle) => set({ documentTitle }),
+
+  /**
+   * Called by the workspace's ResizeObserver. While the view is in fit mode
+   * this re-fits, which is what keeps the artboard correctly sized when a panel
+   * opens, the window resizes or the inspector is toggled.
+   */
+  setViewport: (width, height) => {
+    const { viewport, isFit } = get()
+    if (viewport.width === width && viewport.height === height) return
+
+    set({ viewport: { width, height } })
+    if (isFit) get().fitToViewport()
+  },
+
+  setZoom: (zoom) => {
+    const { canvas, artboard } = get()
+    const next = clampZoom(zoom)
+    set({ zoom: next, isFit: false })
+    applyCanvasZoom(canvas, artboard, next)
+    canvas?.requestRenderAll()
+  },
+
+  zoomBy: (factor) => {
+    get().setZoom(get().zoom * factor)
+  },
+
+  fitToViewport: () => {
+    const { canvas, artboard, viewport } = get()
+    const scale = fitScale(viewport, artboard)
+    set({ zoom: scale, isFit: true })
+    applyCanvasZoom(canvas, artboard, scale)
+    canvas?.requestRenderAll()
+  },
 
   checkSavedProject: () => {
     if (typeof window === "undefined") return
@@ -61,7 +144,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     try {
       // In Fabric v6, toObject() accepts custom property arrays, whereas toJSON() takes 0 arguments
-      const canvasJson = canvas.toObject(DOCUMENT_PROPERTIES as unknown as string[])
+      const canvasJson = canvas.toObject(
+        DOCUMENT_PROPERTIES as unknown as string[]
+      )
 
       const payload = {
         canvasJson,
@@ -80,7 +165,11 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       }
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-      set({ hasSavedProject: true, lastSavedAt: payload.savedAt, isDirty: false })
+      set({
+        hasSavedProject: true,
+        lastSavedAt: payload.savedAt,
+        isDirty: false,
+      })
       return true
     } catch (error) {
       console.error("Failed to save project to localStorage:", error)
@@ -174,29 +263,22 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
   setAspectRatio: (width, height) => {
-    const { canvas, saveHistoryState } = get()
+    const { canvas, saveHistoryState, isFit, zoom } = get()
     if (!canvas) return
 
     set({ artboard: { width, height } })
 
-    // 1. Synchronize logical canvas coordinate dimensions
+    // 1. Synchronize logical canvas coordinate dimensions. This is the document
+    //    size — the thing that gets exported — and is independent of zoom.
     canvas.setDimensions({ width, height })
 
-    // 2. Scale visually with CSS to fit container
-    const container = canvas.getElement().parentElement?.parentElement
-    if (container) {
-      const scale = Math.min(
-        (container.clientWidth - 80) / width,
-        (container.clientHeight - 80) / height
-      )
-
-      canvas.setDimensions(
-        {
-          width: `${Math.round(width * scale)}px`,
-          height: `${Math.round(height * scale)}px`,
-        },
-        { cssOnly: true }
-      )
+    // 2. Re-fit, or re-apply the user's zoom to the new aspect. The old code
+    //    computed a scale once here and never revisited it, so opening a panel
+    //    or resizing the window left the artboard at a stale size.
+    if (isFit) {
+      get().fitToViewport()
+    } else {
+      applyCanvasZoom(canvas, { width, height }, zoom)
     }
 
     // 3. Adapt existing letterboxes and vignettes to the new aspect ratio
@@ -581,7 +663,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (!activeObject || activeObject.lockMovementX) return
 
     // Clone the active element and keep an in-memory reference
-    const cloned = await activeObject.clone(DOCUMENT_PROPERTIES as unknown as string[])
+    const cloned = await activeObject.clone(
+      DOCUMENT_PROPERTIES as unknown as string[]
+    )
     set({ clipboardObject: cloned })
   },
 
@@ -598,7 +682,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (!canvas || !clipboardObject) return
 
     // Clone the clipboard copy so multiple pastes create independent objects
-    const cloned = await clipboardObject.clone(DOCUMENT_PROPERTIES as unknown as string[])
+    const cloned = await clipboardObject.clone(
+      DOCUMENT_PROPERTIES as unknown as string[]
+    )
     canvas.discardActiveObject()
 
     cloned.set({

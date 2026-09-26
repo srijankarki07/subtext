@@ -202,12 +202,29 @@ export interface CoreSlice {
   /** True when the document has changed since the last save. */
   isDirty: boolean
 
+  /**
+   * The artboard's on-screen scale. 1 means the artboard is displayed at its
+   * logical size. Applied as a CSS size on the Fabric canvas, so logical
+   * coordinates and export are unaffected.
+   */
+  zoom: number
+  /** True while `zoom` is derived from the available space rather than the user. */
+  isFit: boolean
+  /** Last measured size of the scrollable workspace, used to compute fit. */
+  viewport: { width: number; height: number }
+
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
   setDocumentTitle: (title: string) => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void
+
+  // Canvas view. `setViewport` is called by the workspace's ResizeObserver.
+  setViewport: (width: number, height: number) => void
+  setZoom: (zoom: number) => void
+  zoomBy: (factor: number) => void
+  fitToViewport: () => void
   addText: (type: TextBlockType) => void
   addImage: () => void
   deleteActiveObject: (targetObj?: FabricObject | null) => void
