@@ -352,7 +352,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.discardActiveObject()
     canvas.requestRenderAll()
 
-    set({ activeObject: null, contrastStats: null })
+    set({ activeObject: null, visibility: null })
     closeContextMenu()
     saveHistoryState()
   },
@@ -437,7 +437,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     set({
       activeObject: null,
-      contrastStats: null,
+      visibility: null,
       imagePalette: [],
       vignettes: [],
       blurZones: [],
@@ -615,7 +615,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       get().setActiveObject(quoteObject)
       get().calculateContrast()
 
-      if (get().contrastStats?.badge === "FAIL") {
+      if (get().visibility?.badge === "FAIL") {
         get().autoColorText()
       }
     }

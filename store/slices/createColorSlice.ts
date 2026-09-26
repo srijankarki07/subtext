@@ -1,19 +1,60 @@
 import {
-  getComplianceBadge,
-  getContrastRatio,
-  getSmartTextColor,
-  getVisibilityScore,
-} from "@/lib/colorUtils"
+  analyseRegion,
+  buildReport,
+  rankColours,
+  type RegionStats,
+  type ReportInput,
+} from "@/lib/visibility"
 import { ColorSlice, EditorStore } from "@/types/store.types"
 import { IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
+
+/**
+ * Roughly how many pixels to inspect per pass.
+ *
+ * The region under a quote can be over a million pixels on a 1080px artboard.
+ * Walking all of them on every pointer move is what made dragging text feel
+ * heavy, and it buys nothing: a percentile of a 20k-pixel sample is already
+ * stable to well under a percent.
+ */
+const TARGET_SAMPLES = 20_000
+
+/** Frame handle for `scheduleContrast`, module-scoped so it survives renders. */
+let contrastFrame: number | null = null
+
+/** States the object can leave the region sample in. */
+function readRegion(
+  canvas: NonNullable<EditorStore["canvas"]>,
+  rect: { left: number; top: number; width: number; height: number },
+  quality: "fast" | "full"
+): RegionStats {
+  const retina = canvas.getRetinaScaling()
+  const ctx = canvas.getContext()
+
+  const canvasWidth = canvas.getWidth() * retina
+  const canvasHeight = canvas.getHeight() * retina
+
+  const left = Math.max(0, Math.floor(rect.left * retina))
+  const top = Math.max(0, Math.floor(rect.top * retina))
+  const width = Math.max(1, Math.min(Math.ceil(rect.width * retina), canvasWidth - left))
+  const height = Math.max(1, Math.min(Math.ceil(rect.height * retina), canvasHeight - top))
+
+  const data = ctx.getImageData(left, top, width, height).data
+
+  const pixels = width * height
+  const budgeted = Math.sqrt(pixels / TARGET_SAMPLES)
+  const floor = quality === "fast" ? 3 : 1
+  const stride = Math.max(floor, Math.floor(budgeted))
+
+  return analyseRegion(data, { stride })
+}
 
 export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
   set,
   get
 ) => ({
   imagePalette: [],
-  contrastStats: null,
+  visibility: null,
   isPickingColor: false,
   colorPickerTarget: null,
   pickerSnapshot: null,
@@ -238,125 +279,92 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
     }
   },
 
-  calculateContrast: () => {
+  calculateContrast: (quality = "full") => {
     const { canvas, activeObject } = get()
 
-    // Contrast only applies to Text layers
+    // Readability only means anything for text.
     if (!canvas || !activeObject || activeObject.type !== "i-text") {
-      set({ contrastStats: null })
+      set({ visibility: null })
       return
     }
 
-    // Step 1: Temporarily hide the text object so we can sample the exact background color beneath it
-    activeObject.set("visible", false)
+    const text = activeObject as IText
+    const shadow = text.get("shadow") as Shadow | null
+
+    // Fabric scales through scaleX/scaleY and leaves fontSize untouched, so a
+    // quote dragged from 40px to 200px used to report 40px — which meant the
+    // size bonus, and the choice of contrast threshold, were both wrong.
+    const scale = Math.abs(text.scaleX ?? 1)
+    const fontSize = ((text.get("fontSize") as number) || 40) * scale
+
+    const rawWeight = text.get("fontWeight")
+    const fontWeight =
+      typeof rawWeight === "number"
+        ? rawWeight
+        : rawWeight === "bold"
+          ? 700
+          : 400
+
+    const strokeWidth = (text.get("strokeWidth") as number) || 0
+
+    // Hide the text so the sample is of what is actually behind it.
+    text.set("visible", false)
     canvas.renderAll()
 
+    let region: RegionStats
     try {
-      const rect = activeObject.getBoundingRect()
-      const ctx = canvas.getContext()
-      const retinaScaling = canvas.getRetinaScaling() // Handle high-DPI displays properly
-
-      // Convert Fabric coordinates to actual canvas device pixels
-      const left = Math.max(0, Math.floor(rect.left * retinaScaling))
-      const top = Math.max(0, Math.floor(rect.top * retinaScaling))
-      const width = Math.max(
-        1,
-        Math.min(
-          Math.ceil(rect.width * retinaScaling),
-          canvas.getWidth() * retinaScaling - left
-        )
-      )
-      const height = Math.max(
-        1,
-        Math.min(
-          Math.ceil(rect.height * retinaScaling),
-          canvas.getHeight() * retinaScaling - top
-        )
-      )
-
-      // Extract all pixels currently sitting in the bounding box area of the text
-      const imageData = ctx.getImageData(left, top, width, height)
-
-      // Step 2: Unhide the text immediately. Because this happens in the same JS execution frame, the user never sees a flicker.
-      activeObject.set("visible", true)
-      canvas.renderAll()
-
-      let r = 0,
-        g = 0,
-        b = 0,
-        count = 0
-
-      // Step 3: Average the RGB values to get the dominant background color.
-      // We increment by 16 (skipping 4 pixels at a time) for a massive performance boost,
-      // ensuring the UI doesn't lag while dragging text around.
-      for (let i = 0; i < imageData.data.length; i += 16) {
-        r += imageData.data[i]
-        g += imageData.data[i + 1]
-        b += imageData.data[i + 2]
-        count++
-      }
-
-      if (count === 0) {
-        set({ contrastStats: null })
-        return
-      }
-
-      r = Math.round(r / count)
-      g = Math.round(g / count)
-      b = Math.round(b / count)
-
-      const bgHex =
-        "#" +
-        [r, g, b]
-          .map((value) => value.toString(16).padStart(2, "0"))
-          .join("")
-          .toUpperCase()
-
-      const textFill = (activeObject.get("fill") as string) || "#FFFFFF"
-      const fontSize = (activeObject.get("fontSize") as number) || 40
-      const rawWeight = activeObject.get("fontWeight")
-      const fontWeight =
-        typeof rawWeight === "number"
-          ? rawWeight
-          : rawWeight === "bold"
-            ? 700
-            : 400
-
-      // Step 4: Run standard WCAG formula to determine readability scores
-      const contrastRatio = getContrastRatio(textFill, bgHex)
-      const score = getVisibilityScore(contrastRatio, fontSize, fontWeight)
-      const badge = getComplianceBadge(contrastRatio, fontSize, fontWeight)
-
-      set({
-        contrastStats: { ratio: contrastRatio, score, badge, bgColor: bgHex },
-      })
+      region = readRegion(canvas, text.getBoundingRect(), quality)
     } catch (error) {
-      // Failsafe to ensure object is never permanently invisible if something crashes
-      activeObject.set("visible", true)
+      console.error("Could not sample the region behind the text:", error)
+      set({ visibility: null })
+      return
+    } finally {
+      // Runs in the same frame, so the user never sees a flicker — and it runs
+      // even if sampling threw, so the text can never be left invisible.
+      text.set("visible", true)
       canvas.renderAll()
-      set({ contrastStats: null })
     }
+
+    const input: ReportInput = {
+      region,
+      fill: (text.get("fill") as string) || "#FFFFFF",
+      stroke: strokeWidth > 0 ? (text.get("stroke") as string) : undefined,
+      strokeWidth,
+      shadowColor: shadow?.color,
+      shadowBlur: shadow?.blur,
+      shadowOffset: Math.abs(shadow?.offsetX ?? 0) + Math.abs(shadow?.offsetY ?? 0),
+      fontSize,
+      fontWeight,
+    }
+
+    set({ visibility: buildReport(input) })
+  },
+
+  /**
+   * Frame-throttled recalculation.
+   *
+   * `object:moving` fires on every pointer event, and each pass costs a GPU
+   * readback. Collapsing those to one per frame is what makes dragging cheap;
+   * the caller still does a full-precision pass on `object:modified`.
+   */
+  scheduleContrast: (quality = "fast") => {
+    if (typeof window === "undefined") return
+    if (contrastFrame !== null) return
+
+    contrastFrame = window.requestAnimationFrame(() => {
+      contrastFrame = null
+      get().calculateContrast(quality)
+    })
   },
 
   autoColorText: () => {
-    const { activeObject, contrastStats, imagePalette, applyTextStyle } = get()
+    const { activeObject, visibility, imagePalette, applyTextStyle } = get()
+    if (!activeObject || activeObject.type !== "i-text" || !visibility) return
 
-    // We need a text object and calculated contrast background color to proceed
-    if (!activeObject || activeObject.type !== "i-text" || !contrastStats)
-      return
-
-    const currentTextHex = (activeObject.get("fill") as string) || "#FFFFFF"
-    const bgHex = contrastStats.bgColor
-
-    // Pass the user's current color, the exact background color, and the cinematic palette
-    // into the harmony engine to calculate the most aesthetic, WCAG-compliant color.
-    const optimalTextColor = getSmartTextColor(
-      currentTextHex,
-      bgHex,
-      imagePalette
-    )
-
-    // Apply the intelligent color
-    applyTextStyle("fill", optimalTextColor)
+    // Ranked rather than filtered: the previous version discarded every
+    // candidate below 4.5:1 even for display type, where WCAG asks for 3:1, so
+    // it rejected good colours on the user's behalf.
+    const [best] = rankColours(visibility, imagePalette, 1)
+    if (best) applyTextStyle("fill", best.color)
   },
 })
