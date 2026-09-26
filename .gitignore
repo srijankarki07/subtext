@@ -35,6 +35,12 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
+# local planning docs and design references (kept out of the repo)
 /DESIGN
 PLAN.md
+design.md
+project-plan.jsx
+image.png
+
+# one-off codemod scripts archived from the repo root
+/scratch

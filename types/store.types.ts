@@ -106,8 +106,10 @@ export interface ColorSlice {
   getActiveSelectionStyle: (key: string) => any
 }
 
-// src/types/store.types.ts (Replace only the EffectSlice part)
-
+/**
+ * EFFECT SLICE: Manages image grading, overlays and the multi-instance effect layers
+ * (vignettes, blur zones, letterbox bars) that sit on top of the artwork.
+ */
 export interface VignetteState {
   id: string
   opacity: number
@@ -163,20 +165,6 @@ export interface EffectSlice {
 
   addLetterbox: (thicknessRatio: number) => void
   removeLetterbox: (id: string) => void
-}
-
-export interface ContrastStats {
-  ratio: number
-  score: number
-  badge: "AAA" | "AA" | "FAIL"
-  bgColor: string
-}
-
-export interface ContextMenuState {
-  visible: boolean
-  x: number
-  y: number
-  targetObject: FabricObject | null
 }
 
 /**
