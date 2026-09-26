@@ -2,6 +2,7 @@ import { CINEMATIC_PRESETS } from "@/lib/filters"
 import {
   DOCUMENT_PROPERTIES,
   bindBlurHandleListeners,
+  withoutEditorChrome,
 } from "@/lib/fabricDocument"
 import { applyGrain } from "@/lib/grain"
 import { importImage, pickImageFile } from "@/lib/imageImport"
@@ -634,12 +635,16 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.requestRenderAll()
 
     try {
-      // 2. toCanvasElement takes 'multiplier' directly as a number in Fabric
-      const tempCanvas = canvas.toCanvasElement(scale)
-
-      // Grain has to be composited here too, or the clipboard copy would be the
-      // one output that silently differs from the screen.
-      applyGrain(tempCanvas, get().grainIntensity, { scale })
+      // 2. toCanvasElement takes 'multiplier' directly as a number in Fabric.
+      //    Editor-only objects are hidden for the render, and grain is
+      //    composited here too, or the clipboard copy would be the one output
+      //    that silently differs from the screen.
+      const grainIntensity = get().grainIntensity
+      const tempCanvas = withoutEditorChrome(canvas, () => {
+        const element = canvas.toCanvasElement(scale)
+        applyGrain(element, grainIntensity, { scale })
+        return element
+      })
 
       // 3. Convert to PNG Blob via HTMLCanvasElement.toBlob
       let blob = await new Promise<Blob | null>((resolve) => {
