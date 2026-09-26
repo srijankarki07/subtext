@@ -71,6 +71,15 @@ export default function EditorShell() {
   const initializeCustomFonts = useEditorStore((s) => s.initializeCustomFonts)
 
   const [activeTool, setActiveTool] = useState<EditorTool>("text")
+  /**
+   * Whether the context panel is showing.
+   *
+   * Kept separate from `activeTool` on purpose. The panel used to be hidden by
+   * switching the active tool to "select", which conflated "which panel" with
+   * "is a panel showing" — so collapsing the panel also dropped the tool
+   * selection, and the rail highlighted a tool the user had not chosen.
+   */
+  const [isPanelOpen, setIsPanelOpen] = useState(true)
   const [isInspectorOpen, setIsInspectorOpen] = useState(false)
   const [userToggledInspector, setUserToggledInspector] = useState(false)
 
@@ -95,6 +104,69 @@ export default function EditorShell() {
     setUserToggledInspector(true)
   }
 
+  /**
+   * Tool selection doubles as the panel toggle, the way it does in Figma and
+   * Canva: picking the tool that is already active collapses the panel, and
+   * picking any other tool opens it. "Select" is a mode rather than a panel,
+   * so it always collapses.
+   */
+  const handleToolChange = (tool: EditorTool) => {
+    if (tool === "select") {
+      setActiveTool("select")
+      setIsPanelOpen(false)
+      return
+    }
+
+    if (tool === activeTool) {
+      setIsPanelOpen((open) => !open)
+      return
+    }
+
+    setActiveTool(tool)
+    setIsPanelOpen(true)
+  }
+
+  // The tool rail advertises these keys in its tooltips, so they need to work.
+  useEffect(() => {
+    const TOOL_KEYS: Record<string, EditorTool> = {
+      v: "select",
+      t: "text",
+      m: "media",
+      p: "templates",
+      c: "cinema",
+      l: "layers",
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return
+
+      const target = event.target
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
+        return
+      }
+
+      // Never steal keys while a text layer is being edited on the canvas.
+      const active = useEditorStore.getState().activeObject as
+        | { isEditing?: boolean }
+        | null
+      if (active?.isEditing) return
+
+      const tool = TOOL_KEYS[event.key.toLowerCase()]
+      if (!tool) return
+
+      event.preventDefault()
+      handleToolChange(tool)
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTool])
+
   return (
     <TooltipProvider>
       <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background font-sans text-foreground antialiased lg:flex-row">
@@ -102,12 +174,18 @@ export default function EditorShell() {
         <ExportModal />
         <GlobalDialogs />
 
-        <ToolRail activeTool={activeTool} onToolChange={setActiveTool} />
-
-        <ContextPanel
+        <ToolRail
           activeTool={activeTool}
-          onClose={() => setActiveTool("select")}
+          isPanelOpen={isPanelOpen}
+          onToolChange={handleToolChange}
         />
+
+        {isPanelOpen && activeTool !== "select" && (
+          <ContextPanel
+            activeTool={activeTool}
+            onClose={() => setIsPanelOpen(false)}
+          />
+        )}
 
         <main className="relative flex min-w-0 flex-1 flex-col">
           <TopBar
