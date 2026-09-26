@@ -35,13 +35,19 @@
 
 @theme inline {
   /* ---- typography -------------------------------------------------------- */
-  /* --font-geist-sans / --font-geist-mono are set by next/font in app/layout.tsx */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif;
+  /* The --font-* variables themselves are set by next/font in app/layout.tsx. */
+  /* Open Sauce Sans first: it is the product's face. Geist remains behind it so
+     a metric-sensitive surface still has a tuned fallback while the new face
+     settles. */
+  --font-sans: var(--font-open-sauce), var(--font-geist-sans), ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
     Monaco, monospace;
   --font-serif: Georgia, "Times New Roman", serif;
   --font-heading: var(--font-sans);
+  /* One heavy display cut, for the largest labels only. */
+  --font-display: var(--font-peace-sans), var(--font-open-sauce),
+    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -107,6 +113,17 @@
   --color-on-workspace-faint: var(--on-workspace-faint);
   --color-on-workspace-hairline: var(--on-workspace-hairline);
 
+  /* ---- landing modules: deliberately *not* indirect ----------------------- */
+  /* Fixed dark panels, so they look the same in both themes. See the note on
+     the values themselves. */
+  --color-module-dark: var(--module-dark);
+  --color-module-dark-raised: var(--module-dark-raised);
+  --color-module-dark-border: var(--module-dark-border);
+  --color-module-dark-hairline: var(--module-dark-hairline);
+  --color-on-module: var(--on-module);
+  --color-on-module-muted: var(--on-module-muted);
+  --color-module-glow: var(--module-glow);
+
   /* ---- quiet surfaces, indirect for the same reason ---------------------- */
   /* These used to be literals like `bg-subtle`, which is invisible on a
      dark surface. Naming them is what makes a dark theme possible at all. */
@@ -161,7 +178,16 @@
   --secondary: #f1f0ee;
   --secondary-foreground: #000000;
   --muted: #f1f0ee;
-  --muted-foreground: #757575;
+  /*
+   * Aliased to `--text-muted` rather than repeating DESIGN/ stone.
+   *
+   * They were two copies of the same value, which is how the contrast fix below
+   * missed this one: `--text-muted` was darkened to clear 4.5:1 and this stayed
+   * at the failing #757575, so anything using shadcn's name for it — the
+   * installed footer blocks, for instance — kept rendering non-compliant text.
+   * One name, one value.
+   */
+  --muted-foreground: var(--text-muted);
 
   /* `accent` is shadcn's subtle highlight surface, not the brand colour. */
   --accent: #efeeec;
@@ -206,6 +232,31 @@
   --on-workspace-muted: rgb(245 244 239 / 0.66);
   --on-workspace-faint: rgb(245 244 239 / 0.44);
   --on-workspace-hairline: rgb(255 255 255 / 0.10);
+
+  /*
+   * The landing page's dark modules.
+   *
+   * Fixed rather than themed, and that is the point: these panels are the page's
+   * own artwork, so they stay dark in light mode and dark mode alike. A themed
+   * "dark card" would invert with the rest of the chrome and lose the contrast
+   * the layout is built on.
+   *
+   * Measured, not eyeballed: `--on-module` is 17.9:1 on the base tone and 16.6:1
+   * on the raised one; `--on-module-muted` is 7.9:1 and 7.3:1, so body copy
+   * clears 4.5:1 on either.
+   *
+   * One caveat worth knowing before styling with them: `--primary` on
+   * `--module-dark` is only 4.2:1, so the accent is not legible enough for small
+   * text on these panels — use it for fills, rules, glows and display-size type,
+   * and take the muted greys or white for anything you expect people to read.
+   */
+  --module-dark: #0e0e10;
+  --module-dark-raised: #17171b;
+  --module-dark-border: rgb(255 255 255 / 9%);
+  --module-dark-hairline: rgb(255 255 255 / 6%);
+  --on-module: #f6f6f7;
+  --on-module-muted: #a5a5ad;
+  --module-glow: rgb(0 117 222 / 22%);
 
   /* Quiet surfaces layered on the chrome: segmented-control tracks, icon-button
      hover, the alignment button groups. */
