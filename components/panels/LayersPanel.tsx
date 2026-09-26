@@ -102,7 +102,7 @@ export default function LayersPanel() {
         title="Layers"
         description="Top of the list is front-most."
         action={
-          <span className="rounded-full bg-black/[0.05] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] tabular-nums">
+          <span className="rounded-full bg-subtle px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] tabular-nums">
             {objects.length}
           </span>
         }
@@ -142,7 +142,7 @@ export default function LayersPanel() {
                 onClick={() => select(layer.obj)}
                 className={cn(
                   "relative flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors",
-                  isSelected ? "bg-primary/[0.08]" : "hover:bg-black/[0.04]",
+                  isSelected ? "bg-primary/[0.08]" : "hover:bg-subtle-hover",
                   draggedIndex === actualIndex && "opacity-40"
                 )}
               >

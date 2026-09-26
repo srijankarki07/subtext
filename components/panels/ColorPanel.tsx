@@ -70,7 +70,7 @@ export default function ColorPanel() {
                     "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
                     failing
                       ? "bg-destructive/10 text-destructive"
-                      : "bg-emerald-600/10 text-emerald-700"
+                      : "bg-emerald-600/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"
                   )}
                 >
                   {failing ? (
@@ -86,7 +86,7 @@ export default function ColorPanel() {
                 <span className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
                   Background
                   <span
-                    className="size-3 rounded-full border border-black/15"
+                    className="size-3 rounded-full border border-swatch-edge"
                     style={{ backgroundColor: contrastStats.bgColor }}
                   />
                   <span className="font-mono">{contrastStats.bgColor}</span>
@@ -129,10 +129,10 @@ export default function ColorPanel() {
                 type="button"
                 onClick={() => applyColor(color)}
                 aria-label={`Apply ${color}`}
-                className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-lg p-1 outline-none transition-colors hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-lg p-1 outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
               >
                 <span
-                  className="aspect-square w-full rounded-md border border-black/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] transition-transform group-hover:scale-[1.03] group-active:scale-95"
+                  className="aspect-square w-full rounded-md border border-swatch-edge shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] transition-transform group-hover:scale-[1.03] group-active:scale-95"
                   style={{ backgroundColor: color }}
                 />
                 <span className="font-mono text-[10px] text-[var(--text-muted)] uppercase">

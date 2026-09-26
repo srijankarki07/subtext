@@ -64,7 +64,7 @@ export function ColorCircle({
     <button
       type="button"
       className={cn(
-        "size-6 shrink-0 cursor-pointer rounded-full border border-black/15 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]",
+        "size-6 shrink-0 cursor-pointer rounded-full border border-swatch-edge shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]",
         "transition-transform outline-none hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95",
         className
       )}
@@ -92,7 +92,7 @@ export function PresetButton({
         "outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]",
         isDanger
           ? "text-[var(--text-muted)] hover:bg-destructive/10 hover:text-destructive"
-          : "border border-border bg-white text-[var(--text-secondary)] hover:bg-black/[0.03] hover:text-foreground"
+          : "border border-border bg-card text-[var(--text-secondary)] hover:bg-subtle-hover hover:text-foreground"
       )}
     >
       {label}

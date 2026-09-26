@@ -89,7 +89,7 @@ export default function EffectsPanel() {
   }
 
   const dashedButton =
-    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 py-2 text-[12px] text-[var(--text-secondary)] outline-none transition-colors hover:bg-black/[0.03] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-edge-strong py-2 text-[12px] text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
 
   return (
     <div className="flex flex-col gap-6">
@@ -289,7 +289,7 @@ export default function EffectsPanel() {
           {letterboxes.map((letterbox) => (
             <div
               key={letterbox.id}
-              className="flex items-center justify-between gap-2 rounded-lg bg-black/[0.03] px-2 py-1.5"
+              className="flex items-center justify-between gap-2 rounded-lg bg-subtle px-2 py-1.5"
             >
               <span className="text-[11px] text-[var(--text-muted)]">
                 Draggable bars on the artboard
@@ -335,7 +335,7 @@ export default function EffectsPanel() {
           {blurZones.map((zone) => (
             <div
               key={zone.id}
-              className="flex flex-col gap-3 rounded-lg bg-black/[0.03] p-2.5"
+              className="flex flex-col gap-3 rounded-lg bg-subtle p-2.5"
             >
               <AppleSlider
                 label="Blur radius"

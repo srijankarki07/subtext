@@ -61,7 +61,7 @@ export default function GlobalDialogs() {
                 type="button"
                 aria-label="Close"
                 onClick={closeConfirm}
-                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-black/[0.05] hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <X size={14} />
               </button>

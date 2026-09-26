@@ -145,7 +145,7 @@ export default function ExportModal() {
               type="button"
               aria-label="Close export"
               onClick={() => setIsExportModalOpen(false)}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-black/[0.05] hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               <X size={15} />
             </button>
@@ -214,7 +214,7 @@ export default function ExportModal() {
                         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                         active
                           ? "border-primary/40 bg-primary/[0.06] text-foreground"
-                          : "border-border text-[var(--text-secondary)] hover:bg-black/[0.03]"
+                          : "border-border text-[var(--text-secondary)] hover:bg-subtle-hover"
                       )}
                     >
                       <span className="text-[12px] font-medium">
@@ -251,7 +251,7 @@ export default function ExportModal() {
               disabled={busy}
               className={cn(
                 "w-full",
-                copied && "text-emerald-700"
+                copied && "text-emerald-700 dark:text-emerald-400"
               )}
             >
               {isCopying ? (

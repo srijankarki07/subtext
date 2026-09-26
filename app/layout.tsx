@@ -61,6 +61,7 @@ import {
   Yeseva_One,
 } from "next/font/google"
 
+import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Metadata } from "next"
 import "./globals.css"
@@ -492,7 +493,7 @@ export default function RootLayout({
           "antialiased"
         )}
       >
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   )

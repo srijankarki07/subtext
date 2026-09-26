@@ -116,7 +116,7 @@ export default function ContextMenu() {
   const isImage = target?.type === "image"
 
   const item =
-    "flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-[12px] text-foreground outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+    "flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-[12px] text-foreground outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
   const hint = "font-mono text-[10px] text-[var(--text-muted)]"
 
   /** Runs an action and dismisses the menu, like the image rows already did. */

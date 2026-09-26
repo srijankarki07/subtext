@@ -62,9 +62,9 @@ function AddElement({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
+      className="group flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-[var(--text-secondary)] transition-colors group-hover:border-black/15 group-hover:text-foreground">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-[var(--text-secondary)] transition-colors group-hover:border-swatch-edge group-hover:text-foreground">
         {icon}
       </span>
       <span className="min-w-0">
