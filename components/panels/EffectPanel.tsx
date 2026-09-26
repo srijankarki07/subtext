@@ -3,7 +3,8 @@
 import { useEditorStore } from "@/store/useEditorStore"
 import { HelpCircle, MonitorPlay, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { AppleSlider, ColorCircle, ColorPickerDropdown } from "../functions"
+import { AppleSlider, ColorCircle } from "../functions"
+import { ColorPopover } from "@/components/ui/color-popover"
 
 export default function EffectsPanel() {
   const {
@@ -33,7 +34,6 @@ export default function EffectsPanel() {
   const [saturation, setSaturation] = useState(0)
   const [warmth, setWarmth] = useState(0)
 
-  const [openPicker, setOpenPicker] = useState<string | null>(null)
   const [lightColor, setLightColor] = useState("#FF453A")
   const [darkColor, setDarkColor] = useState("#0A84FF")
 
@@ -147,11 +147,12 @@ export default function EffectsPanel() {
             <div className="flex items-center justify-between text-[11px] font-medium text-white/80">
               <span className="flex items-center gap-2">
                 Vignette
-                <ColorCircle
-                  color={v.color}
-                  onClick={() =>
-                    setOpenPicker(openPicker === v.id ? null : v.id)
-                  }
+                <ColorPopover
+                  value={v.color}
+                  onChange={(hex) => updateVignette(v.id, { color: hex })}
+                  label="Vignette colour"
+                  align="start"
+                  trigger={<ColorCircle color={v.color} />}
                 />
               </span>
               <div className="flex rounded-md bg-black/40 p-0.5">
@@ -177,12 +178,6 @@ export default function EffectsPanel() {
                 </button>
               </div>
             </div>
-
-            <ColorPickerDropdown
-              isOpen={openPicker === v.id}
-              currentColor={v.color}
-              onChange={(hex) => updateVignette(v.id, { color: hex })}
-            />
 
             <AppleSlider
               label="Intensity"
@@ -250,35 +245,27 @@ export default function EffectsPanel() {
           <div className="relative flex-1 rounded-sm border border-white/[0.05] bg-white/[0.02] p-2">
             <div className="flex items-center justify-between text-[11px] text-white/60">
               <span>Highlights</span>
-              <ColorCircle
-                color={lightColor}
-                onClick={() =>
-                  setOpenPicker(openPicker === "light" ? null : "light")
-                }
+              <ColorPopover
+                value={lightColor}
+                onChange={(hex) => handleDuotoneChange("light", hex)}
+                label="Highlights colour"
+                align="start"
+                trigger={<ColorCircle color={lightColor} />}
               />
             </div>
-            <ColorPickerDropdown
-              isOpen={openPicker === "light"}
-              currentColor={lightColor}
-              onChange={(hex) => handleDuotoneChange("light", hex)}
-            />
           </div>
 
           <div className="relative flex-1 rounded-sm border border-white/[0.05] bg-white/[0.02] p-2">
             <div className="flex items-center justify-between text-[11px] text-white/60">
               <span>Shadows</span>
-              <ColorCircle
-                color={darkColor}
-                onClick={() =>
-                  setOpenPicker(openPicker === "dark" ? null : "dark")
-                }
+              <ColorPopover
+                value={darkColor}
+                onChange={(hex) => handleDuotoneChange("dark", hex)}
+                label="Shadows colour"
+                align="start"
+                trigger={<ColorCircle color={darkColor} />}
               />
             </div>
-            <ColorPickerDropdown
-              isOpen={openPicker === "dark"}
-              currentColor={darkColor}
-              onChange={(hex) => handleDuotoneChange("dark", hex)}
-            />
           </div>
         </div>
       </div>

@@ -1,114 +1,76 @@
-interface AppleSliderProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step?: number
-  onChange: (val: number) => void
-}
+"use client"
 
-const PRESET_COLORS = [
-  "#FFFFFF",
-  "#EBEBF5",
-  "#8E8E93",
-  "#000000",
-  "#FF453A",
-  "#FF9F0A",
-  "#FFD60A",
-  "#32D74B",
-  "#64D2FF",
-  "#0A84FF",
-  "#5E5CE6",
-  "#FF375F",
-]
+import * as React from "react"
+
+import { IconButton } from "@/components/ui/icon-button"
+import { Slider } from "@/components/ui/slider"
+import { cn } from "@/lib/utils"
+
+/**
+ * Shared editor controls.
+ *
+ * These are thin, tokenised wrappers over the primitives in `components/ui`.
+ * They keep their existing names so the panels did not need rewriting in the
+ * same change, but they no longer hardcode dark hex values, and the icon-only
+ * controls now require an accessible name.
+ *
+ * `ColorPickerDropdown` used to live here and has been replaced by
+ * `ColorPopover` in `components/ui/color-popover` — see that file for why.
+ */
 
 export function AlignmentButton({
   icon,
+  label,
   onClick,
 }: {
   icon: React.ReactNode
+  /** Accessible name, e.g. "Align left". */
+  label: string
   onClick: () => void
 }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex cursor-pointer items-center justify-center rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-    >
-      {icon}
-    </button>
-  )
+  return <IconButton icon={icon} label={label} onClick={onClick} />
 }
 
 export function FormatButton({
   icon,
+  label,
   isActive,
   onClick,
 }: {
   icon: React.ReactNode
+  /** Accessible name, e.g. "Bold". */
+  label: string
   isActive: boolean
   onClick: () => void
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`cursor-pointer rounded-lg p-2 transition-all ${isActive ? "bg-white text-black" : "text-white/60 hover:bg-white/[0.08] hover:text-white"}`}
-    >
-      {icon}
-    </button>
+    <IconButton icon={icon} label={label} active={isActive} onClick={onClick} />
   )
 }
 
+/**
+ * A colour swatch.
+ *
+ * Spreads unknown props so it can serve directly as a `Popover.Trigger` render
+ * target; when used that way the popover supplies the accessible name. Pass
+ * `aria-label` when rendering it standalone.
+ */
 export function ColorCircle({
   color,
-  onClick,
-}: {
-  color: string
-  onClick: () => void
-}) {
+  className,
+  ...props
+}: Omit<React.ComponentProps<"button">, "color"> & { color: string }) {
   return (
     <button
-      onClick={onClick}
-      className="h-6 w-6 cursor-pointer rounded-full border border-white/20 shadow-inner transition-transform hover:scale-105 active:scale-95"
+      type="button"
+      className={cn(
+        "size-6 shrink-0 cursor-pointer rounded-full border border-black/15 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]",
+        "transition-transform outline-none hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95",
+        className
+      )}
       style={{ backgroundColor: color }}
+      {...props}
     />
-  )
-}
-
-export function ColorPickerDropdown({
-  isOpen,
-  currentColor,
-  onChange,
-}: {
-  isOpen: boolean
-  currentColor: string
-  onChange: (color: string) => void
-}) {
-  if (!isOpen) return null
-
-  return (
-    <div className="absolute top-8 right-0 z-50 w-60 animate-in rounded-lg border border-white/[0.1] bg-[#2C2C2E] p-3 shadow-[0_10px_40px_rgba(0,0,0,0.5)] duration-150 zoom-in-95 fade-in">
-      <div className="mb-3 grid grid-cols-4 gap-2">
-        {PRESET_COLORS.map((preset) => (
-          <button
-            key={preset}
-            onClick={() => onChange(preset)}
-            className={`aspect-square h-12 w-12 cursor-pointer rounded-full shadow-inner transition-transform hover:scale-110 active:scale-95 ${currentColor === preset ? "ring-2 ring-white ring-offset-2 ring-offset-[#2C2C2E]" : ""}`}
-            style={{ backgroundColor: preset }}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-2 rounded-lg border border-white/[0.05] bg-black/40 p-1.5">
-        <span className="pl-1 font-mono text-[11px] font-medium text-white/40">
-          HEX
-        </span>
-        <input
-          type="text"
-          value={currentColor}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent font-mono text-[12px] text-white uppercase outline-none"
-        />
-      </div>
-    </div>
   )
 }
 
@@ -123,43 +85,25 @@ export function PresetButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex-1 cursor-pointer rounded-lg py-1.5 text-[10px] font-medium tracking-wider uppercase transition-all active:scale-95 ${
+      className={cn(
+        "flex-1 cursor-pointer rounded-lg py-1.5 text-[11px] font-medium transition-colors",
+        "outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]",
         isDanger
-          ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          : "border border-white/[0.05] bg-white/[0.05] text-white/70 hover:bg-white/[0.1] hover:text-white"
-      }`}
+          ? "text-[var(--text-muted)] hover:bg-destructive/10 hover:text-destructive"
+          : "border border-border bg-white text-[var(--text-secondary)] hover:bg-black/[0.03] hover:text-foreground"
+      )}
     >
       {label}
     </button>
   )
 }
 
-export function AppleSlider({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  onChange,
-}: AppleSliderProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-[12px] font-medium text-white/60">
-        <span>{label}</span>
-        <span className="text-white/40 tabular-nums">
-          {value?.toFixed(step < 1 ? 1 : 0)}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/[0.1] outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,0,0,0.5)]"
-      />
-    </div>
-  )
+/**
+ * @deprecated Use `Slider` from `components/ui/slider`. Kept as an alias so
+ * panels can be migrated one at a time.
+ */
+export function AppleSlider(props: React.ComponentProps<typeof Slider>) {
+  return <Slider {...props} />
 }

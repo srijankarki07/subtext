@@ -19,15 +19,15 @@ import {
   Trash2,
   Underline as UnderlineIcon,
 } from "lucide-react"
-import { useReducer, useState } from "react"
+import { useReducer } from "react"
 import {
   AlignmentButton,
   AppleSlider,
   ColorCircle,
-  ColorPickerDropdown,
   FormatButton,
   PresetButton,
 } from "../functions"
+import { ColorPopover } from "@/components/ui/color-popover"
 
 export default function TextPanel() {
   const {
@@ -41,9 +41,6 @@ export default function TextPanel() {
   } = useEditorStore()
 
   const [, forceUpdate] = useReducer((x) => x + 1, 0)
-  const [openPicker, setOpenPicker] = useState<
-    "fill" | "stroke" | "shadow" | null
-  >(null)
 
   if (!activeObject || activeObject.type !== "i-text") {
     return (
@@ -100,10 +97,6 @@ export default function TextPanel() {
     forceUpdate()
   }
 
-  const togglePicker = (picker: "fill" | "stroke" | "shadow") => {
-    setOpenPicker(openPicker === picker ? null : picker)
-  }
-
   return (
     <div className="flex flex-col gap-6 p-1 pb-24">
       {/* CANVAS ALIGNMENT */}
@@ -116,26 +109,32 @@ export default function TextPanel() {
         <div className="grid grid-cols-6 gap-1 rounded-md border border-white/[0.05] bg-white/[0.04] p-1.5">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
+            label="Align left"
             onClick={() => alignObjectToCanvas("left")}
           />
           <AlignmentButton
             icon={<AlignCenterHorizontal size={16} />}
+            label="Align horizontal centre"
             onClick={() => alignObjectToCanvas("center-h")}
           />
           <AlignmentButton
             icon={<MoveRight size={16} />}
+            label="Align right"
             onClick={() => alignObjectToCanvas("right")}
           />
           <AlignmentButton
             icon={<AlignStartVertical size={16} />}
+            label="Align top"
             onClick={() => alignObjectToCanvas("top")}
           />
           <AlignmentButton
             icon={<AlignCenterVertical size={16} />}
+            label="Align vertical centre"
             onClick={() => alignObjectToCanvas("center-v")}
           />
           <AlignmentButton
             icon={<AlignEndVertical size={16} />}
+            label="Align bottom"
             onClick={() => alignObjectToCanvas("bottom")}
           />
         </div>
@@ -155,16 +154,19 @@ export default function TextPanel() {
           <div className="flex gap-1">
             <FormatButton
               icon={<AlignLeft size={16} />}
+              label="Align text left"
               isActive={textObj.get("textAlign") === "left"}
               onClick={() => applyTextStyle("textAlign", "left")}
             />
             <FormatButton
               icon={<AlignCenter size={16} />}
+              label="Align text centre"
               isActive={textObj.get("textAlign") === "center"}
               onClick={() => applyTextStyle("textAlign", "center")}
             />
             <FormatButton
               icon={<AlignRight size={16} />}
+              label="Align text right"
               isActive={textObj.get("textAlign") === "right"}
               onClick={() => applyTextStyle("textAlign", "right")}
             />
@@ -173,6 +175,7 @@ export default function TextPanel() {
           <div className="flex gap-1">
             <FormatButton
               icon={<Bold size={16} />}
+              label="Bold"
               isActive={fontWeight >= 700}
               onClick={() =>
                 applyTextStyle("fontWeight", fontWeight >= 700 ? 400 : 700)
@@ -180,6 +183,7 @@ export default function TextPanel() {
             />
             <FormatButton
               icon={<Italic size={16} />}
+              label="Italic"
               isActive={isItalic}
               onClick={() =>
                 applyTextStyle("fontStyle", isItalic ? "normal" : "italic")
@@ -187,11 +191,13 @@ export default function TextPanel() {
             />
             <FormatButton
               icon={<UnderlineIcon size={16} />}
+              label="Underline"
               isActive={isUnderline}
               onClick={() => applyTextStyle("underline", !isUnderline)}
             />
             <FormatButton
               icon={<Strikethrough size={16} />}
+              label="Strikethrough"
               isActive={isLinethrough}
               onClick={() => applyTextStyle("linethrough", !isLinethrough)}
             />
@@ -211,14 +217,14 @@ export default function TextPanel() {
               <Pipette size={12} />
               Pick
             </button>
-            <ColorCircle color={fill} onClick={() => togglePicker("fill")} />
+            <ColorPopover
+              value={fill}
+              onChange={(color) => applyTextStyle("fill", color)}
+              label="Text colour"
+              trigger={<ColorCircle color={fill} />}
+            />
           </div>
         </div>
-        <ColorPickerDropdown
-          isOpen={openPicker === "fill"}
-          currentColor={fill}
-          onChange={(color) => applyTextStyle("fill", color)}
-        />
       </div>
 
       {/* TYPOGRAPHY SLIDERS */}
@@ -274,17 +280,14 @@ export default function TextPanel() {
                   <Pipette size={12} />
                   Pick
                 </button>
-                <ColorCircle
-                  color={strokeColor}
-                  onClick={() => togglePicker("stroke")}
+                <ColorPopover
+                  value={strokeColor}
+                  onChange={(color) => applyTextStyle("stroke", color)}
+                  label="Outline colour"
+                  trigger={<ColorCircle color={strokeColor} />}
                 />
               </div>
             </div>
-            <ColorPickerDropdown
-              isOpen={openPicker === "stroke"}
-              currentColor={strokeColor}
-              onChange={(color) => applyTextStyle("stroke", color)}
-            />
           </div>
           <AppleSlider
             label="Width"
@@ -309,17 +312,14 @@ export default function TextPanel() {
                   <Pipette size={12} />
                   Pick
                 </button>
-                <ColorCircle
-                  color={shadowColor}
-                  onClick={() => togglePicker("shadow")}
+                <ColorPopover
+                  value={shadowColor}
+                  onChange={(color) => updateShadow({ color })}
+                  label="Shadow colour"
+                  trigger={<ColorCircle color={shadowColor} />}
                 />
               </div>
             </div>
-            <ColorPickerDropdown
-              isOpen={openPicker === "shadow"}
-              currentColor={shadowColor}
-              onChange={(color) => updateShadow({ color })}
-            />
           </div>
 
           <div className="flex gap-2 pt-1">

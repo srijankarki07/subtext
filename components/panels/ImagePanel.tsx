@@ -64,26 +64,32 @@ export default function ImagePanel() {
         <div className="grid grid-cols-6 gap-1 rounded-md border border-white/[0.05] bg-white/[0.04] p-1.5">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
+            label="Align left"
             onClick={() => alignObjectToCanvas("left")}
           />
           <AlignmentButton
             icon={<AlignCenterHorizontal size={16} />}
+            label="Align horizontal centre"
             onClick={() => alignObjectToCanvas("center-h")}
           />
           <AlignmentButton
             icon={<MoveRight size={16} />}
+            label="Align right"
             onClick={() => alignObjectToCanvas("right")}
           />
           <AlignmentButton
             icon={<AlignStartVertical size={16} />}
+            label="Align top"
             onClick={() => alignObjectToCanvas("top")}
           />
           <AlignmentButton
             icon={<AlignCenterVertical size={16} />}
+            label="Align vertical centre"
             onClick={() => alignObjectToCanvas("center-v")}
           />
           <AlignmentButton
             icon={<AlignEndVertical size={16} />}
+            label="Align bottom"
             onClick={() => alignObjectToCanvas("bottom")}
           />
         </div>
