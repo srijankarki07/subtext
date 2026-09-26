@@ -17,6 +17,15 @@ import { applyGrain } from "@/lib/grain"
 import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
 
+/**
+ * The scale presets, described by what they produce.
+ *
+ * "Draft / Standard / High-res / Ultra" says how the file *feels*; it does not
+ * say whether a 2× story export is 2160px tall, which is the thing anyone
+ * choosing between them actually needs. Each preset now carries its real output
+ * size, computed from the artboard, with the marketing words kept only as a
+ * secondary line.
+ */
 const SCALE_PRESETS = [
   { label: "0.5×", value: 0.5, desc: "Draft" },
   { label: "1×", value: 1, desc: "Standard" },
@@ -60,7 +69,16 @@ export default function ExportModal() {
   const [format, setFormat] = useState<"png" | "jpg">("png")
   const [quality, setQuality] = useState(0.92)
   const [scale, setScale] = useState(1)
-  const [isExporting, setIsExporting] = useState(false)
+  /**
+   * Which part of the export is running.
+   *
+   * Fabric renders and encodes in one synchronous call, so there is no real
+   * percentage to report — a determinate bar would be a lie. These are the
+   * genuine steps, and naming them is honest about what is happening on a large
+   * export: the render is the slow half, the save is instant.
+   */
+  const [phase, setPhase] = useState<"idle" | "rendering" | "saving">("idle")
+  const isExporting = phase !== "idle"
   const [isCopying, setIsCopying] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -74,7 +92,7 @@ export default function ExportModal() {
 
   const handleDownload = async () => {
     if (!canvas) return
-    setIsExporting(true)
+    setPhase("rendering")
 
     try {
       // Deselect first so selection handles are not baked into the export.
@@ -103,6 +121,7 @@ export default function ExportModal() {
         canvas.requestRenderAll()
       }
 
+      setPhase("saving")
       const link = document.createElement("a")
       link.download = filename
       link.href = dataUrl
@@ -119,7 +138,7 @@ export default function ExportModal() {
           "The artwork could not be rendered. Try a smaller export size or a different format.",
       })
     } finally {
-      setIsExporting(false)
+      setPhase("idle")
     }
   }
 
@@ -146,7 +165,16 @@ export default function ExportModal() {
   return (
     <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
       {isExportModalOpen && (
-        <DialogContent className="max-w-md p-5">
+        <DialogContent
+          /*
+           * Anchored under the Export button rather than centred.
+           *
+           * A modal in the middle of the window covers the artwork, and choosing
+           * an export size is a decision you make *by looking at* the artwork — so
+           * the panel that changes it should not be the one thing hiding it.
+           */
+          className="top-16 right-3 left-auto w-[360px] max-w-[calc(100vw-1.5rem)] translate-x-0 translate-y-0 sm:right-4"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <DialogTitle>Export artwork</DialogTitle>
@@ -158,7 +186,7 @@ export default function ExportModal() {
               type="button"
               aria-label="Close export"
               onClick={() => setIsExportModalOpen(false)}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               <X size={15} />
             </button>
@@ -223,7 +251,7 @@ export default function ExportModal() {
                       onClick={() => setScale(preset.value)}
                       aria-pressed={active}
                       className={cn(
-                        "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-2 outline-none transition-colors",
+                        "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-2 transition-colors outline-none",
                         "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                         active
                           ? "border-primary/40 bg-primary/[0.06] text-foreground"
@@ -233,8 +261,10 @@ export default function ExportModal() {
                       <span className="text-[12px] font-medium">
                         {preset.label}
                       </span>
-                      <span className="text-[10px] text-[var(--text-muted)]">
-                        {preset.desc}
+                      {/* The actual pixels, which is what the choice is about. */}
+                      <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
+                        {Math.round(baseW * preset.value)}×
+                        {Math.round(baseH * preset.value)}
                       </span>
                     </button>
                   )
@@ -247,8 +277,14 @@ export default function ExportModal() {
             <Button onClick={handleDownload} disabled={busy} className="w-full">
               {isExporting ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  Rendering {outputW}×{outputH}…
+                  <Loader2
+                    size={14}
+                    className="animate-spin"
+                    aria-hidden="true"
+                  />
+                  {phase === "saving"
+                    ? "Saving…"
+                    : `Rendering ${outputW}×${outputH}…`}
                 </>
               ) : (
                 <>
@@ -269,7 +305,11 @@ export default function ExportModal() {
             >
               {isCopying ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  <Loader2
+                    size={14}
+                    className="animate-spin"
+                    aria-hidden="true"
+                  />
                   Copying…
                 </>
               ) : copied ? (
