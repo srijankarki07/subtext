@@ -206,7 +206,9 @@ export default function TopBar({
         "Restore the saved project from this browser? Current unsaved changes will be overwritten.",
       confirmText: "Restore",
       onConfirm: async () => {
-        await loadProjectFromStorage()
+        // The saved copy, not the autosaved document: pressing Restore is a
+        // request for the thing the user deliberately kept.
+        await loadProjectFromStorage("savedProject")
       },
     })
   }
@@ -223,9 +225,17 @@ export default function TopBar({
     if (customW > 100 && customH > 100) setAspectRatio(customW, customH)
   }
 
-  // Honest state: `lastSavedAt` only ever said "a save happened at some point",
-  // so the badge stayed green after further edits.
-  const unsaved = isDirty || (!hasSavedProject && !justSaved)
+  /**
+   * What the badge answers: "would I lose work if this tab died?"
+   *
+   * Not "have I pressed Save?" — that was the old rule, and it predates
+   * autosave: it read as a warning whenever there was no *explicit* copy, even
+   * though the document was written and would come back. `isDirty` already means
+   * "there are changes not yet written", which is the only state that risks
+   * anything. An explicit copy is a separate question, answered by the Save
+   * button and the Restore button next to it.
+   */
+  const unsaved = isDirty
   const saved = !unsaved
 
   return (

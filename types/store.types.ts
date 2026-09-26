@@ -271,8 +271,21 @@ export interface CoreSlice {
 
   /** The workspace name. Persisted with the project and used for export filenames. */
   documentTitle: string
-  /** True when the document has changed since the last save. */
+  /**
+   * True when the document differs from the autosaved copy — that is, there are
+   * changes not yet written. Drives autosave and the status badge, and means
+   * "would I lose work?", not "have I pressed Save?".
+   */
   isDirty: boolean
+  /**
+   * The signature of the stored document, or null if nothing is stored.
+   *
+   * Internal: it exists so `isDirty` can be a comparison rather than a guess.
+   * See `lib/persistence.ts`.
+   */
+  savedSignature: string | null
+  /** Set when a document was restored on load, to drive the notice. Cleared on acknowledgement. */
+  restoredAt: string | null
 
   /**
    * The artboard's on-screen scale. 1 means the artboard is displayed at its
@@ -302,6 +315,8 @@ export interface CoreSlice {
   toggleGuide: (key: keyof GuidesState) => void
   setActiveGuides: (guides: SnapLine[]) => void
   setDocumentTitle: (title: string) => void
+  /** Dismisses the restored-session notice without touching the document. */
+  acknowledgeRestore: () => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void
@@ -322,7 +337,15 @@ export interface CoreSlice {
 
   // Storage actions
   saveProjectToStorage: () => boolean
-  loadProjectFromStorage: () => Promise<boolean>
+  /**
+   * Loads a stored document. `"document"` is the autosaved copy a reload should
+   * bring back; `"savedProject"` is the explicit copy the Restore button means.
+   */
+  loadProjectFromStorage: (
+    source?: "document" | "savedProject"
+  ) => Promise<boolean>
+  /** Writes the autosaved document slot. Silent: it runs on a timer. */
+  autosaveDocument: () => boolean
   clearSavedProject: () => void
   checkSavedProject: () => void
 
