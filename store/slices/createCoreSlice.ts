@@ -344,11 +344,33 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   deleteActiveObject: (targetObj) => {
-    const { canvas, activeObject, saveHistoryState, closeContextMenu } = get()
+    const {
+      canvas,
+      activeObject,
+      saveHistoryState,
+      closeContextMenu,
+      removeBlurZone,
+    } = get()
     const target = targetObj || activeObject
 
     // Prevent deletion if the object is explicitly locked
     if (!canvas || !target || target.lockMovementX) return
+
+    // A blur zone is several canvas objects behind one control. Deleting any
+    // part of it has to take the whole zone: removing one overlay left the
+    // handle and the remaining layers behind with nothing to remove them by.
+    const targetId = (target as any).id as string | undefined
+    const blurZoneId = targetId?.startsWith("blur-handle-")
+      ? targetId
+      : targetId?.startsWith("blur-overlay-")
+        ? ((target as any).overlayId as string | undefined)
+        : undefined
+
+    if (blurZoneId) {
+      removeBlurZone(blurZoneId)
+      closeContextMenu()
+      return
+    }
 
     canvas.remove(target)
     canvas.discardActiveObject()
