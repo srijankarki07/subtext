@@ -1,5 +1,7 @@
 import type { Canvas } from "fabric"
 
+import { applyBlurClips } from "@/lib/blurZone"
+
 /**
  * The artboard's default fill, used until an image covers it. This is artwork
  * background, not chrome — it is what a text-only composition exports against.
@@ -28,6 +30,9 @@ export const DOCUMENT_PROPERTIES = [
   "vignetteOpacity",
   "blurOpacity",
   "overlayId",
+  "overlayIds",
+  "blurRing",
+  "blurFeather",
   "selectable",
   "evented",
   "lockMovementX",
@@ -84,24 +89,9 @@ export function bindBlurHandleListeners(canvas: Canvas): void {
 
   objects.forEach((object: any) => {
     if (!object.id?.startsWith("blur-handle")) return
-
-    const overlay = objects.find((candidate: any) => candidate.id === object.overlayId)
-    if (!overlay) return
-
-    const updateClip = () => {
-      overlay.set({
-        clipPath: new object.constructor({
-          left: object.left,
-          top: object.top,
-          width: object.getScaledWidth(),
-          height: object.getScaledHeight(),
-          absolutePositioned: true,
-        }),
-      })
-      canvas.requestRenderAll()
-    }
-
-    object.on("moving", updateClip)
-    object.on("scaling", updateClip)
+    object.on("moving", () => applyBlurClips(canvas))
+    object.on("scaling", () => applyBlurClips(canvas))
   })
+
+  applyBlurClips(canvas)
 }

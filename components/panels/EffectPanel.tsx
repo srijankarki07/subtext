@@ -61,6 +61,7 @@ export default function EffectsPanel() {
   const addBlurZone = useEditorStore((s) => s.addBlurZone)
   const updateBlurZone = useEditorStore((s) => s.updateBlurZone)
   const removeBlurZone = useEditorStore((s) => s.removeBlurZone)
+  const setBlurZoneFeather = useEditorStore((s) => s.setBlurZoneFeather)
   const setGradientOverlay = useEditorStore((s) => s.setGradientOverlay)
   const gradientOpacity = useEditorStore((s) => s.gradientOpacity)
   const resetEffect = useEditorStore((s) => s.resetEffect)
@@ -329,11 +330,34 @@ export default function EffectsPanel() {
               key={zone.id}
               className="flex flex-col gap-3 rounded-lg bg-subtle p-2.5"
             >
+              <SegmentedControl
+                label="Blur edge"
+                size="sm"
+                value={zone.feather > 0 ? "faded" : "hard"}
+                onChange={(mode) =>
+                  void setBlurZoneFeather(zone.id, mode === "faded" ? 50 : 0)
+                }
+                options={[
+                  { value: "hard", label: "Hard" },
+                  { value: "faded", label: "Faded" },
+                ]}
+              />
+
+              {zone.feather > 0 && (
+                <AppleSlider
+                  label="Fade"
+                  min={0}
+                  max={100}
+                  value={zone.feather}
+                  onChange={(value) => void setBlurZoneFeather(zone.id, value)}
+                />
+              )}
+
               <AppleSlider
                 label="Blur radius"
                 min={0}
                 max={100}
-                value={zone.opacity}
+                value={zone.blur}
                 onChange={(value) => updateBlurZone(zone.id, value)}
               />
               <Button

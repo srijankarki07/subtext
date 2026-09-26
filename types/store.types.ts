@@ -122,8 +122,12 @@ export interface VignetteState {
 
 export interface BlurZoneState {
   id: string
-  overlayId: string
-  opacity: number
+  /** The stacked blurred copies: index 0 is the core, the rest are the fade. */
+  overlayIds: string[]
+  /** Blur radius, 0–100. */
+  blur: number
+  /** How far the blur fades out beyond the core, 0–100. Zero is a hard edge. */
+  feather: number
 }
 
 export interface LetterboxState {
@@ -189,7 +193,10 @@ export interface EffectSlice {
   removeVignette: (id: string) => void
 
   addBlurZone: () => Promise<void>
-  updateBlurZone: (id: string, opacity: number) => void
+  /** Builds the blurred layers for a zone, one per fade ring. */
+  buildBlurLayers: (handleId: string, feather: number) => Promise<FabricObject[]>
+  updateBlurZone: (id: string, blur: number) => void
+  setBlurZoneFeather: (id: string, feather: number) => Promise<void>
   removeBlurZone: (id: string) => void
 
   addLetterbox: (thicknessRatio: number) => void
