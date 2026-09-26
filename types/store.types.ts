@@ -1,5 +1,6 @@
 import { Canvas, FabricObject } from "fabric"
 
+import type { EffectSnapshot } from "@/lib/snapshot"
 import type { VisibilityReport } from "@/lib/visibility"
 import { CustomFontMetadata } from "@/lib/customFonts"
 
@@ -32,6 +33,16 @@ export interface HistoryItem {
   title: string
   timestamp: string
   objectCount: number
+  /**
+   * Grading and overlay state, which lives in the store rather than in the
+   * Fabric object graph and so is not in `json`.
+   */
+  effects: EffectSnapshot
+  /**
+   * Identifies the control that produced this entry, so repeated edits of the
+   * same control collapse into it instead of filling the stack.
+   */
+  coalesceKey?: string
 }
 export interface HistorySlice {
   history: HistoryItem[]
@@ -40,7 +51,16 @@ export interface HistorySlice {
   canRedo: boolean
   isHistoryProcessing: boolean
 
-  saveHistoryState: (description?: string) => void
+  saveHistoryState: (
+    description?: string,
+    options?: { coalesceKey?: string }
+  ) => void
+  /**
+   * Groups a compound edit into one history entry. Anything saved between the
+   * calls is folded into the entry committed at the end.
+   */
+  beginHistoryTransaction: (description: string) => void
+  endHistoryTransaction: () => void
   undo: () => Promise<void>
   redo: () => Promise<void>
   jumpToHistoryIndex: (index: number) => Promise<void>
@@ -176,13 +196,9 @@ export interface EffectSlice {
   ) => void
 
   applyImageFilter: (type: string, options: any) => void
-  applyPreset: (matrix: number[]) => void
+  applyPreset: (matrix: number[], coalesceKey?: string) => void
   applyWarmth: (value: number) => void
-  applyDuotone: (
-    lightHex: string,
-    darkHex: string,
-    intensity?: number
-  ) => void
+  applyDuotone: (lightHex: string, darkHex: string, intensity?: number) => void
   resetEffect: (
     category: "adjustments" | "cinematic" | "atmospherics" | "all"
   ) => void
@@ -194,7 +210,10 @@ export interface EffectSlice {
 
   addBlurZone: () => Promise<void>
   /** Builds the blurred layers for a zone, one per fade ring. */
-  buildBlurLayers: (handleId: string, feather: number) => Promise<FabricObject[]>
+  buildBlurLayers: (
+    handleId: string,
+    feather: number
+  ) => Promise<FabricObject[]>
   updateBlurZone: (id: string, blur: number) => void
   setBlurZoneFeather: (id: string, feather: number) => Promise<void>
   removeBlurZone: (id: string) => void
