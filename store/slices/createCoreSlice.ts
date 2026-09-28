@@ -1,30 +1,12 @@
 import { CINEMATIC_PRESETS } from "@/lib/filters"
+import { DOCUMENT_PROPERTIES, bindBlurHandleListeners } from "@/lib/fabricDocument"
+import { importImage, pickImageFile } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
-import { FabricImage, IText, Shadow } from "fabric"
+import { IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
 const STORAGE_KEY = "Subtext_saved_project"
-// Custom Fabric object attributes to preserve in JSON serialization
-const SERIALIZE_PROPERTIES = [
-  "id",
-  "isEffect",
-  "textType",
-  "vignetteColor",
-  "vignetteType",
-  "vignetteOpacity",
-  "blurOpacity",
-  "overlayId",
-  "selectable",
-  "evented",
-  "lockMovementX",
-  "lockMovementY",
-  "lockScalingX",
-  "lockScalingY",
-  "stroke",
-  "strokeWidth",
-  "strokeDashArray",
-]
 
 export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   set,
@@ -79,7 +61,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     try {
       // In Fabric v6, toObject() accepts custom property arrays, whereas toJSON() takes 0 arguments
-      const canvasJson = canvas.toObject(SERIALIZE_PROPERTIES as any)
+      const canvasJson = canvas.toObject(DOCUMENT_PROPERTIES as unknown as string[])
 
       const payload = {
         canvasJson,
@@ -163,29 +145,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       await canvas.loadFromJSON(canvasJson)
 
       // 4. Re-bind draggable event listeners for any blur handles
-      canvas.getObjects().forEach((obj: any) => {
-        if (obj.id?.startsWith("blur-handle")) {
-          const overlay = canvas
-            .getObjects()
-            .find((o: any) => o.id === obj.overlayId)
-          if (overlay) {
-            const updateClip = () => {
-              overlay.set({
-                clipPath: new obj.constructor({
-                  left: obj.left,
-                  top: obj.top,
-                  width: obj.getScaledWidth(),
-                  height: obj.getScaledHeight(),
-                  absolutePositioned: true,
-                }),
-              })
-              canvas.requestRenderAll()
-            }
-            obj.on("moving", updateClip)
-            obj.on("scaling", updateClip)
-          }
-        }
-      })
+      bindBlurHandleListeners(canvas)
 
       canvas.requestRenderAll()
       saveHistoryState()
@@ -260,45 +220,24 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     saveHistoryState()
   },
 
-  addImage: () => {
+  addImage: async () => {
     const { canvas, saveHistoryState } = get()
     if (!canvas) return
 
-    // Create a hidden input programmatically to trigger the OS file browser
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "image/*"
-    input.onchange = async (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (!file) return
+    const file = await pickImageFile()
+    if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = async (f) => {
-        const data = f.target?.result as string
-        try {
-          const img = await FabricImage.fromURL(data)
-          img.set("crossOrigin", "anonymous")
-
-          // Scale the image down automatically if it's larger than the canvas
-          const scale = Math.min(
-            canvas.getWidth() / (img.width || 1),
-            canvas.getHeight() / (img.height || 1)
-          )
-          img.scale(scale * 0.9) // 90% of canvas size to leave a small margin
-          canvas.centerObject(img)
-
-          // Insert images at the back (index 0) so they act as backgrounds behind text
-          canvas.insertAt(0, img)
-          canvas.setActiveObject(img)
-          canvas.requestRenderAll()
-          saveHistoryState()
-        } catch (error) {
-          console.error("Failed to load image:", error)
-        }
-      }
-      reader.readAsDataURL(file)
+    try {
+      const result = await importImage(canvas, file)
+      if (!result) return
+      // This path used to skip palette extraction entirely, so the colour panel
+      // claimed there was no image to sample straight after one was added.
+      set({ imagePalette: result.palette })
+      canvas.requestRenderAll()
+      saveHistoryState("Upload image")
+    } catch (error) {
+      console.error("Failed to load image:", error)
     }
-    input.click()
   },
 
   deleteActiveObject: (targetObj) => {
@@ -379,21 +318,41 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     saveHistoryState()
   },
 
-  clearCanvas: () =>
-    set((state) => {
-      state.canvas?.clear()
-      state.canvas?.dispose()
-      return {
-        canvas: null,
-        activeObject: null,
-        contrastStats: null,
-        imagePalette: [],
-        history: [],
-        historyIndex: -1,
-        canUndo: false,
-        canRedo: false,
-      }
-    }),
+  /**
+   * Starts a new document: clears the artboard and resets everything that
+   * describes it, but keeps the Fabric canvas alive.
+   *
+   * The previous implementation called `canvas.dispose()` and set `canvas:
+   * null`, which permanently killed the editor — the Canvas component only
+   * constructs the Fabric canvas on mount, so nothing would ever rebuild it.
+   * That is presumably why this was never wired to any UI.
+   */
+  clearCanvas: () => {
+    const { canvas } = get()
+    if (!canvas) return
+
+    canvas.discardActiveObject()
+    canvas.remove(...canvas.getObjects())
+
+    set({
+      activeObject: null,
+      contrastStats: null,
+      imagePalette: [],
+      vignettes: [],
+      blurZones: [],
+      letterboxes: [],
+      grainIntensity: 0,
+      gradientOpacity: 0,
+      history: [],
+      historyIndex: -1,
+      canUndo: false,
+      canRedo: false,
+      documentTitle: "Untitled",
+    })
+
+    canvas.requestRenderAll()
+    get().saveHistoryState("New canvas")
+  },
 
   // TEMPLATE INJECTION
   applyTemplate: (templateId) => {
@@ -469,6 +428,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     }
 
     // 4. INJECT TEMPLATE TEXTS WITH DYNAMIC BOUNDING BOX CLAMPING
+    let quoteObject: IText | null = null
+
     template.texts.forEach((tConfig) => {
       let content = tConfig.text
 
@@ -538,9 +499,26 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
       ;(textObject as any).textType = textRole
       canvas.add(textObject)
+
+      if (textRole === "quote") quoteObject = textObject
     })
 
     canvas.requestRenderAll()
+
+    // Readability safeguard. A template's fill is chosen against a hypothetical
+    // image, so applying it over a real photo could land exactly the unreadable
+    // result this app exists to prevent. The colour is only overridden when it
+    // actually fails, so a template that works keeps its art direction.
+    if (quoteObject) {
+      canvas.setActiveObject(quoteObject)
+      get().setActiveObject(quoteObject)
+      get().calculateContrast()
+
+      if (get().contrastStats?.badge === "FAIL") {
+        get().autoColorText()
+      }
+    }
+
     saveHistoryState()
   },
 
@@ -603,7 +581,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (!activeObject || activeObject.lockMovementX) return
 
     // Clone the active element and keep an in-memory reference
-    const cloned = await activeObject.clone(SERIALIZE_PROPERTIES as any)
+    const cloned = await activeObject.clone(DOCUMENT_PROPERTIES as unknown as string[])
     set({ clipboardObject: cloned })
   },
 
@@ -620,7 +598,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (!canvas || !clipboardObject) return
 
     // Clone the clipboard copy so multiple pastes create independent objects
-    const cloned = await clipboardObject.clone(SERIALIZE_PROPERTIES as any)
+    const cloned = await clipboardObject.clone(DOCUMENT_PROPERTIES as unknown as string[])
     canvas.discardActiveObject()
 
     cloned.set({

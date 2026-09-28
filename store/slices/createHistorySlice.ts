@@ -1,27 +1,8 @@
+import { DOCUMENT_PROPERTIES, bindBlurHandleListeners } from "@/lib/fabricDocument"
 import { EditorStore, HistoryItem, HistorySlice } from "@/types/store.types"
 import { StateCreator } from "zustand"
 
 const MAX_HISTORY_STEPS = 30
-
-const HISTORY_PROPERTIES = [
-  "id",
-  "isEffect",
-  "textType",
-  "vignetteColor",
-  "vignetteType",
-  "vignetteOpacity",
-  "blurOpacity",
-  "overlayId",
-  "selectable",
-  "evented",
-  "lockMovementX",
-  "lockMovementY",
-  "lockScalingX",
-  "lockScalingY",
-  "stroke",
-  "strokeWidth",
-  "strokeDashArray",
-]
 
 export const createHistorySlice: StateCreator<
   EditorStore,
@@ -40,7 +21,7 @@ export const createHistorySlice: StateCreator<
     if (!canvas || isHistoryProcessing) return
 
     try {
-      const json = JSON.stringify(canvas.toObject(HISTORY_PROPERTIES as any))
+      const json = JSON.stringify(canvas.toObject(DOCUMENT_PROPERTIES as unknown as string[]))
       const newHistory = history.slice(0, historyIndex + 1)
 
       // Avoid duplicate consecutive saves
@@ -127,29 +108,7 @@ export const createHistorySlice: StateCreator<
       await canvas.loadFromJSON(JSON.parse(targetState.json))
 
       // Re-bind draggable blur handles if any exist in the restored state
-      canvas.getObjects().forEach((obj: any) => {
-        if (obj.id?.startsWith("blur-handle")) {
-          const overlay = canvas
-            .getObjects()
-            .find((o: any) => o.id === obj.overlayId)
-          if (overlay) {
-            const updateClip = () => {
-              overlay.set({
-                clipPath: new obj.constructor({
-                  left: obj.left,
-                  top: obj.top,
-                  width: obj.getScaledWidth(),
-                  height: obj.getScaledHeight(),
-                  absolutePositioned: true,
-                }),
-              })
-              canvas.requestRenderAll()
-            }
-            obj.on("moving", updateClip)
-            obj.on("scaling", updateClip)
-          }
-        }
-      })
+      bindBlurHandleListeners(canvas)
 
       canvas.requestRenderAll()
 

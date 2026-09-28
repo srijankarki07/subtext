@@ -1,11 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Check, Download, FolderOpen, Redo2, Save, Settings2, Undo2 } from "lucide-react"
+import {
+  Check,
+  Download,
+  FolderOpen,
+  MoreHorizontal,
+  Redo2,
+  Save,
+  Settings2,
+  Trash2,
+  Undo2,
+} from "lucide-react"
 
 import HistoryDropdown from "@/components/editor/HistoryDropdown"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -15,6 +26,80 @@ import {
 } from "@/components/ui/select"
 import { ASPECT_RATIOS, useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
+
+/**
+ * Secondary document actions.
+ *
+ * These live in a menu rather than on the bar itself — DESIGN/ §5 asks for a
+ * quiet top bar, and "start over" and "delete the saved project" are both rare
+ * and destructive. Both previously existed in the store with no way to reach
+ * them.
+ */
+function DocumentMenu() {
+  const [open, setOpen] = useState(false)
+  const hasSavedProject = useEditorStore((s) => s.hasSavedProject)
+  const clearCanvas = useEditorStore((s) => s.clearCanvas)
+  const clearSavedProject = useEditorStore((s) => s.clearSavedProject)
+  const setConfirmDialog = useEditorStore((s) => s.setConfirmDialog)
+
+  const item =
+    "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <IconButton
+            icon={<MoreHorizontal size={15} />}
+            label="More document actions"
+            active={open}
+          />
+        }
+      />
+      <PopoverContent align="end" className="w-[228px]">
+        <button
+          type="button"
+          className={item}
+          onClick={() => {
+            setOpen(false)
+            setConfirmDialog({
+              title: "Start a new canvas?",
+              message:
+                "This clears the artboard and its layers. Your saved project, if any, is not affected.",
+              confirmText: "New canvas",
+              onConfirm: () => clearCanvas(),
+            })
+          }}
+        >
+          <Trash2 size={14} className="text-[var(--text-muted)]" />
+          New canvas
+        </button>
+
+        <button
+          type="button"
+          disabled={!hasSavedProject}
+          className={cn(
+            item,
+            "disabled:pointer-events-none disabled:opacity-40"
+          )}
+          onClick={() => {
+            setOpen(false)
+            setConfirmDialog({
+              title: "Delete saved project?",
+              message:
+                "The copy stored in this browser will be removed. Anything currently on the artboard stays put.",
+              confirmText: "Delete",
+              onConfirm: () => clearSavedProject(),
+            })
+          }}
+        >
+          <FolderOpen size={14} className="text-[var(--text-muted)]" />
+          Delete saved project
+        </button>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 /**
  * The top bar carries global actions only.
@@ -160,6 +245,7 @@ export default function TopBar({
           <FolderOpen size={14} />
           <span>Restore</span>
         </Button>
+        <DocumentMenu />
       </div>
 
       {/* Canvas + output */}

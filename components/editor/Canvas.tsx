@@ -1,10 +1,10 @@
 "use client"
 
-import { extractPalette } from "@/lib/colorUtils"
+import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
+import { importImage, isImageFile } from "@/lib/imageImport"
 import { useEditorStore } from "@/store/useEditorStore"
 import {
   Canvas as FabricCanvas,
-  FabricImage,
   FabricObject,
   IText,
 } from "fabric"
@@ -73,7 +73,7 @@ export default function Canvas() {
     const canvas = new FabricCanvas(canvasRef.current, {
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
-      backgroundColor: "#1C1C1E",
+      backgroundColor: DEFAULT_ARTBOARD_BACKGROUND,
       fireRightClick: true,
       stopContextMenu: true,
     })
@@ -236,9 +236,25 @@ export default function Canvas() {
         return
       }
 
-      // 6. DESELECT / CLOSE: Escape
+      // 6. DESELECT / CANCEL / CLOSE: Escape
       if (e.key === "Escape") {
+        const store = useEditorStore.getState()
+
+        // An open dialog owns Escape. Without this guard the canvas would also
+        // deselect behind the dialog and swallow the key.
+        if (store.isExportModalOpen || store.confirmDialog || store.alertDialog) {
+          return
+        }
+
         e.preventDefault()
+
+        // Cancel the eyedropper. This was never handled anywhere, so Escape
+        // left the canvas in sampling mode and the next click — meant as a
+        // deselect — sampled a colour instead.
+        if (store.isPickingColor) {
+          store.stopColorPicker()
+        }
+
         canvas.discardActiveObject()
         canvas.requestRenderAll()
         closeContextMenu()
@@ -290,40 +306,26 @@ export default function Canvas() {
   ])
 
   const processFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) return
+    if (!isImageFile(file)) return
+
+    const canvas = useEditorStore.getState().canvas
+    if (!canvas) return
+
     setIsProcessingImage(true)
+    try {
+      // Shared with the store's addImage so both upload paths behave the same
+      // and always extract a palette.
+      const result = await importImage(canvas, file)
+      if (!result) return
 
-    const reader = new FileReader()
-    reader.onload = async (f) => {
-      const data = f.target?.result as string
-      const canvas = useEditorStore.getState().canvas
-      if (!canvas) {
-        setIsProcessingImage(false)
-        return
-      }
-
-      try {
-        const img = await FabricImage.fromURL(data)
-        const scale = Math.min(
-          canvas.getWidth() / (img.width || 1),
-          canvas.getHeight() / (img.height || 1)
-        )
-        img.scale(scale * 0.9)
-        canvas.centerObject(img)
-        canvas.insertAt(0, img)
-        canvas.setActiveObject(img)
-
-        const palette = await extractPalette(data, 6)
-        useEditorStore.getState().setImagePalette(palette)
-        canvas.requestRenderAll()
-        saveHistoryState("Upload Image")
-      } catch (error) {
-        console.error("Failed to load image or extract palette:", error)
-      } finally {
-        setIsProcessingImage(false)
-      }
+      useEditorStore.getState().setImagePalette(result.palette)
+      canvas.requestRenderAll()
+      saveHistoryState("Upload image")
+    } catch (error) {
+      console.error("Failed to load image or extract palette:", error)
+    } finally {
+      setIsProcessingImage(false)
     }
-    reader.readAsDataURL(file)
   }
 
   return (
