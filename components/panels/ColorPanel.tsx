@@ -1,134 +1,148 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
 import { AlertTriangle, CheckCircle2, Droplet, PaintBucket } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import { Section } from "@/components/ui/section"
+import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
+
+/**
+ * Visibility and colour.
+ *
+ * The contrast score is the product's reason to exist, so it gets the room
+ * rather than being one row among many. Structural note: the previous version
+ * applied the colour change without calling `saveHistoryState`, so clicking a
+ * palette swatch could not be undone — that call is now made, matching every
+ * other text-style path.
+ */
 export default function ColorPanel() {
-  const { activeObject, contrastStats, imagePalette, autoColorText, canvas } =
-    useEditorStore()
+  const activeObject = useEditorStore((s) => s.activeObject)
+  const contrastStats = useEditorStore((s) => s.contrastStats)
+  const imagePalette = useEditorStore((s) => s.imagePalette)
+  const autoColorText = useEditorStore((s) => s.autoColorText)
 
   if (!activeObject || activeObject.type !== "i-text") {
-    return <p>Select a text layer to view color intelligence.</p>
+    return (
+      <p className="text-[12px] text-[var(--text-muted)]">
+        Select a text layer to see its visibility.
+      </p>
+    )
   }
 
   const applyColor = (hex: string) => {
-    if (!activeObject || !canvas) return
-    activeObject.set("fill", hex)
-    canvas.requestRenderAll()
-    // Force recalculation of contrast with new color
-    useEditorStore.getState().calculateContrast()
+    const store = useEditorStore.getState()
+    if (!store.canvas || !store.activeObject) return
+    store.activeObject.set("fill", hex)
+    store.canvas.requestRenderAll()
+    store.calculateContrast()
+    store.saveHistoryState(`Recolour text ${hex}`)
   }
 
+  const failing = contrastStats?.badge === "FAIL"
+
   return (
-    <>
-      {/* 1. CONTRAST METER & VISIBILITY SCORE */}
-      <div className="relative overflow-hidden rounded-md border border-white/[0.05] bg-white/[0.02] p-4">
-        {/* Background glow based on status */}
-        <div
-          className={`pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-20 blur-3xl ${
-            !contrastStats
-              ? "bg-transparent"
-              : contrastStats.badge === "FAIL"
-                ? "bg-red-500"
-                : "bg-green-500"
-          }`}
-        />
-
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">
-            Visibility Engine
-          </h3>
-          {contrastStats && (
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] text-white/40">
-                BG: {contrastStats.bgColor}
-              </span>
-              <div
-                className="h-3 w-3 rounded-full border border-white/20"
-                style={{ backgroundColor: contrastStats.bgColor }}
-              />
-            </div>
-          )}
-        </div>
-
+    <div className="flex flex-col gap-6">
+      <Section title="Visibility">
         {!contrastStats ? (
-          <div className="py-4 text-center text-[13px] text-white/40">
-            Move text over the image to calculate contrast.
-          </div>
+          <p className="rounded-lg border border-dashed border-border p-4 text-center text-[12px] text-[var(--text-muted)]">
+            Move the text over the image to measure its contrast.
+          </p>
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-end justify-between">
+          <>
+            <div className="flex items-end justify-between gap-3">
               <div>
-                <div className="text-[32px] leading-none font-light tracking-tight text-white">
+                <div className="text-[32px] leading-none font-light tracking-tight text-foreground tabular-nums">
                   {contrastStats.score}
-                  <span className="ml-1 text-[14px] text-white/40">/100</span>
+                  <span className="ml-1 text-[14px] text-[var(--text-muted)]">
+                    /100
+                  </span>
                 </div>
-                <div className="mt-1 text-[12px] text-white/50">
-                  Overall Readability
-                </div>
+                <p className="mt-1 text-[12px] text-[var(--text-muted)]">
+                  Estimated readability
+                </p>
               </div>
 
               <div className="flex flex-col items-end gap-1.5">
-                {contrastStats.badge === "FAIL" ? (
-                  <div className="flex items-center gap-1 rounded bg-red-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-400">
-                    <AlertTriangle size={10} /> FAIL
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 rounded bg-green-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-green-400">
-                    <CheckCircle2 size={10} /> {contrastStats.badge} PASS
-                  </div>
-                )}
-                <div className="font-mono text-[12px] text-white/60">
-                  {contrastStats.ratio.toFixed(2)} : 1
-                </div>
+                {/* Status is never colour-only: icon + word + ratio. */}
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
+                    failing
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-emerald-600/10 text-emerald-700"
+                  )}
+                >
+                  {failing ? (
+                    <AlertTriangle size={10} aria-hidden="true" />
+                  ) : (
+                    <CheckCircle2 size={10} aria-hidden="true" />
+                  )}
+                  {failing ? "LOW" : `${contrastStats.badge} PASS`}
+                </span>
+                <span className="text-[12px] text-[var(--text-secondary)] tabular-nums">
+                  {contrastStats.ratio.toFixed(2)}:1
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+                  Background
+                  <span
+                    className="size-3 rounded-full border border-black/15"
+                    style={{ backgroundColor: contrastStats.bgColor }}
+                  />
+                  <span className="font-mono">{contrastStats.bgColor}</span>
+                </span>
               </div>
             </div>
 
-            {/* Smart Auto-Color Button */}
-            <button
+            <Button
+              variant="secondary"
+              className="w-full"
               onClick={autoColorText}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform hover:bg-blue-400 active:scale-95"
             >
-              <PaintBucket size={16} className="fill-white/20" />
-              Smart Auto-Color
-            </button>
-          </div>
+              <PaintBucket size={14} />
+              Smart auto-colour
+            </Button>
+          </>
         )}
-      </div>
+      </Section>
 
-      {/* 2. EXTRACTED CINEMATIC PALETTE */}
-      <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">
-            Cinematic Palette
-          </h3>
-          <Droplet size={14} className="text-white/30" />
-        </div>
-
+      <Section
+        title="Image palette"
+        description={
+          imagePalette.length > 0
+            ? "Tap a colour to apply it to the selected text."
+            : undefined
+        }
+        action={
+          <Droplet size={14} className="text-[var(--text-muted)]" aria-hidden="true" />
+        }
+      >
         {imagePalette.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 text-center text-[13px] text-white/40">
-            Upload an image to extract colors.
-          </div>
+          <p className="rounded-lg border border-dashed border-border p-4 text-center text-[12px] text-[var(--text-muted)]">
+            Add an image to extract its colours.
+          </p>
         ) : (
-          <div className="grid grid-cols-3 gap-3">
-            {imagePalette.map((color, i) => (
+          <div className="grid grid-cols-3 gap-2">
+            {imagePalette.map((color, index) => (
               <button
-                key={i}
+                key={`${color}-${index}`}
+                type="button"
                 onClick={() => applyColor(color)}
-                className="group relative flex flex-col items-center gap-2"
+                aria-label={`Apply ${color}`}
+                className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-lg p-1 outline-none transition-colors hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
               >
-                <div
-                  className="aspect-square w-full rounded-2xl border border-white/10 shadow-inner transition-transform hover:scale-105 active:scale-90"
+                <span
+                  className="aspect-square w-full rounded-md border border-black/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)] transition-transform group-hover:scale-[1.03] group-active:scale-95"
                   style={{ backgroundColor: color }}
                 />
-                <span className="font-mono text-[10px] text-white/40 uppercase transition-colors group-hover:text-white/80">
+                <span className="font-mono text-[10px] text-[var(--text-muted)] uppercase">
                   {color}
                 </span>
               </button>
             ))}
           </div>
         )}
-      </div>
-    </>
+      </Section>
+    </div>
   )
 }

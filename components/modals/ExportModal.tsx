@@ -1,75 +1,110 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
-import { Check, Copy, Download, FileImage, Loader2, X } from "lucide-react"
 import { useState } from "react"
-import { AppleSlider } from "../functions"
+import { Check, Copy, Download, FileImage, Loader2, X } from "lucide-react"
+
+import { AppleSlider } from "@/components/functions"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
 
 const SCALE_PRESETS = [
-  { label: "0.5x", value: 0.5, desc: "Web Draft" },
-  { label: "1x", value: 1, desc: "Standard" },
-  { label: "2x", value: 2, desc: "High-Res" },
-  { label: "3x", value: 3, desc: "Ultra HD" },
+  { label: "0.5×", value: 0.5, desc: "Draft" },
+  { label: "1×", value: 1, desc: "Standard" },
+  { label: "2×", value: 2, desc: "High-res" },
+  { label: "3×", value: 3, desc: "Ultra" },
 ]
 
+/** Turns the workspace name into a filename-safe stem. */
+export function slugifyTitle(title: string): string {
+  const slug = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+  return slug || "subtext"
+}
+
+/**
+ * Export.
+ *
+ * Rebuilt on the Dialog primitive, so it gains Escape, backdrop dismissal, a
+ * focus trap and proper dialog roles — previously the only way out was a 28px
+ * unlabelled X, and the backdrop's `stopPropagation` implied a dismissal that
+ * did not exist. Format and scale now share one selection language instead of
+ * `bg-white` for one and gold for the other, and the two competing radius
+ * scales are gone.
+ *
+ * The download filename is derived from the workspace name, which is what the
+ * document title input was always for.
+ */
 export default function ExportModal() {
-  const {
-    isExportModalOpen,
-    setIsExportModalOpen,
-    canvas,
-    copyCanvasToClipboard,
-  } = useEditorStore()
+  const isExportModalOpen = useEditorStore((s) => s.isExportModalOpen)
+  const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
+  const canvas = useEditorStore((s) => s.canvas)
+  const copyCanvasToClipboard = useEditorStore((s) => s.copyCanvasToClipboard)
+  const setAlertDialog = useEditorStore((s) => s.setAlertDialog)
+  const documentTitle = useEditorStore((s) => s.documentTitle)
 
   const [format, setFormat] = useState<"png" | "jpg">("png")
-  const [quality, setQuality] = useState(0.92) // 92% quality default for JPG
+  const [quality, setQuality] = useState(0.92)
   const [scale, setScale] = useState(1)
   const [isExporting, setIsExporting] = useState(false)
   const [isCopying, setIsCopying] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  if (!isExportModalOpen) return null
-
-  // Calculate output dimensions
   const baseW = canvas?.getWidth() || 1080
   const baseH = canvas?.getHeight() || 1080
   const outputW = Math.round(baseW * scale)
   const outputH = Math.round(baseH * scale)
+
+  const extension = format === "jpg" ? "jpg" : "png"
+  const filename = `${slugifyTitle(documentTitle)}-${outputW}x${outputH}.${extension}`
 
   const handleDownload = async () => {
     if (!canvas) return
     setIsExporting(true)
 
     try {
-      // 1. Temporarily deselect any active object so bounding boxes/handles are excluded
+      // Deselect first so selection handles are not baked into the export.
       const activeObj = canvas.getActiveObject()
       canvas.discardActiveObject()
       canvas.requestRenderAll()
 
-      // 2. Fabric's multiplier option renders the canvas scaled up in-memory without breaking layout
       const dataUrl = canvas.toDataURL({
         format: format === "jpg" ? "jpeg" : "png",
-        quality: quality,
+        quality,
         multiplier: scale,
       })
 
-      // 3. Re-select the active object
       if (activeObj) {
         canvas.setActiveObject(activeObj)
         canvas.requestRenderAll()
       }
 
-      // 4. Programmatic download link trigger
       const link = document.createElement("a")
-      link.download = `Subtext-${Date.now()}.${format === "jpg" ? "jpg" : "png"}`
+      link.download = filename
       link.href = dataUrl
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
 
-      // Close modal on success
       setIsExportModalOpen(false)
-    } catch (err) {
-      console.error("Export failed:", err)
+    } catch (error) {
+      console.error("Export failed:", error)
+      setAlertDialog({
+        title: "Export failed",
+        message:
+          "The artwork could not be rendered. Try a smaller export size or a different format.",
+      })
     } finally {
       setIsExporting(false)
     }
@@ -85,170 +120,164 @@ export default function ExportModal() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     } else {
-      alert("Unable to copy to clipboard. Please check browser permissions.")
+      setAlertDialog({
+        title: "Copy failed",
+        message:
+          "Could not copy to the clipboard. Check this browser's clipboard permission and try again.",
+      })
     }
   }
 
+  const busy = isExporting || isCopying
+
   return (
-    <div className="fixed inset-0 z-[200] flex animate-in items-center justify-center bg-black/70 p-4 font-sans backdrop-blur-md duration-150 fade-in">
-      <div
-        className="relative w-full max-w-md animate-in overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141414] p-6 text-white shadow-2xl duration-150 zoom-in-95"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#D6B47A]/10 text-[#D6B47A]">
-              <Download size={15} />
-            </div>
+    <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+      {isExportModalOpen && (
+        <DialogContent className="max-w-md p-5">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-[14px] font-semibold text-white">
-                Export Artwork
-              </h2>
-              <p className="text-[10px] text-white/40">
-                Render or copy high-resolution visual
-              </p>
+              <DialogTitle>Export artwork</DialogTitle>
+              <DialogDescription>
+                Rendered at {outputW} × {outputH} px
+              </DialogDescription>
             </div>
-          </div>
-          <button
-            onClick={() => setIsExportModalOpen(false)}
-            className="rounded-full p-1.5 text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="space-y-5 py-5">
-          {/* 1. FORMAT SWITCHER */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-              Format
-            </label>
-            <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1">
-              <button
-                onClick={() => setFormat("png")}
-                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-[12px] font-medium transition-all ${
-                  format === "png"
-                    ? "bg-white font-semibold text-black shadow-md"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                <FileImage size={14} />
-                PNG (Lossless)
-              </button>
-              <button
-                onClick={() => setFormat("jpg")}
-                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-[12px] font-medium transition-all ${
-                  format === "jpg"
-                    ? "bg-white font-semibold text-black shadow-md"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                <FileImage size={14} />
-                JPG (Smaller)
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="Close export"
+              onClick={() => setIsExportModalOpen(false)}
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-black/[0.05] hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <X size={15} />
+            </button>
           </div>
 
-          {/* 2. QUALITY SLIDER (JPG Only) */}
-          {format === "jpg" && (
-            <div className="animate-in space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 duration-150 fade-in">
-              <AppleSlider
-                label="JPEG Quality"
-                value={Math.round(quality * 100)}
-                min={10}
-                max={100}
-                step={1}
-                onChange={(val) => setQuality(val / 100)}
+          <div className="mt-5 flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <span className="text-[12px] font-medium text-foreground">
+                Format
+              </span>
+              <SegmentedControl
+                label="Export format"
+                value={format}
+                onChange={setFormat}
+                options={[
+                  {
+                    value: "png",
+                    label: "PNG",
+                    icon: <FileImage size={13} aria-hidden="true" />,
+                  },
+                  {
+                    value: "jpg",
+                    label: "JPG",
+                    icon: <FileImage size={13} aria-hidden="true" />,
+                  },
+                ]}
               />
-              <span className="block text-[9px] text-white/30">
-                Higher quality produces clearer gradients with larger file
-                sizes.
-              </span>
             </div>
-          )}
 
-          {/* 3. SIZE & RESOLUTION PRESETS */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-semibold tracking-wider text-white/50 uppercase">
-                Resolution Presets
-              </label>
-              <span className="font-mono text-[10px] text-[#D6B47A]">
-                {outputW} × {outputH} px
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {SCALE_PRESETS.map((p) => {
-                const isActive = scale === p.value
-                return (
-                  <button
-                    key={p.value}
-                    onClick={() => setScale(p.value)}
-                    className={`flex flex-col items-center justify-center rounded-xl border py-2.5 transition-all ${
-                      isActive
-                        ? "border-[#D6B47A] bg-[#D6B47A]/10 text-white shadow-sm"
-                        : "border-white/[0.06] bg-white/[0.02] text-white/60 hover:border-white/[0.15] hover:text-white"
-                    }`}
-                  >
-                    <span className="text-[12px] font-semibold">{p.label}</span>
-                    <span className="text-[8px] text-white/40">{p.desc}</span>
-                  </button>
-                )
-              })}
+            {format === "jpg" && (
+              <div className="rounded-lg border border-border p-3">
+                <AppleSlider
+                  label="JPEG quality"
+                  value={Math.round(quality * 100)}
+                  min={10}
+                  max={100}
+                  step={1}
+                  onChange={(value) => setQuality(value / 100)}
+                />
+                <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                  Higher quality keeps gradients smooth at a larger file size.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[12px] font-medium text-foreground">
+                  Resolution
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)] tabular-nums">
+                  {outputW} × {outputH} px
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {SCALE_PRESETS.map((preset) => {
+                  const active = scale === preset.value
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => setScale(preset.value)}
+                      aria-pressed={active}
+                      className={cn(
+                        "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-2 outline-none transition-colors",
+                        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                        active
+                          ? "border-primary/40 bg-primary/[0.06] text-foreground"
+                          : "border-border text-[var(--text-secondary)] hover:bg-black/[0.03]"
+                      )}
+                    >
+                      <span className="text-[12px] font-medium">
+                        {preset.label}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        {preset.desc}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* FOOTER ACTIONS */}
-        <div className="space-y-2.5 border-t border-white/[0.06] pt-4">
-          <button
-            onClick={handleDownload}
-            disabled={isExporting || isCopying}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#D6B47A] py-3 text-[12px] font-semibold text-black transition-all hover:bg-[#e2c492] active:scale-[0.98] disabled:opacity-50"
-          >
-            {isExporting ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Rendering {outputW}×{outputH}...
-              </span>
-            ) : (
-              <>
-                <Download size={14} />
-                Download {format.toUpperCase()} ({outputW}×{outputH})
-              </>
-            )}
-          </button>
+          <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4">
+            <Button onClick={handleDownload} disabled={busy} className="w-full">
+              {isExporting ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  Rendering {outputW}×{outputH}…
+                </>
+              ) : (
+                <>
+                  <Download size={14} aria-hidden="true" />
+                  Download {format.toUpperCase()}
+                </>
+              )}
+            </Button>
 
-          {/* CLIPBOARD COPY BUTTON */}
-          <button
-            onClick={handleCopy}
-            disabled={isExporting || isCopying}
-            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-[12px] font-medium transition-all active:scale-[0.98] ${
-              copied
-                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-                : "border-white/[0.08] bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white"
-            }`}
-          >
-            {isCopying ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-white/50" />
-                <span>Copying to Clipboard...</span>
-              </>
-            ) : copied ? (
-              <>
-                <Check size={14} className="text-emerald-400" />
-                <span>Copied to Clipboard!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={14} className="text-white/50" />
-                <span>Copy to Clipboard (PNG)</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+            <Button
+              variant={copied ? "secondary" : "outline"}
+              onClick={handleCopy}
+              disabled={busy}
+              className={cn(
+                "w-full",
+                copied && "text-emerald-700"
+              )}
+            >
+              {isCopying ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  Copying…
+                </>
+              ) : copied ? (
+                <>
+                  <Check size={14} aria-hidden="true" />
+                  Copied to clipboard
+                </>
+              ) : (
+                <>
+                  <Copy size={14} aria-hidden="true" />
+                  Copy PNG to clipboard
+                </>
+              )}
+            </Button>
+
+            <p className="truncate text-center text-[11px] text-[var(--text-muted)]">
+              Saves as {filename}
+            </p>
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
   )
 }

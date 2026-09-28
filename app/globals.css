@@ -2,245 +2,283 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * Keep the class-based dark variant even though Subtext ships a single light
+ * theme. Without this line Tailwind falls back to `prefers-color-scheme`, which
+ * would let the `dark:` utilities inside components/ui/* flip on a dark-mode OS.
+ * Nothing ever adds `.dark`, so those utilities stay inert.
+ */
 @custom-variant dark (&:is(.dark *));
 
+/* ===========================================================================
+   Subtext theme
+
+   The visual language is DESIGN/ (see DESIGN/tokens.json): a warm paper canvas,
+   white surfaces, 1px rgba(0,0,0,.08) hairlines instead of shadows, one brand
+   accent (#0075de), radii of 4/8/12px, no gradients.
+
+   The shadcn variable names below are the canonical tokens — components/ui/*
+   already consumes them — and are the only place DESIGN/ values are mapped:
+
+     --background     DESIGN/ paper-warmth   #f6f5f4
+     --card/popover   DESIGN/ pure-white     #ffffff
+     --foreground     DESIGN/ ink-black      #000000
+     --muted-foreground  DESIGN/ stone       #757575
+     --border         DESIGN/ hairline       rgba(0,0,0,.08)
+     --primary        DESIGN/ notion-blue    #0075de
+     --destructive    DESIGN/ vermillion     #e32d14
+
+   Two additions DESIGN/ does not define: `workspace`, the dark surface the
+   artboard floats on, and the warm accent cast (marigold/coral/sky/saffron/
+   midnight) kept for artwork-adjacent punctuation only.
+   =========================================================================== */
+
 @theme inline {
-  --font-sans: var(--font-sans);
-  --font-mono:
-    SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New,
-    monospace;
-  --font-serif: Georgia, serif;
-  --radius: 1.5rem;
-  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  /* ---- typography -------------------------------------------------------- */
+  /* --font-geist-sans / --font-geist-mono are set by next/font in app/layout.tsx */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    Monaco, monospace;
+  --font-serif: Georgia, "Times New Roman", serif;
   --font-heading: var(--font-sans);
-  --tracking-normal: var(--tracking-normal);
-  --shadow-2xl: var(--shadow-2xl);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-md: var(--shadow-md);
-  --shadow: var(--shadow);
-  --shadow-sm: var(--shadow-sm);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-2xs: var(--shadow-2xs);
-  --spacing: var(--spacing);
-  --letter-spacing: var(--letter-spacing);
-  --shadow-offset-y: var(--shadow-offset-y);
-  --shadow-offset-x: var(--shadow-offset-x);
-  --shadow-spread: var(--shadow-spread);
-  --shadow-blur: var(--shadow-blur);
-  --shadow-opacity: var(--shadow-opacity);
-  --color-shadow-color: var(--shadow-color);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* DESIGN/ type scale. Sentence case in the UI; canvas type is separate. */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.33;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.43;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-subheading: 20px;
+  --text-subheading--line-height: 1.4;
+  --text-heading-sm: 22px;
+  --text-heading-sm--line-height: 1.27;
+  --text-heading-sm--letter-spacing: -0.011em;
+  --text-heading: 40px;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.022em;
+
+  --tracking-normal: 0em;
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  --letter-spacing: var(--tracking-normal);
+
+  --spacing: 0.25rem;
+
+  /* ---- radii (DESIGN/: small 4, buttons 8, cards 12) ---------------------- */
+  --radius: 0.5rem;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+
+  /* ---- elevation --------------------------------------------------------- */
+  /* DESIGN/ uses hairlines, not shadows, for content. These are for floating
+     surfaces only: popovers, dialogs, the artboard, the zoom control. */
+  --shadow-2xs: 0 1px 2px rgb(0 0 0 / 0.03);
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.12);
+  --shadow-2xl: 0 16px 48px rgb(0 0 0 / 0.16);
+  /* Separates the artboard from the dark workspace (design doc §8). */
+  --shadow-artboard: 0 12px 40px rgb(0 0 0 / 0.28);
+
+  /* ---- the artboard workspace (new; DESIGN/ has no dark surface) ---------- */
+  --color-workspace: #141311;
+  --color-workspace-raised: #1d1b18;
+  --color-on-workspace: #f5f4ef;
+  --color-on-workspace-muted: rgb(245 244 239 / 0.62);
+  --color-on-workspace-faint: rgb(245 244 239 / 0.38);
+  --color-on-workspace-hairline: rgb(255 255 255 / 0.08);
+
+  /* ---- warm accent cast (DESIGN/, used sparingly) ------------------------- */
+  --color-marigold: #ffb110;
+  --color-coral: #f64932;
+  --color-saffron: #e89d01;
+  --color-sky: #62aef0;
+  --color-midnight: #02093a;
+
+  /* ---- shadcn token bridge ---------------------------------------------- */
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --font-sans: Inter, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: JetBrains Mono, monospace;
-  --shadow-color: #4e5661;
-  --shadow-opacity: 0.1;
-  --shadow-blur: 28px;
-  --shadow-spread: 0px;
-  --shadow-offset-x: 0px;
-  --shadow-offset-y: 2px;
-  --letter-spacing: 0em;
-  --spacing: 0.25rem;
-  --shadow-2xs: 0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.05);
-  --shadow-xs: 0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.05);
-  --shadow-sm:
-    0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.1),
-    0px 1px 2px -1px hsl(214.7368 10.8571% 34.3137% / 0.1);
-  --shadow:
-    0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.1),
-    0px 1px 2px -1px hsl(214.7368 10.8571% 34.3137% / 0.1);
-  --shadow-md:
-    0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.1),
-    0px 2px 4px -1px hsl(214.7368 10.8571% 34.3137% / 0.1);
-  --shadow-lg:
-    0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.1),
-    0px 4px 6px -1px hsl(214.7368 10.8571% 34.3137% / 0.1);
-  --shadow-xl:
-    0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.1),
-    0px 8px 10px -1px hsl(214.7368 10.8571% 34.3137% / 0.1);
-  --shadow-2xl: 0px 2px 28px 0px hsl(214.7368 10.8571% 34.3137% / 0.25);
-  --tracking-normal: 0em;
-}
+  /* Surfaces — warm paper, white cards. Never invert this hierarchy. */
+  --background: #f6f5f4;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 1.5rem;
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --font-sans:
-    Segoe UI, Helvetica Neue, Helvetica, Lucida Grande, Arial, Ubuntu,
-    Cantarell, Fira Sans, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono:
-    SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New,
-    monospace;
-  --shadow-color: #000000;
-  --shadow-opacity: 0.45;
-  --shadow-blur: 40px;
-  --shadow-spread: 0px;
-  --shadow-offset-x: 0px;
-  --shadow-offset-y: 4px;
-  --letter-spacing: 0em;
-  --spacing: 0.25rem;
-  --shadow-2xs: 0px 4px 40px 0px hsl(0 0% 0% / 0.23);
-  --shadow-xs: 0px 4px 40px 0px hsl(0 0% 0% / 0.23);
-  --shadow-sm:
-    0px 4px 40px 0px hsl(0 0% 0% / 0.45), 0px 1px 2px -1px hsl(0 0% 0% / 0.45);
-  --shadow:
-    0px 4px 40px 0px hsl(0 0% 0% / 0.45), 0px 1px 2px -1px hsl(0 0% 0% / 0.45);
-  --shadow-md:
-    0px 4px 40px 0px hsl(0 0% 0% / 0.45), 0px 2px 4px -1px hsl(0 0% 0% / 0.45);
-  --shadow-lg:
-    0px 4px 40px 0px hsl(0 0% 0% / 0.45), 0px 4px 6px -1px hsl(0 0% 0% / 0.45);
-  --shadow-xl:
-    0px 4px 40px 0px hsl(0 0% 0% / 0.45), 0px 8px 10px -1px hsl(0 0% 0% / 0.45);
-  --shadow-2xl: 0px 4px 40px 0px hsl(0 0% 0% / 1.13);
+  /* The single chromatic commitment: one filled action per screen. */
+  --primary: #0075de;
+  --primary-foreground: #ffffff;
+
+  /* Quiet surfaces for secondary controls and hover states. */
+  --secondary: #f1f0ee;
+  --secondary-foreground: #000000;
+  --muted: #f1f0ee;
+  --muted-foreground: #757575;
+
+  /* `accent` is shadcn's subtle highlight surface, not the brand colour. */
+  --accent: #efeeec;
+  --accent-foreground: #000000;
+
+  --destructive: #e32d14;
+  --destructive-foreground: #ffffff;
+
+  /* Hairlines, not shadows, carry the structure. */
+  --border: rgb(0 0 0 / 8%);
+  --input: rgb(0 0 0 / 12%);
+  --ring: #0075de;
+
+  /* Text hierarchy is built from alpha on ink, per DESIGN/. */
+  --text-secondary: #615d59; /* DESIGN/ graphite */
+  --text-muted: #757575; /* DESIGN/ stone */
+
+  /* Focus ring geometry, shared by every focus style in the app. */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 }
 
 @layer base {
-  body {
-    letter-spacing: var(--tracking-normal);
-    @apply bg-background text-foreground;
-  }
-  * {
-    @apply border-border outline-ring/50;
-  }
   html {
     @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    letter-spacing: var(--letter-spacing);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One consistent focus ring. Primitives in components/ui opt out with
+     `outline-none` and draw their own ring instead. */
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--ring);
+    outline-offset: var(--focus-ring-offset);
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: rgb(0 117 222 / 22%);
+    color: #000000;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  /* The artboard sets its own cursor; never let the browser show a text caret. */
+  canvas {
+    -webkit-user-select: none;
+    user-select: none;
   }
 }
 
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  /*
+   * A visible-but-quiet scrollbar. The previous version set
+   * `scrollbar-width: none` for Firefox while drawing a 5px thumb for WebKit,
+   * so Firefox scroll regions gave no affordance at all.
+   */
   .custom-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(0 0 0 / 18%) transparent;
   }
-  /* .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 18%);
+    background-clip: content-box;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  } */
+    background: rgb(0 0 0 / 30%);
+    background-clip: content-box;
+  }
+
+  /* The same control on the dark workspace. */
+  .custom-scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 20%) transparent;
+  }
+  .custom-scrollbar-dark::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar-dark::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 20%);
+    background-clip: content-box;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * DESIGN/ keeps motion at ~200ms with ease timing for hovers, and reserves
+ * spring for decorative marks. Honour the user's system preference regardless.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

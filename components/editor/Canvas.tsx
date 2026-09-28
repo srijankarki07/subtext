@@ -1,10 +1,10 @@
 "use client"
 
-import { extractPalette } from "@/lib/colorUtils"
+import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
+import { importImage, isImageFile } from "@/lib/imageImport"
 import { useEditorStore } from "@/store/useEditorStore"
 import {
   Canvas as FabricCanvas,
-  FabricImage,
   FabricObject,
   IText,
 } from "fabric"
@@ -73,14 +73,13 @@ export default function Canvas() {
     const canvas = new FabricCanvas(canvasRef.current, {
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
-      backgroundColor: "#1C1C1E",
+      backgroundColor: DEFAULT_ARTBOARD_BACKGROUND,
       fireRightClick: true,
       stopContextMenu: true,
     })
 
-    const wrapper = canvas.getElement().parentElement
-    if (wrapper) wrapper.style.border = "1px solid rgba(255,255,255,0.05)"
-
+    // No border here: CanvasWorkspace draws the artboard's hairline, and doing
+    // it in both places produced a 2px double edge.
     setCanvas(canvas)
     saveHistoryState("Initial Canvas")
 
@@ -237,9 +236,25 @@ export default function Canvas() {
         return
       }
 
-      // 6. DESELECT / CLOSE: Escape
+      // 6. DESELECT / CANCEL / CLOSE: Escape
       if (e.key === "Escape") {
+        const store = useEditorStore.getState()
+
+        // An open dialog owns Escape. Without this guard the canvas would also
+        // deselect behind the dialog and swallow the key.
+        if (store.isExportModalOpen || store.confirmDialog || store.alertDialog) {
+          return
+        }
+
         e.preventDefault()
+
+        // Cancel the eyedropper. This was never handled anywhere, so Escape
+        // left the canvas in sampling mode and the next click — meant as a
+        // deselect — sampled a colour instead.
+        if (store.isPickingColor) {
+          store.stopColorPicker()
+        }
+
         canvas.discardActiveObject()
         canvas.requestRenderAll()
         closeContextMenu()
@@ -291,46 +306,32 @@ export default function Canvas() {
   ])
 
   const processFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) return
+    if (!isImageFile(file)) return
+
+    const canvas = useEditorStore.getState().canvas
+    if (!canvas) return
+
     setIsProcessingImage(true)
+    try {
+      // Shared with the store's addImage so both upload paths behave the same
+      // and always extract a palette.
+      const result = await importImage(canvas, file)
+      if (!result) return
 
-    const reader = new FileReader()
-    reader.onload = async (f) => {
-      const data = f.target?.result as string
-      const canvas = useEditorStore.getState().canvas
-      if (!canvas) {
-        setIsProcessingImage(false)
-        return
-      }
-
-      try {
-        const img = await FabricImage.fromURL(data)
-        const scale = Math.min(
-          canvas.getWidth() / (img.width || 1),
-          canvas.getHeight() / (img.height || 1)
-        )
-        img.scale(scale * 0.9)
-        canvas.centerObject(img)
-        canvas.insertAt(0, img)
-        canvas.setActiveObject(img)
-
-        const palette = await extractPalette(data, 6)
-        useEditorStore.getState().setImagePalette(palette)
-        canvas.requestRenderAll()
-        saveHistoryState("Upload Image")
-      } catch (error) {
-        console.error("Failed to load image or extract palette:", error)
-      } finally {
-        setIsProcessingImage(false)
-      }
+      useEditorStore.getState().setImagePalette(result.palette)
+      canvas.requestRenderAll()
+      saveHistoryState("Upload image")
+    } catch (error) {
+      console.error("Failed to load image or extract palette:", error)
+    } finally {
+      setIsProcessingImage(false)
     }
-    reader.readAsDataURL(file)
   }
 
   return (
     <div
       ref={containerRef}
-      className={`ro relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl transition-all ${
+      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl transition-all ${
         isPickingColor ? "cursor-crosshair" : ""
       }`}
       onDragOver={(e) => {
@@ -348,21 +349,34 @@ export default function Canvas() {
 
       {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
       {isDraggingOver && (
-        <div className="pointer-events-none absolute inset-6 z-50 flex animate-in flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D6B47A] bg-[#D6B47A]/10 backdrop-blur-md duration-150 zoom-in-95">
-          <UploadCloud size={36} className="animate-bounce text-[#D6B47A]" />
-          <span className="mt-2.5 text-[14px] font-semibold text-white">
+        <div className="pointer-events-none absolute inset-4 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-black/50 backdrop-blur-md">
+          <UploadCloud
+            size={34}
+            aria-hidden="true"
+            className="animate-bounce text-[var(--color-on-workspace)]"
+          />
+          <span className="mt-2.5 text-[14px] font-semibold text-[var(--color-on-workspace)]">
             Drop image to frame
           </span>
-          <span className="text-[10px] text-white/50">PNG, JPG, or WebP</span>
+          <span className="text-[11px] text-[var(--color-on-workspace-muted)]">
+            PNG, JPG or WebP
+          </span>
         </div>
       )}
 
       {/* 2. IMAGE PROCESSING LOADING OVERLAY */}
       {isProcessingImage && (
-        <div className="pointer-events-none absolute inset-0 z-50 flex animate-in flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md duration-150 fade-in">
-          <Loader2 size={32} className="animate-spin text-[#D6B47A]" />
-          <span className="mt-3 text-[12px] font-medium text-white/90">
-            Processing image & extracting palette...
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md"
+        >
+          <Loader2
+            size={30}
+            aria-hidden="true"
+            className="animate-spin text-[var(--color-on-workspace)]"
+          />
+          <span className="mt-3 text-[12px] font-medium text-[var(--color-on-workspace)]">
+            Processing image and extracting its palette…
           </span>
         </div>
       )}
@@ -408,13 +422,19 @@ export default function Canvas() {
         <div
           className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
           style={{
+            // Nudge inward from the pointer, but flip near the right and top
+            // edges so the swatch and its readout are never cut off.
             left: pickerPreview.x,
             top: pickerPreview.y,
-            transform: "translate(20px, -70px)",
+            transform:
+              typeof window !== "undefined" &&
+              pickerPreview.x > window.innerWidth - 90
+                ? "translate(-84px, -70px)"
+                : "translate(20px, -70px)",
           }}
         >
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3px] border-white shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+            className="flex size-12 items-center justify-center rounded-full border-[3px] border-white shadow-lg"
             style={{ backgroundColor: pickerPreview.color }}
           />
           <div className="rounded-md bg-black/80 px-2 py-1 font-mono text-[10px] text-white shadow-lg backdrop-blur-md">
@@ -424,22 +444,46 @@ export default function Canvas() {
       )}
 
       {isPickingColor && !pickerPreview && (
-        <div className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 animate-bounce items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xl backdrop-blur-md">
-          <Pipette size={14} />
-          Click anywhere to sample color
+        <div
+          role="status"
+          className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg"
+        >
+          <Pipette size={14} aria-hidden="true" />
+          Click anywhere to sample a colour
         </div>
       )}
 
-      {/* 5. CANVAS EMPTY STATE BUTTON */}
+      {/* 5. CANVAS EMPTY STATE */}
       {!hasImage && (
-        <div className="pointer-events-none absolute right-0 bottom-4 left-0 z-40 flex justify-center">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-xs text-white/40 transition-all hover:border-white/25 hover:bg-black/60 hover:text-white"
-          >
-            <ImagePlus size={13} />
-            Upload photo · or drag & drop
-          </button>
+        <div
+          // The whole artboard is a drop target and now a click target too.
+          // It used to be `pointer-events-none` with a single text button
+          // enabled, so the obvious affordance — click the artwork area —
+          // did nothing.
+          role="button"
+          tabIndex={0}
+          aria-label="Upload a photo"
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault()
+              fileInputRef.current?.click()
+            }
+          }}
+          className="absolute inset-0 z-40 flex cursor-pointer flex-col items-center justify-center text-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--color-on-workspace-muted)]"
+        >
+          <h2 className="text-[15px] font-medium text-[var(--color-on-workspace)]">
+            Start with an image
+          </h2>
+          <p className="mt-1.5 text-[12px] text-[var(--color-on-workspace-muted)]">
+            Drop a photo here, or click to choose a file
+          </p>
+          <span className="mt-4 rounded-lg border border-[var(--color-on-workspace-hairline)] px-3 py-1.5 text-[12px] font-medium text-[var(--color-on-workspace)]">
+            Upload photo
+          </span>
+          <span className="mt-4 text-[11px] text-[var(--color-on-workspace-faint)]">
+            Your image stays in your browser.
+          </span>
         </div>
       )}
     </div>

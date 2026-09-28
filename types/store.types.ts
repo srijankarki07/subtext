@@ -18,26 +18,6 @@ export interface ContextMenuState {
   targetObject: FabricObject | null
 }
 
-/**
- * CORE SLICE: Manages the canvas initialization, global selections,
- * artboard dimensions, and adding/removing base objects.
- */
-export interface CoreSlice {
-  canvas: Canvas | null
-  activeObject: FabricObject | null
-  activeMobileTab: MobileTab
-  artboard: { width: number; height: number }
-
-  setCanvas: (canvas: Canvas) => void
-  setActiveObject: (obj: FabricObject | null) => void
-  setActiveMobileTab: (tab: MobileTab) => void
-  setAspectRatio: (width: number, height: number) => void
-  addText: (type: TextBlockType) => void
-  addImage: () => void
-  deleteActiveObject: (targetObj?: FabricObject | null) => void
-  clearCanvas: () => void
-}
-
 export interface FontSlice {
   customFonts: CustomFontMetadata[]
   customFontsLoading: boolean
@@ -126,8 +106,10 @@ export interface ColorSlice {
   getActiveSelectionStyle: (key: string) => any
 }
 
-// src/types/store.types.ts (Replace only the EffectSlice part)
-
+/**
+ * EFFECT SLICE: Manages image grading, overlays and the multi-instance effect layers
+ * (vignettes, blur zones, letterbox bars) that sit on top of the artwork.
+ */
 export interface VignetteState {
   id: string
   opacity: number
@@ -185,25 +167,27 @@ export interface EffectSlice {
   removeLetterbox: (id: string) => void
 }
 
-export interface ContrastStats {
-  ratio: number
-  score: number
-  badge: "AAA" | "AA" | "FAIL"
-  bgColor: string
-}
-
-export interface ContextMenuState {
-  visible: boolean
-  x: number
-  y: number
-  targetObject: FabricObject | null
-}
-
 /**
  * CORE SLICE: Manages the canvas initialization, global selections,
  * artboard dimensions, and adding/removing base objects.
  */
+
+export interface DialogConfig {
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  onConfirm?: () => void
+  onCancel?: () => void
+  onClose?: () => void
+}
+
 export interface CoreSlice {
+  confirmDialog: DialogConfig | null
+  alertDialog: DialogConfig | null
+  setConfirmDialog: (config: DialogConfig | null) => void
+  setAlertDialog: (config: DialogConfig | null) => void
+
   canvas: Canvas | null
   activeObject: FabricObject | null
   activeMobileTab: MobileTab
@@ -213,8 +197,14 @@ export interface CoreSlice {
   lastSavedAt: string | null
   clipboardObject: FabricObject | null
 
+  /** The workspace name. Persisted with the project and used for export filenames. */
+  documentTitle: string
+  /** True when the document has changed since the last save. */
+  isDirty: boolean
+
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
+  setDocumentTitle: (title: string) => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void

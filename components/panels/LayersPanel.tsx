@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditorStore } from "@/store/useEditorStore"
+import { useState } from "react"
 import {
   ArrowDown,
   ArrowUp,
@@ -8,214 +8,221 @@ import {
   EyeOff,
   Image as ImageIcon,
   Lock,
+  MonitorPlay,
+  Square,
   Trash2,
   Type,
   Unlock,
 } from "lucide-react"
-import { useState } from "react"
+
+import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
+import { Section } from "@/components/ui/section"
+import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
+
+/**
+ * Layer list.
+ *
+ * Two fixes worth naming. Every non-text object used to be labelled "Background
+ * Image", so vignettes, letterbox bars, blur zones and gradients were all
+ * indistinguishable; they now carry their own names and icons. And the drop
+ * indicator was a `border-t-2` that changed the row's box, shifting the whole
+ * list by a pixel mid-drag — it is now an overlay that costs no layout.
+ */
+
+type Layer = {
+  id: string
+  label: string
+  icon: typeof Type
+  obj: any
+}
+
+function describe(obj: any): { label: string; icon: typeof Type } {
+  if (obj.type === "i-text") {
+    const text = typeof obj.text === "string" ? obj.text.trim() : ""
+    return { label: text.substring(0, 24) || "Empty text", icon: Type }
+  }
+
+  const id = String(obj.id ?? "")
+
+  if (id.startsWith("vignette")) return { label: "Vignette", icon: MonitorPlay }
+  if (id.endsWith("-top") || id.endsWith("-bottom"))
+    return { label: "Letterbox bar", icon: Square }
+  if (id.startsWith("letterbox"))
+    return { label: "Letterbox bar", icon: Square }
+  if (id.includes("gradient"))
+    return { label: "Gradient overlay", icon: MonitorPlay }
+  if (id.includes("blur")) return { label: "Blur zone", icon: MonitorPlay }
+  if (obj.isEffect) return { label: "Effect", icon: MonitorPlay }
+  if (obj.type === "image") return { label: "Image", icon: ImageIcon }
+
+  return { label: obj.type ?? "Layer", icon: Square }
+}
 
 export default function LayersPanel() {
-  const {
-    canvas,
-    activeObject,
-    moveLayerToIndex,
-    toggleLayerLock,
-    toggleLayerVisibility,
-    deleteActiveObject,
-  } = useEditorStore()
+  const canvas = useEditorStore((s) => s.canvas)
+  const activeObject = useEditorStore((s) => s.activeObject)
+  const moveLayerToIndex = useEditorStore((s) => s.moveLayerToIndex)
+  const toggleLayerLock = useEditorStore((s) => s.toggleLayerLock)
+  const toggleLayerVisibility = useEditorStore((s) => s.toggleLayerVisibility)
+  const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
-  const objects = canvas?.getObjects() || []
+  const objects = canvas?.getObjects() ?? []
 
   if (objects.length === 0) {
     return (
-      <div className="p-4 text-sm text-white/50">
-        No elements on canvas. Add text or images to manage layers.
-      </div>
+      <p className="p-2 text-[12px] text-[var(--text-muted)]">
+        Nothing on the artboard yet. Add text or an image to build up layers.
+      </p>
     )
   }
 
-  // Display top layers first
-  const layerList = [...objects].reverse()
+  // Topmost layer first, matching how the canvas stacks.
+  const layers: Layer[] = objects
+    .map((obj, index) => ({
+      id: String((obj as any).id ?? index),
+      ...describe(obj),
+      obj,
+    }))
+    .reverse()
 
-  const handleDragStart = (e: React.DragEvent, actualIndex: number) => {
-    setDraggedIndex(actualIndex)
-    e.dataTransfer.effectAllowed = "move"
-  }
-
-  const handleDragOver = (e: React.DragEvent, actualIndex: number) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-    if (dragOverIndex !== actualIndex) {
-      setDragOverIndex(actualIndex)
-    }
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (e: React.DragEvent, dropActualIndex: number) => {
-    e.preventDefault()
-    if (draggedIndex !== null && draggedIndex !== dropActualIndex) {
-      moveLayerToIndex(draggedIndex, dropActualIndex)
-    }
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null)
-    setDragOverIndex(null)
+  const select = (obj: any) => {
+    canvas?.setActiveObject(obj)
+    canvas?.requestRenderAll()
+    useEditorStore.getState().setActiveObject(obj)
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">
-          Canvas Layers
-        </h3>
+    <div className="flex flex-col gap-6">
+      <Section
+        title="Layers"
+        description="Top of the list is front-most."
+        action={
+          <span className="rounded-full bg-black/[0.05] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] tabular-nums">
+            {objects.length}
+          </span>
+        }
+      >
+        <div className="flex flex-col gap-1">
+          {layers.map((layer, listIndex) => {
+            const actualIndex = objects.indexOf(layer.obj)
+            const isSelected = activeObject === layer.obj
+            const isLocked = Boolean(layer.obj.lockMovementX)
+            const Icon = layer.icon
 
-        <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-medium text-white/40">
-          {objects.length}
-        </span>
-      </div>
+            return (
+              <div
+                key={`${layer.id}-${actualIndex}`}
+                draggable
+                onDragStart={(event) => {
+                  setDraggedIndex(actualIndex)
+                  event.dataTransfer.effectAllowed = "move"
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = "move"
+                  if (dragOverIndex !== actualIndex) setDragOverIndex(actualIndex)
+                }}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  if (draggedIndex !== null && draggedIndex !== actualIndex) {
+                    moveLayerToIndex(draggedIndex, actualIndex)
+                  }
+                  setDraggedIndex(null)
+                  setDragOverIndex(null)
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null)
+                  setDragOverIndex(null)
+                }}
+                onClick={() => select(layer.obj)}
+                className={cn(
+                  "relative flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors",
+                  isSelected ? "bg-primary/[0.08]" : "hover:bg-black/[0.04]",
+                  draggedIndex === actualIndex && "opacity-40"
+                )}
+              >
+                {/* Drop indicator drawn as an overlay so it cannot shift layout. */}
+                {dragOverIndex === actualIndex &&
+                  draggedIndex !== actualIndex && (
+                    <span className="pointer-events-none absolute inset-x-0 -top-0.5 h-0.5 rounded-full bg-primary" />
+                  )}
 
-      {/* LAYER LIST */}
-      <div className="space-y-2">
-        {layerList.map((obj) => {
-          const actualIndex = objects.indexOf(obj)
-          const isSelected = activeObject === obj
-          const isText = obj.type === "i-text"
-
-          const rawText =
-            isText && typeof (obj as any).text === "string"
-              ? (obj as any).text
-              : ""
-
-          const textPreview = isText
-            ? rawText.trim().substring(0, 20) || "Empty Text"
-            : "Background Image"
-
-          return (
-            <div
-              key={actualIndex}
-              draggable
-              onDragStart={(e) => handleDragStart(e, actualIndex)}
-              onDragOver={(e) => handleDragOver(e, actualIndex)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, actualIndex)}
-              onDragEnd={handleDragEnd}
-              onClick={() => {
-                // Ensure users can still select hidden & locked items to manipulate from right panel
-                canvas?.setActiveObject(obj)
-                canvas?.requestRenderAll()
-                useEditorStore.getState().setActiveObject(obj)
-              }}
-              className={`flex cursor-pointer items-center justify-between rounded-2xl border p-3 transition-all ${
-                isSelected
-                  ? "border-white/20 bg-white/[0.08] text-white shadow-lg"
-                  : "border-white/[0.05] bg-white/[0.02] text-white/60 hover:bg-white/[0.04]"
-              } ${
-                dragOverIndex === actualIndex
-                  ? "border-t-2 border-[#D6B47A] bg-white/[0.06]"
-                  : ""
-              } ${draggedIndex === actualIndex ? "opacity-40" : "opacity-100"}`}
-            >
-              {/* LAYER INFO */}
-              <div className="pointer-events-none flex min-w-0 items-center gap-3 overflow-hidden">
-                <span className={isSelected ? "text-white" : "text-white/40"}>
-                  {isText ? <Type size={16} /> : <ImageIcon size={16} />}
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <Icon
+                    size={15}
+                    aria-hidden="true"
+                    className={cn(
+                      "shrink-0",
+                      isSelected ? "text-primary" : "text-[var(--text-muted)]"
+                    )}
+                  />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[12px] font-medium text-foreground">
+                      {layer.label}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      Layer {actualIndex + 1}
+                    </span>
+                  </span>
                 </span>
 
-                <div className="flex min-w-0 flex-col overflow-hidden">
-                  <span className="truncate text-[13px] font-medium">
-                    {textPreview}
-                  </span>
-
-                  <span className="font-mono text-[10px] text-white/30">
-                    Layer #{actualIndex + 1}
-                  </span>
-                </div>
+                <span
+                  className="flex shrink-0 items-center gap-0.5"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <IconButton
+                    icon={layer.obj.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                    label={layer.obj.visible ? "Hide layer" : "Show layer"}
+                    size="sm"
+                    tone={layer.obj.visible ? "default" : "danger"}
+                    onClick={() => toggleLayerVisibility(layer.obj)}
+                  />
+                  <IconButton
+                    icon={isLocked ? <Lock size={14} /> : <Unlock size={14} />}
+                    label={isLocked ? "Unlock layer" : "Lock layer"}
+                    size="sm"
+                    active={isLocked ? true : undefined}
+                    onClick={() => toggleLayerLock(layer.obj)}
+                  />
+                  <IconButton
+                    icon={<ArrowUp size={14} />}
+                    label="Move layer forward"
+                    size="sm"
+                    disabled={listIndex === 0}
+                    onClick={() =>
+                      moveLayerToIndex(actualIndex, actualIndex + 1)
+                    }
+                  />
+                  <IconButton
+                    icon={<ArrowDown size={14} />}
+                    label="Move layer backward"
+                    size="sm"
+                    disabled={listIndex === layers.length - 1}
+                    onClick={() =>
+                      moveLayerToIndex(actualIndex, actualIndex - 1)
+                    }
+                  />
+                </span>
               </div>
-
-              {/* LAYER ACTIONS */}
-              <div
-                className="ml-2 flex shrink-0 items-center gap-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* VISIBILITY */}
-                <button
-                  type="button"
-                  onClick={() => toggleLayerVisibility(obj)}
-                  title={obj.visible ? "Hide Layer" : "Show Layer"}
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  {obj.visible ? (
-                    <Eye size={14} />
-                  ) : (
-                    <EyeOff size={14} className="text-red-400" />
-                  )}
-                </button>
-
-                {/* LOCK */}
-                <button
-                  type="button"
-                  onClick={() => toggleLayerLock(obj)}
-                  title={obj.lockMovementX ? "Unlock Layer" : "Lock Layer"}
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  {obj.lockMovementX ? (
-                    <Lock size={14} className="text-amber-400" />
-                  ) : (
-                    <Unlock size={14} />
-                  )}
-                </button>
-
-                <div className="mx-1 h-4 w-px bg-white/10" />
-
-                {/* MOVE UP */}
-                <button
-                  type="button"
-                  disabled={actualIndex === objects.length - 1}
-                  onClick={() => moveLayerToIndex(actualIndex, actualIndex + 1)}
-                  title="Move Up"
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                >
-                  <ArrowUp size={14} />
-                </button>
-
-                {/* MOVE DOWN */}
-                <button
-                  type="button"
-                  disabled={actualIndex === 0}
-                  onClick={() => moveLayerToIndex(actualIndex, actualIndex - 1)}
-                  title="Move Down"
-                  className="cursor-pointer rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                >
-                  <ArrowDown size={14} />
-                </button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* DELETE SELECTED */}
-      {activeObject && (
-        <div className="border-t border-white/[0.08] pt-4">
-          <button
-            type="button"
-            onClick={() => deleteActiveObject()}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-500/10 py-3 text-[13px] font-medium text-red-500 transition-all hover:bg-red-500/20 active:scale-95"
-          >
-            <Trash2 size={16} />
-            Delete Selected Layer
-          </button>
+            )
+          })}
         </div>
+      </Section>
+
+      {activeObject && (
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={() => deleteActiveObject()}
+        >
+          <Trash2 size={15} />
+          Delete layer
+        </Button>
       )}
     </div>
   )
