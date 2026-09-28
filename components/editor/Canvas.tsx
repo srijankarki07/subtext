@@ -3,11 +3,7 @@
 import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
 import { importImage, isImageFile } from "@/lib/imageImport"
 import { useEditorStore } from "@/store/useEditorStore"
-import {
-  Canvas as FabricCanvas,
-  FabricObject,
-  IText,
-} from "fabric"
+import { Canvas as FabricCanvas, FabricObject, IText } from "fabric"
 import { ImagePlus, Loader2, Pipette, UploadCloud } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
@@ -44,7 +40,15 @@ export default function Canvas() {
     grainIntensity,
   } = useEditorStore()
 
-  const [hasImage, setHasImage] = useState(false)
+  /**
+   * Whether the artboard holds anything at all.
+   *
+   * The empty-state prompt is gated on this rather than on whether an image is
+   * present. That prompt covers the artboard and captures pointer events, so
+   * gating it on the image alone made the whole artboard dead in a text-only
+   * document — a quote you had just added could not be clicked or dragged.
+   */
+  const [hasContent, setHasContent] = useState(false)
 
   useEffect(() => {
     const canvas = useEditorStore.getState().canvas
@@ -70,9 +74,16 @@ export default function Canvas() {
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return
 
+    // Start at the artboard's logical size, not the container's. Sizing the
+    // document to whatever the viewport happened to be meant the artboard was
+    // nominally 1080x1080 in the store while the canvas was e.g. 1060x637, so
+    // export dimensions and overlay geometry disagreed with the artboard.
+    // On-screen scale is applied separately as a CSS size.
+    const { artboard } = useEditorStore.getState()
+
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
+      width: artboard.width,
+      height: artboard.height,
       backgroundColor: DEFAULT_ARTBOARD_BACKGROUND,
       fireRightClick: true,
       stopContextMenu: true,
@@ -92,14 +103,9 @@ export default function Canvas() {
     canvas.on("selection:cleared", () => setActiveObject(null))
 
     const handleObjectsChanged = () => {
-      // Adjusted to ensure effect layers don't trigger "has image" flag errantly
-      setHasImage(
-        canvas
-          .getObjects()
-          .some(
-            (object) => object.type === "image" && !(object as any).isEffect
-          )
-      )
+      // Effect layers (vignettes, letterbox bars, gradients) are still objects,
+      // so an artboard holding only an effect counts as non-empty too.
+      setHasContent(canvas.getObjects().length > 0)
       saveHistoryState()
     }
 
@@ -242,7 +248,11 @@ export default function Canvas() {
 
         // An open dialog owns Escape. Without this guard the canvas would also
         // deselect behind the dialog and swallow the key.
-        if (store.isExportModalOpen || store.confirmDialog || store.alertDialog) {
+        if (
+          store.isExportModalOpen ||
+          store.confirmDialog ||
+          store.alertDialog
+        ) {
           return
         }
 
@@ -260,6 +270,25 @@ export default function Canvas() {
         closeContextMenu()
         return
       }
+
+      // Zoom. "=" as well as "+" because the plus key needs Shift on most
+      // layouts while the unshifted key is "=".
+      if (isCmdOrCtrl && (key === "+" || key === "=")) {
+        e.preventDefault()
+        useEditorStore.getState().zoomBy(1.2)
+        return
+      }
+      if (isCmdOrCtrl && (key === "-" || key === "_")) {
+        e.preventDefault()
+        useEditorStore.getState().zoomBy(1 / 1.2)
+        return
+      }
+      if (isCmdOrCtrl && key === "0") {
+        e.preventDefault()
+        useEditorStore.getState().fitToViewport()
+        return
+      }
+
       if (isCmdOrCtrl && key === "]" && !e.altKey) {
         e.preventDefault()
         bringToFront()
@@ -331,7 +360,7 @@ export default function Canvas() {
   return (
     <div
       ref={containerRef}
-      className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl transition-all ${
+      className={`relative flex h-full w-full ${
         isPickingColor ? "cursor-crosshair" : ""
       }`}
       onDragOver={(e) => {
@@ -345,147 +374,157 @@ export default function Canvas() {
         if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0])
       }}
     >
-      <canvas ref={canvasRef} className="rounded-xl transition-all" />
+      {/*
+        The artboard box. `m-auto` rather than flex centring on the parent:
+        centring an oversized child inside a scroll container makes its top and
+        left overflow unreachable, so a zoomed-in artboard could not be scrolled
+        to its own corner. Overlays are positioned against this box, so they
+        track the artboard instead of the viewport.
+      */}
+      <div className="m-auto shrink-0 overflow-hidden rounded-xl shadow-artboard ring-1 ring-[var(--color-on-workspace-hairline)]">
+        <canvas ref={canvasRef} />
 
-      {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
-      {isDraggingOver && (
-        <div className="pointer-events-none absolute inset-4 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-black/50 backdrop-blur-md">
-          <UploadCloud
-            size={34}
-            aria-hidden="true"
-            className="animate-bounce text-[var(--color-on-workspace)]"
-          />
-          <span className="mt-2.5 text-[14px] font-semibold text-[var(--color-on-workspace)]">
-            Drop image to frame
-          </span>
-          <span className="text-[11px] text-[var(--color-on-workspace-muted)]">
-            PNG, JPG or WebP
-          </span>
-        </div>
-      )}
-
-      {/* 2. IMAGE PROCESSING LOADING OVERLAY */}
-      {isProcessingImage && (
-        <div
-          role="status"
-          className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md"
-        >
-          <Loader2
-            size={30}
-            aria-hidden="true"
-            className="animate-spin text-[var(--color-on-workspace)]"
-          />
-          <span className="mt-3 text-[12px] font-medium text-[var(--color-on-workspace)]">
-            Processing image and extracting its palette…
-          </span>
-        </div>
-      )}
-
-      {/* 3. FILM GRAIN SVG OVERLAY */}
-      {grainIntensity > 0 && (
-        <div
-          className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
-          style={{ opacity: grainIntensity / 100 }}
-        >
-          <svg
-            viewBox="0 0 200 200"
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-full w-full opacity-60"
-            preserveAspectRatio="none"
-          >
-            <filter id="cinematic-noise">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.65"
-                numOctaves="3"
-                stitchTiles="stitch"
-              />
-            </filter>
-            <rect width="100%" height="100%" filter="url(#cinematic-noise)" />
-          </svg>
-        </div>
-      )}
-
-      <input
-        type="file"
-        accept="image/*"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.[0]) processFile(e.target.files[0])
-          if (fileInputRef.current) fileInputRef.current.value = ""
-        }}
-      />
-
-      {/* 4. FLOATING EYEDROPPER MAGNIFIER */}
-      {isPickingColor && pickerPreview && (
-        <div
-          className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
-          style={{
-            // Nudge inward from the pointer, but flip near the right and top
-            // edges so the swatch and its readout are never cut off.
-            left: pickerPreview.x,
-            top: pickerPreview.y,
-            transform:
-              typeof window !== "undefined" &&
-              pickerPreview.x > window.innerWidth - 90
-                ? "translate(-84px, -70px)"
-                : "translate(20px, -70px)",
-          }}
-        >
-          <div
-            className="flex size-12 items-center justify-center rounded-full border-[3px] border-white shadow-lg"
-            style={{ backgroundColor: pickerPreview.color }}
-          />
-          <div className="rounded-md bg-black/80 px-2 py-1 font-mono text-[10px] text-white shadow-lg backdrop-blur-md">
-            {pickerPreview.color}
+        {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
+        {isDraggingOver && (
+          <div className="pointer-events-none absolute inset-4 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-black/50 backdrop-blur-md">
+            <UploadCloud
+              size={34}
+              aria-hidden="true"
+              className="animate-bounce text-[var(--color-on-workspace)]"
+            />
+            <span className="mt-2.5 text-[14px] font-semibold text-[var(--color-on-workspace)]">
+              Drop image to frame
+            </span>
+            <span className="text-[11px] text-[var(--color-on-workspace-muted)]">
+              PNG, JPG or WebP
+            </span>
           </div>
-        </div>
-      )}
+        )}
 
-      {isPickingColor && !pickerPreview && (
-        <div
-          role="status"
-          className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg"
-        >
-          <Pipette size={14} aria-hidden="true" />
-          Click anywhere to sample a colour
-        </div>
-      )}
+        {/* 2. IMAGE PROCESSING LOADING OVERLAY */}
+        {isProcessingImage && (
+          <div
+            role="status"
+            className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md"
+          >
+            <Loader2
+              size={30}
+              aria-hidden="true"
+              className="animate-spin text-[var(--color-on-workspace)]"
+            />
+            <span className="mt-3 text-[12px] font-medium text-[var(--color-on-workspace)]">
+              Processing image and extracting its palette…
+            </span>
+          </div>
+        )}
 
-      {/* 5. CANVAS EMPTY STATE */}
-      {!hasImage && (
-        <div
-          // The whole artboard is a drop target and now a click target too.
-          // It used to be `pointer-events-none` with a single text button
-          // enabled, so the obvious affordance — click the artwork area —
-          // did nothing.
-          role="button"
-          tabIndex={0}
-          aria-label="Upload a photo"
-          onClick={() => fileInputRef.current?.click()}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault()
-              fileInputRef.current?.click()
-            }
+        {/* 3. FILM GRAIN SVG OVERLAY */}
+        {grainIntensity > 0 && (
+          <div
+            className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
+            style={{ opacity: grainIntensity / 100 }}
+          >
+            <svg
+              viewBox="0 0 200 200"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-full w-full opacity-60"
+              preserveAspectRatio="none"
+            >
+              <filter id="cinematic-noise">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.65"
+                  numOctaves="3"
+                  stitchTiles="stitch"
+                />
+              </filter>
+              <rect width="100%" height="100%" filter="url(#cinematic-noise)" />
+            </svg>
+          </div>
+        )}
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.[0]) processFile(e.target.files[0])
+            if (fileInputRef.current) fileInputRef.current.value = ""
           }}
-          className="absolute inset-0 z-40 flex cursor-pointer flex-col items-center justify-center text-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--color-on-workspace-muted)]"
-        >
-          <h2 className="text-[15px] font-medium text-[var(--color-on-workspace)]">
-            Start with an image
-          </h2>
-          <p className="mt-1.5 text-[12px] text-[var(--color-on-workspace-muted)]">
-            Drop a photo here, or click to choose a file
-          </p>
-          <span className="mt-4 rounded-lg border border-[var(--color-on-workspace-hairline)] px-3 py-1.5 text-[12px] font-medium text-[var(--color-on-workspace)]">
-            Upload photo
-          </span>
-          <span className="mt-4 text-[11px] text-[var(--color-on-workspace-faint)]">
-            Your image stays in your browser.
-          </span>
-        </div>
-      )}
+        />
+
+        {/* 4. FLOATING EYEDROPPER MAGNIFIER */}
+        {isPickingColor && pickerPreview && (
+          <div
+            className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
+            style={{
+              // Nudge inward from the pointer, but flip near the right and top
+              // edges so the swatch and its readout are never cut off.
+              left: pickerPreview.x,
+              top: pickerPreview.y,
+              transform:
+                typeof window !== "undefined" &&
+                pickerPreview.x > window.innerWidth - 90
+                  ? "translate(-84px, -70px)"
+                  : "translate(20px, -70px)",
+            }}
+          >
+            <div
+              className="flex size-12 items-center justify-center rounded-full border-[3px] border-white shadow-lg"
+              style={{ backgroundColor: pickerPreview.color }}
+            />
+            <div className="rounded-md bg-black/80 px-2 py-1 font-mono text-[10px] text-white shadow-lg backdrop-blur-md">
+              {pickerPreview.color}
+            </div>
+          </div>
+        )}
+
+        {isPickingColor && !pickerPreview && (
+          <div
+            role="status"
+            className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg"
+          >
+            <Pipette size={14} aria-hidden="true" />
+            Click anywhere to sample a colour
+          </div>
+        )}
+
+        {/* 5. CANVAS EMPTY STATE — only on a genuinely empty artboard, so it
+            never blocks interaction with existing layers. */}
+        {!hasContent && (
+          <div
+            // The whole artboard is a drop target and now a click target too.
+            // It used to be `pointer-events-none` with a single text button
+            // enabled, so the obvious affordance — click the artwork area —
+            // did nothing.
+            role="button"
+            tabIndex={0}
+            aria-label="Upload a photo"
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault()
+                fileInputRef.current?.click()
+              }
+            }}
+            className="absolute inset-0 z-40 flex cursor-pointer flex-col items-center justify-center text-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--color-on-workspace-muted)]"
+          >
+            <h2 className="text-[15px] font-medium text-[var(--color-on-workspace)]">
+              Start with an image
+            </h2>
+            <p className="mt-1.5 text-[12px] text-[var(--color-on-workspace-muted)]">
+              Drop a photo here, or click to choose a file
+            </p>
+            <span className="mt-4 rounded-lg border border-[var(--color-on-workspace-hairline)] px-3 py-1.5 text-[12px] font-medium text-[var(--color-on-workspace)]">
+              Upload photo
+            </span>
+            <span className="mt-4 text-[11px] text-[var(--color-on-workspace-faint)]">
+              Your image stays in your browser.
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

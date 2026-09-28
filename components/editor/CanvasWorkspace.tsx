@@ -1,9 +1,11 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
+import { Maximize, Minus, Plus } from "lucide-react"
 
 import { useEditorStore } from "@/store/useEditorStore"
+import { cn } from "@/lib/utils"
 
 const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
   ssr: false,
@@ -25,59 +27,128 @@ const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
 /**
  * The artboard workspace.
  *
- * The artwork is the hero (design doc §2), so the workspace is the only dark
- * surface in an otherwise light app: paper chrome, white panels, and this.
- * The decorative gold glow and the "Artboard" / "100%" badge chrome that used
- * to sit over it are gone — they were interface noise around the artwork.
+ * This is the only dark surface in an otherwise light app, so the artwork stays
+ * the hero (design doc §2).
  *
- * The scale readout is measured from the live canvas rather than hardcoded.
- * The old `100%` was a string literal and was wrong whenever the artboard was
- * scaled to fit.
+ * It owns the viewport measurement. A `ResizeObserver` reports the available
+ * space to the store, which re-fits the artboard whenever the view is in fit
+ * mode. Previously the fit scale was computed once when the aspect ratio
+ * changed and never revisited, so opening the inspector, toggling a panel or
+ * resizing the window cropped or off-centred the artboard with no way back —
+ * and the zoom readout was a hardcoded "100%".
+ *
+ * The scroll container is `overflow-auto` rather than `overflow-hidden`, so
+ * zooming past fit is reachable instead of clipped, and the artboard wrapper
+ * uses `m-auto` rather than flex centring: centring an oversized child in a
+ * scroll container makes the top and left overflow unreachable.
  */
 
-function ZoomReadout() {
-  const canvas = useEditorStore((s) => s.canvas)
+function ZoomControls() {
+  const zoom = useEditorStore((s) => s.zoom)
+  const isFit = useEditorStore((s) => s.isFit)
   const artboard = useEditorStore((s) => s.artboard)
-  const [scale, setScale] = useState<number | null>(null)
+  const zoomBy = useEditorStore((s) => s.zoomBy)
+  const fitToViewport = useEditorStore((s) => s.fitToViewport)
 
-  useEffect(() => {
-    if (!canvas) return
-    const el = canvas.getElement()
-    if (!el) return
-
-    const measure = () => {
-      const logical = canvas.getWidth()
-      if (logical > 0) setScale(el.clientWidth / logical)
-    }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [canvas, artboard])
+  const button =
+    "flex size-7 cursor-pointer items-center justify-center rounded-md text-[var(--color-on-workspace-muted)] outline-none transition-colors hover:bg-white/10 hover:text-[var(--color-on-workspace)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-on-workspace-muted)] disabled:pointer-events-none disabled:opacity-40"
 
   return (
-    <div className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-[var(--color-on-workspace-hairline)] bg-black/40 px-2.5 py-1.5 text-[11px] text-[var(--color-on-workspace-muted)] backdrop-blur-md lg:bottom-4">
-      <span className="tabular-nums">
-        {scale === null ? "—" : `${Math.round(scale * 100)}%`}
-      </span>
-      <span className="text-[var(--color-on-workspace-faint)]">·</span>
-      <span className="tabular-nums">
-        {artboard.width} × {artboard.height}
+    <div className="pointer-events-auto absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-[var(--color-on-workspace-hairline)] bg-black/45 p-0.5 backdrop-blur-md lg:bottom-4">
+      <button
+        type="button"
+        aria-label="Zoom out"
+        className={button}
+        onClick={() => zoomBy(1 / 1.2)}
+      >
+        <Minus size={13} aria-hidden="true" />
+      </button>
+
+      {/* The percentage doubles as a reset-to-fit control. Its accessible name
+          is deliberately state-independent — a label that changes with the
+          value is announced as a different control each time it changes. */}
+      <button
+        type="button"
+        aria-label="Reset zoom to fit"
+        title="Reset zoom to fit"
+        onClick={fitToViewport}
+        className={cn(
+          button,
+          "w-12 font-mono text-[11px] tabular-nums",
+          isFit && "text-[var(--color-on-workspace)]"
+        )}
+      >
+        {Math.round(zoom * 100)}%
+      </button>
+
+      <button
+        type="button"
+        aria-label="Zoom in"
+        className={button}
+        onClick={() => zoomBy(1.2)}
+      >
+        <Plus size={13} aria-hidden="true" />
+      </button>
+
+      <div className="mx-0.5 h-4 w-px bg-[var(--color-on-workspace-hairline)]" />
+
+      <button
+        type="button"
+        aria-label="Fit artboard to the workspace"
+        title="Fit artboard to the workspace"
+        className={button}
+        onClick={fitToViewport}
+      >
+        <Maximize size={13} aria-hidden="true" />
+      </button>
+
+      <span className="px-1.5 font-mono text-[10px] text-[var(--color-on-workspace-faint)] tabular-nums">
+        {artboard.width}×{artboard.height}
       </span>
     </div>
   )
 }
 
 export default function CanvasWorkspace() {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const setViewport = useEditorStore((s) => s.setViewport)
+
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+
+    const measure = () => {
+      // clientWidth/Height include padding and exclude the scrollbar, so the
+      // padding has to come off to get the space the artboard can actually
+      // occupy — otherwise a fitted artboard is always a little too big and
+      // the workspace shows a scrollbar at 100% fit.
+      const styles = getComputedStyle(el)
+      const width =
+        el.clientWidth -
+        parseFloat(styles.paddingLeft) -
+        parseFloat(styles.paddingRight)
+      const height =
+        el.clientHeight -
+        parseFloat(styles.paddingTop) -
+        parseFloat(styles.paddingBottom)
+      setViewport(Math.max(0, width), Math.max(0, height))
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [setViewport])
+
   return (
-    <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-workspace p-3 sm:p-5 lg:p-8">
-      {/* The artboard reads as a physical object on the workspace: a hairline
-          and a soft shadow, no other chrome. */}
-      <div className="relative h-full w-full overflow-hidden rounded-xl shadow-artboard ring-1 ring-[var(--color-on-workspace-hairline)]">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-workspace">
+      <div
+        ref={viewportRef}
+        className="custom-scrollbar-dark min-h-0 flex-1 overflow-auto p-3 sm:p-5 lg:p-8"
+      >
         <DynamicCanvas />
       </div>
-      <ZoomReadout />
+      <ZoomControls />
     </div>
   )
 }
