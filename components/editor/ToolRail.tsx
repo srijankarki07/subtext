@@ -51,9 +51,12 @@ const TOOLS = [
 
 export default function ToolRail({
   activeTool,
+  isPanelOpen,
   onToolChange,
 }: {
   activeTool: EditorTool
+  /** Whether the active tool's panel is currently showing. */
+  isPanelOpen: boolean
   onToolChange: (tool: EditorTool) => void
 }) {
   return (
@@ -73,6 +76,11 @@ export default function ToolRail({
                 type="button"
                 aria-label={label}
                 aria-pressed={isActive}
+                // "Select" is a mode with no panel, so it never claims to be
+                // expanded; the others report whether their panel is showing.
+                aria-expanded={
+                  id === "select" ? undefined : isActive ? isPanelOpen : false
+                }
                 onClick={() => onToolChange(id)}
                 className={cn(
                   "relative flex size-10 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors",
