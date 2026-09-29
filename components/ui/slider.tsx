@@ -84,7 +84,7 @@ function Slider({
           <SliderPrimitive.Thumb
             aria-label={label}
             className={cn(
-              "size-4 cursor-grab rounded-full border border-black/15 bg-white shadow-sm select-none",
+              "size-4 cursor-grab rounded-full border border-swatch-edge bg-card shadow-sm select-none",
               "active:cursor-grabbing",
               "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
               "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"

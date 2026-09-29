@@ -84,8 +84,8 @@ export default function HistoryDropdown() {
                     isCurrent
                       ? "bg-primary/10"
                       : isFuture
-                        ? "opacity-50 hover:bg-black/[0.04] hover:opacity-100"
-                        : "hover:bg-black/[0.04]"
+                        ? "opacity-50 hover:bg-subtle-hover hover:opacity-100"
+                        : "hover:bg-subtle-hover"
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">

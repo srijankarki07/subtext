@@ -54,7 +54,7 @@ function ZoomControls() {
     "flex size-7 cursor-pointer items-center justify-center rounded-md text-[var(--color-on-workspace-muted)] outline-none transition-colors hover:bg-white/10 hover:text-[var(--color-on-workspace)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-on-workspace-muted)] disabled:pointer-events-none disabled:opacity-40"
 
   return (
-    <div className="pointer-events-auto absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-[var(--color-on-workspace-hairline)] bg-black/45 p-0.5 backdrop-blur-md lg:bottom-4">
+    <div className="pointer-events-auto absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-[var(--color-on-workspace-hairline)] bg-[var(--color-workspace-raised)]/85 p-0.5 backdrop-blur-md lg:bottom-4">
       <button
         type="button"
         aria-label="Zoom out"

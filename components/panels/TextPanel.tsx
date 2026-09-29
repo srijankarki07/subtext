@@ -53,7 +53,7 @@ function EyedropperButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] text-[var(--text-secondary)] outline-none transition-colors hover:bg-black/[0.05] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+      className="flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
     >
       <Pipette size={12} aria-hidden="true" />
       Pick
@@ -171,7 +171,7 @@ export default function TextPanel() {
   return (
     <div className="flex flex-col gap-6">
       <Section title="Alignment">
-        <div className="grid grid-cols-6 gap-1 rounded-lg bg-black/[0.04] p-1">
+        <div className="grid grid-cols-6 gap-1 rounded-lg bg-subtle p-1">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
             label="Align left"
@@ -206,7 +206,7 @@ export default function TextPanel() {
       </Section>
 
       <Section title="Text" description="Applies to a partial selection too.">
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-black/[0.04] p-1">
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-subtle p-1">
           <div className="flex gap-0.5">
             <FormatButton
               icon={<AlignLeft size={16} />}

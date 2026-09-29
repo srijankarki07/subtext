@@ -56,7 +56,7 @@ function IconButton({
           ? "text-[var(--text-muted)] hover:bg-destructive/10 hover:text-destructive"
           : active
             ? "bg-primary/10 text-primary"
-            : "text-[var(--text-secondary)] hover:bg-black/[0.05] hover:text-foreground",
+            : "text-[var(--text-secondary)] hover:bg-subtle-hover hover:text-foreground",
         className
       )}
       {...props}

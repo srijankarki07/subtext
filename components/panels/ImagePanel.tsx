@@ -34,7 +34,7 @@ export default function ImagePanel() {
   }
 
   const sizeTile =
-    "flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card py-3.5 text-[var(--text-secondary)] outline-none transition-colors hover:bg-black/[0.03] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]"
+    "flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-border bg-card py-3.5 text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]"
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,7 +63,7 @@ export default function ImagePanel() {
       </Section>
 
       <Section title="Alignment">
-        <div className="grid grid-cols-6 gap-1 rounded-lg bg-black/[0.04] p-1">
+        <div className="grid grid-cols-6 gap-1 rounded-lg bg-subtle p-1">
           <AlignmentButton
             icon={<MoveLeft size={16} />}
             label="Align left"

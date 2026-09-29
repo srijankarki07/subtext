@@ -87,7 +87,7 @@ export default function ToolRail({
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                   isActive
                     ? "bg-primary/10 text-primary"
-                    : "text-[var(--text-muted)] hover:bg-black/[0.05] hover:text-foreground"
+                    : "text-[var(--text-muted)] hover:bg-subtle-hover hover:text-foreground"
                 )}
               >
                 {isActive && (

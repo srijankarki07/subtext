@@ -73,7 +73,7 @@ function ColorSwatch({
   return (
     <span
       className={cn(
-        "block shrink-0 rounded-full border border-black/15 shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]",
+        "block shrink-0 rounded-full border border-swatch-edge shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]",
         size === "sm" && "size-4",
         size === "md" && "size-6",
         size === "lg" && "size-8",
@@ -134,7 +134,7 @@ function ColorPopover({
   const triggerElement = trigger ?? (
     <button
       type="button"
-      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <ColorSwatch color={value} />
     </button>
@@ -203,7 +203,7 @@ function ColorPopover({
             }}
             aria-invalid={invalid || undefined}
             className={cn(
-              "min-w-0 flex-1 rounded-md border bg-white px-2 py-1.5 font-mono text-[12px] uppercase",
+              "min-w-0 flex-1 rounded-md border bg-card px-2 py-1.5 font-mono text-[12px] uppercase",
               "outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
               invalid
                 ? "border-destructive text-destructive"
@@ -213,7 +213,7 @@ function ColorPopover({
 
           {/* Free choice, which the old picker could not offer at all. */}
           <label
-            className="relative flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border hover:bg-black/[0.04]"
+            className="relative flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border hover:bg-subtle-hover"
             title="Custom colour"
           >
             <span className="sr-only">Custom {label.toLowerCase()}</span>

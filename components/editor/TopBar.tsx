@@ -1,14 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTheme } from "next-themes"
 import {
   Check,
   Download,
   FolderOpen,
+  Moon,
   MoreHorizontal,
   Redo2,
   Save,
   Settings2,
+  Sun,
   Trash2,
   Undo2,
 } from "lucide-react"
@@ -16,7 +19,11 @@ import {
 import HistoryDropdown from "@/components/editor/HistoryDropdown"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -26,6 +33,33 @@ import {
 } from "@/components/ui/select"
 import { ASPECT_RATIOS, useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
+
+/**
+ * Theme switch.
+ *
+ * Renders nothing until mounted: the server cannot know the resolved theme, so
+ * rendering an icon on the server would either mismatch on hydration or flash
+ * the wrong one. The placeholder keeps the top bar from reflowing when it
+ * appears.
+ */
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
+
+  if (!mounted) return <span aria-hidden="true" className="size-8" />
+
+  const isDark = resolvedTheme === "dark"
+
+  return (
+    <IconButton
+      icon={isDark ? <Sun size={15} /> : <Moon size={15} />}
+      label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    />
+  )
+}
 
 /**
  * Secondary document actions.
@@ -43,7 +77,7 @@ function DocumentMenu() {
   const setConfirmDialog = useEditorStore((s) => s.setConfirmDialog)
 
   const item =
-    "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] outline-none transition-colors hover:bg-black/[0.05] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+    "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -191,7 +225,7 @@ export default function TopBar({
           placeholder="Untitled"
           className={cn(
             "w-[88px] min-w-0 rounded-md bg-transparent px-1 py-0.5 text-[13px] text-[var(--text-secondary)]",
-            "outline-none transition-colors hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring focus:text-foreground sm:w-[140px]"
+            "transition-colors outline-none hover:bg-subtle-hover focus:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring sm:w-[140px]"
           )}
         />
         <span className="hidden items-center gap-1.5 text-[11px] text-[var(--text-muted)] sm:flex">
@@ -303,6 +337,8 @@ export default function TopBar({
           <Download size={14} />
           <span>Export</span>
         </Button>
+
+        <ThemeToggle />
 
         <IconButton
           icon={<Settings2 size={15} />}

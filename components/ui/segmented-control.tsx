@@ -44,7 +44,7 @@ function SegmentedControl<T extends string>({
       role="group"
       aria-label={label}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-lg bg-black/[0.04] p-0.5",
+        "inline-flex items-center gap-0.5 rounded-lg bg-subtle p-0.5",
         className
       )}
     >
@@ -61,7 +61,7 @@ function SegmentedControl<T extends string>({
               "outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
               size === "md" ? "h-7 px-2.5 text-[12px]" : "h-6 px-2 text-[11px]",
               selected
-                ? "bg-white text-foreground shadow-xs"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-[var(--text-secondary)] hover:text-foreground"
             )}
           >
