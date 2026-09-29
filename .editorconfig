@@ -1,0 +1,24 @@
+# Editor defaults. Prettier does not read this file — .prettierrc wins for
+# anything Prettier formats. These settings exist so that editors agree on the
+# files Prettier does not touch, and so that a new file starts out matching what
+# Prettier would have produced anyway.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown, so leave them alone.
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
