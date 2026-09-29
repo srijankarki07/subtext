@@ -47,14 +47,14 @@ function PopoverContent({
       <PopoverPrimitive.Positioner
         align={align}
         sideOffset={sideOffset}
-        className="isolate z-50"
+        className="isolate z-popover"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
             // DESIGN/ §Popovers: soft elevated surface, 12px radius, 1px
             // low-opacity border, quiet shadow, ~180ms fade/slide.
-            "relative z-50 max-h-[var(--available-height)] max-w-[var(--available-width)]",
+            "relative z-popover max-h-[var(--available-height)] max-w-[var(--available-width)]",
             "origin-[var(--transform-origin)] overflow-y-auto rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg",
             "outline-none transition-[opacity,transform] duration-150 ease-out",
             "data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",

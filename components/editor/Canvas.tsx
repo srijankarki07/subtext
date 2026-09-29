@@ -386,7 +386,7 @@ export default function Canvas() {
 
         {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
         {isDraggingOver && (
-          <div className="pointer-events-none absolute inset-4 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-black/50 backdrop-blur-md">
+          <div className="z-canvas-overlay pointer-events-none absolute inset-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-black/50 backdrop-blur-md">
             <UploadCloud
               size={34}
               aria-hidden="true"
@@ -405,7 +405,7 @@ export default function Canvas() {
         {isProcessingImage && (
           <div
             role="status"
-            className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md"
+            className="z-canvas-overlay pointer-events-none absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/60 backdrop-blur-md"
           >
             <Loader2
               size={30}
@@ -421,7 +421,7 @@ export default function Canvas() {
         {/* 3. FILM GRAIN SVG OVERLAY */}
         {grainIntensity > 0 && (
           <div
-            className="pointer-events-none absolute inset-0 z-40 mix-blend-overlay"
+            className="z-canvas-overlay pointer-events-none absolute inset-0 mix-blend-overlay"
             style={{ opacity: grainIntensity / 100 }}
           >
             <svg
@@ -457,7 +457,7 @@ export default function Canvas() {
         {/* 4. FLOATING EYEDROPPER MAGNIFIER */}
         {isPickingColor && pickerPreview && (
           <div
-            className="pointer-events-none fixed z-[99999] flex flex-col items-center gap-2"
+            className="z-cursor-preview pointer-events-none fixed flex flex-col items-center gap-2"
             style={{
               // Nudge inward from the pointer, but flip near the right and top
               // edges so the swatch and its readout are never cut off.
@@ -483,7 +483,7 @@ export default function Canvas() {
         {isPickingColor && !pickerPreview && (
           <div
             role="status"
-            className="pointer-events-none absolute top-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg"
+            className="z-canvas-hint pointer-events-none absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg"
           >
             <Pipette size={14} aria-hidden="true" />
             Click anywhere to sample a colour
@@ -508,7 +508,7 @@ export default function Canvas() {
                 fileInputRef.current?.click()
               }
             }}
-            className="absolute inset-0 z-40 flex cursor-pointer flex-col items-center justify-center text-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--color-on-workspace-muted)]"
+            className="z-canvas-overlay absolute inset-0 flex cursor-pointer flex-col items-center justify-center text-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--color-on-workspace-muted)]"
           >
             <h2 className="text-[15px] font-medium text-[var(--color-on-workspace)]">
               Start with an image

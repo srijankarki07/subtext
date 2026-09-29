@@ -52,11 +52,11 @@ function Tooltip({
     <TooltipPrimitive.Root>
       <TooltipPrimitive.Trigger render={children} />
       <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Positioner side={side} sideOffset={6} className="isolate z-50">
+        <TooltipPrimitive.Positioner side={side} sideOffset={6} className="isolate z-popover">
           <TooltipPrimitive.Popup
             data-slot="tooltip"
             className={cn(
-              "z-50 flex items-center gap-1.5 rounded-lg border border-border bg-popover px-2 py-1",
+              "z-popover flex items-center gap-1.5 rounded-lg border border-border bg-popover px-2 py-1",
               "text-[11px] whitespace-nowrap text-popover-foreground shadow-md",
               "origin-[var(--transform-origin)] transition-[opacity,transform] duration-100 ease-out",
               "data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",

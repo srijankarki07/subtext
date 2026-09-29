@@ -44,3 +44,6 @@ image.png
 
 # one-off codemod scripts archived from the repo root
 /scratch
+
+# local working notes: branch log for the redesign stack
+/BRANCHES.md

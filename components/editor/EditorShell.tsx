@@ -123,7 +123,7 @@ export default function EditorShell() {
 
         <nav
           aria-label="Editor panels"
-          className="relative z-50 flex h-[68px] shrink-0 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+          className="z-popover relative flex h-[68px] shrink-0 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
         >
           <MobileTabButton
             icon={<LayoutTemplate size={19} />}
@@ -151,7 +151,7 @@ export default function EditorShell() {
         </nav>
 
         {activeMobileTab && (
-          <div className="absolute inset-0 z-[100] flex flex-col justify-end bg-black/30 lg:hidden">
+          <div className="z-sheet absolute inset-0 flex flex-col justify-end bg-black/30 lg:hidden">
             <button
               type="button"
               aria-label="Close panel"
