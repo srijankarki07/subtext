@@ -267,7 +267,7 @@ function MobileSheetClose() {
       type="button"
       aria-label="Close panel"
       onClick={() => setActiveMobileTab(null)}
-      className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-black/[0.05] hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
     >
       <X size={15} />
     </button>

@@ -59,7 +59,7 @@ function TemplateThumbnailCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left outline-none transition-colors hover:border-black/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left outline-none transition-colors hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
       {/* Mini artboard, 4:5 */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-workspace">
@@ -145,7 +145,7 @@ function TemplateThumbnailCard({
         <span className="truncate text-[12px] font-medium text-foreground">
           {template.name}
         </span>
-        <span className="shrink-0 rounded bg-black/[0.05] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
+        <span className="shrink-0 rounded bg-subtle px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
           {template.category}
         </span>
       </div>
@@ -244,7 +244,7 @@ export default function TemplatesPanel() {
                     "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                     active
                       ? "bg-foreground font-medium text-background"
-                      : "bg-black/[0.04] text-[var(--text-secondary)] hover:bg-black/[0.07] hover:text-foreground"
+                      : "bg-subtle text-[var(--text-secondary)] hover:bg-subtle-hover hover:text-foreground"
                   )}
                 >
                   {category}
@@ -288,12 +288,12 @@ export default function TemplatesPanel() {
                   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]",
                   active
                     ? "border-primary/40 bg-primary/[0.06]"
-                    : "border-border hover:bg-black/[0.03]"
+                    : "border-border hover:bg-subtle-hover"
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   <span
-                    className="size-6 shrink-0 rounded-md border border-black/10"
+                    className="size-6 shrink-0 rounded-md border border-swatch-edge"
                     style={{ backgroundColor: meta.accentColor }}
                   />
                   <span className="min-w-0">

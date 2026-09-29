@@ -171,7 +171,7 @@ export default function FontPicker() {
       "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
       active
         ? "bg-foreground text-background"
-        : "bg-black/[0.04] text-[var(--text-secondary)] hover:bg-black/[0.07] hover:text-foreground"
+        : "bg-subtle text-[var(--text-secondary)] hover:bg-subtle-hover hover:text-foreground"
     )
 
   return (
@@ -218,7 +218,7 @@ export default function FontPicker() {
           type="button"
           onClick={() => uploadInputRef.current?.click()}
           disabled={customFontsLoading}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 py-2 text-[12px] font-medium text-[var(--text-secondary)] outline-none transition-colors hover:bg-black/[0.03] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-edge-strong py-2 text-[12px] font-medium text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60"
         >
           {customFontsLoading ? (
             <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -323,7 +323,7 @@ export default function FontPicker() {
                   "flex items-center gap-1 rounded-lg border p-1.5 transition-colors",
                   isActive
                     ? "border-primary/40 bg-primary/[0.06]"
-                    : "border-border hover:bg-black/[0.03]"
+                    : "border-border hover:bg-subtle-hover"
                 )}
               >
                 <button

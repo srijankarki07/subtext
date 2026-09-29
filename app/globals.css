@@ -99,12 +99,21 @@
   --shadow-artboard: 0 12px 40px rgb(0 0 0 / 0.28);
 
   /* ---- the artboard workspace (new; DESIGN/ has no dark surface) ---------- */
-  --color-workspace: #141311;
-  --color-workspace-raised: #1d1b18;
-  --color-on-workspace: #f5f4ef;
-  --color-on-workspace-muted: rgb(245 244 239 / 0.62);
-  --color-on-workspace-faint: rgb(245 244 239 / 0.38);
-  --color-on-workspace-hairline: rgb(255 255 255 / 0.08);
+  /* Indirect so they flip with the theme; values live in :root and .dark. */
+  --color-workspace: var(--workspace);
+  --color-workspace-raised: var(--workspace-raised);
+  --color-on-workspace: var(--on-workspace);
+  --color-on-workspace-muted: var(--on-workspace-muted);
+  --color-on-workspace-faint: var(--on-workspace-faint);
+  --color-on-workspace-hairline: var(--on-workspace-hairline);
+
+  /* ---- quiet surfaces, indirect for the same reason ---------------------- */
+  /* These used to be literals like `bg-subtle`, which is invisible on a
+     dark surface. Naming them is what makes a dark theme possible at all. */
+  --color-subtle: var(--subtle);
+  --color-subtle-hover: var(--subtle-hover);
+  --color-swatch-edge: var(--swatch-edge);
+  --color-edge-strong: var(--edge-strong);
 
   /* ---- warm accent cast (DESIGN/, used sparingly) ------------------------- */
   --color-marigold: #ffb110;
@@ -173,6 +182,79 @@
   /* Focus ring geometry, shared by every focus style in the app. */
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  /*
+   * The artboard workspace. DESIGN/ defines no dark surface, so this is ours.
+   * Light mode uses a warm *mid*-dark rather than near-black: the paper chrome
+   * against a near-black ground was a ~17:1 jump that read as two unrelated
+   * halves of the app. This brings it to roughly 11:1 and keeps the warm cast.
+   */
+  --workspace: #332e29;
+  --workspace-raised: #3e3831;
+  --on-workspace: #f5f4ef;
+  --on-workspace-muted: rgb(245 244 239 / 0.66);
+  --on-workspace-faint: rgb(245 244 239 / 0.44);
+  --on-workspace-hairline: rgb(255 255 255 / 0.10);
+
+  /* Quiet surfaces layered on the chrome: segmented-control tracks, icon-button
+     hover, the alignment button groups. */
+  --subtle: rgb(0 0 0 / 4%);
+  --subtle-hover: rgb(0 0 0 / 7%);
+  --swatch-edge: rgb(0 0 0 / 15%);
+  --edge-strong: rgb(0 0 0 / 20%);
+  --scrollbar-thumb: rgb(0 0 0 / 18%);
+  --scrollbar-thumb-hover: rgb(0 0 0 / 30%);
+}
+
+/*
+ * Neutral grey dark theme — cooler and more technical than the warm paper
+ * light theme, deliberately: it is the mode for judging colour in the artwork,
+ * and a warm cast around the artwork would fight that.
+ */
+.dark {
+  --background: #18181b;
+  --foreground: #fafafa;
+  --card: #212124;
+  --card-foreground: #fafafa;
+  --popover: #212124;
+  --popover-foreground: #fafafa;
+
+  /* The brand blue lifted for a dark surface; dark text on it rather than
+     white, which would vibrate against this saturation. */
+  --primary: #4a9eff;
+  --primary-foreground: #0a0a0b;
+
+  --secondary: #26262a;
+  --secondary-foreground: #fafafa;
+  --muted: #26262a;
+  --muted-foreground: #a1a1aa;
+
+  --accent: #2a2a2f;
+  --accent-foreground: #fafafa;
+
+  --destructive: #f87171;
+  --destructive-foreground: #0a0a0b;
+
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 14%);
+  --ring: #4a9eff;
+
+  --text-secondary: #a1a1aa;
+  --text-muted: #8b8b93;
+
+  --workspace: #0a0a0b;
+  --workspace-raised: #141417;
+  --on-workspace: #fafafa;
+  --on-workspace-muted: rgb(250 250 250 / 0.66);
+  --on-workspace-faint: rgb(250 250 250 / 0.44);
+  --on-workspace-hairline: rgb(255 255 255 / 0.10);
+
+  --subtle: rgb(255 255 255 / 6%);
+  --subtle-hover: rgb(255 255 255 / 10%);
+  --swatch-edge: rgb(255 255 255 / 18%);
+  --edge-strong: rgb(255 255 255 / 22%);
+  --scrollbar-thumb: rgb(255 255 255 / 18%);
+  --scrollbar-thumb-hover: rgb(255 255 255 / 30%);
 }
 
 @layer base {
@@ -253,7 +335,7 @@
    */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgb(0 0 0 / 18%) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
@@ -265,18 +347,19 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 999px;
-    background: rgb(0 0 0 / 18%);
+    background: var(--scrollbar-thumb);
     background-clip: content-box;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(0 0 0 / 30%);
+    background: var(--scrollbar-thumb-hover);
     background-clip: content-box;
   }
 
-  /* The same control on the dark workspace. */
+  /* The same control over the workspace, where the light-theme thumb would
+     disappear and the dark-theme one would too. */
   .custom-scrollbar-dark {
     scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 20%) transparent;
+    scrollbar-color: var(--on-workspace-hairline) transparent;
   }
   .custom-scrollbar-dark::-webkit-scrollbar {
     width: 8px;
@@ -285,7 +368,7 @@
   .custom-scrollbar-dark::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 999px;
-    background: rgb(255 255 255 / 20%);
+    background: var(--on-workspace-hairline);
     background-clip: content-box;
   }
 

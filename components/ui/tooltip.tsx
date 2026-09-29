@@ -66,7 +66,7 @@ function Tooltip({
           >
             {label}
             {shortcut && (
-              <kbd className="rounded border border-border bg-black/[0.04] px-1 font-sans text-[10px] text-[var(--text-muted)]">
+              <kbd className="rounded border border-border bg-subtle px-1 font-sans text-[10px] text-[var(--text-muted)]">
                 {shortcut}
               </kbd>
             )}
