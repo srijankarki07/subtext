@@ -160,11 +160,29 @@ export default function TopBar({
   const documentTitle = useEditorStore((s) => s.documentTitle)
   const setDocumentTitle = useEditorStore((s) => s.setDocumentTitle)
   const isDirty = useEditorStore((s) => s.isDirty)
+  const artboard = useEditorStore((s) => s.artboard)
 
   const [justSaved, setJustSaved] = useState(false)
   const [ratioSelection, setRatioSelection] = useState("")
   const [customW, setCustomW] = useState(1080)
   const [customH, setCustomH] = useState(1080)
+
+  // The control should describe the canvas that actually exists. It used to show
+  // a "Canvas size" placeholder until the user picked something, and stayed
+  // stale after restoring a project with a different ratio.
+  useEffect(() => {
+    const match = Object.entries(ASPECT_RATIOS).find(
+      ([, ratio]) =>
+        ratio.width === artboard.width && ratio.height === artboard.height
+    )
+    if (match) {
+      setRatioSelection(match[0])
+    } else {
+      setRatioSelection("custom")
+      setCustomW(artboard.width)
+      setCustomH(artboard.height)
+    }
+  }, [artboard])
 
   const canUndo = useEditorStore((s) => s.canUndo)
   const canRedo = useEditorStore((s) => s.canRedo)
@@ -314,7 +332,7 @@ export default function TopBar({
           <SelectTrigger
             size="sm"
             aria-label="Canvas size"
-            className="w-auto min-w-[104px] text-[11px] lg:min-w-[124px]"
+            className="w-auto min-w-[118px] lg:min-w-[132px]"
           >
             <SelectValue placeholder="Canvas size" />
           </SelectTrigger>
