@@ -375,13 +375,19 @@ export default function Canvas() {
       }}
     >
       {/*
-        The artboard box. `m-auto` rather than flex centring on the parent:
-        centring an oversized child inside a scroll container makes its top and
-        left overflow unreachable, so a zoomed-in artboard could not be scrolled
-        to its own corner. Overlays are positioned against this box, so they
-        track the artboard instead of the viewport.
+        The artboard box. Two things here are load-bearing:
+
+        1. `m-auto` rather than flex centring on the parent: centring an
+           oversized child inside a scroll container makes its top and left
+           overflow unreachable, so a zoomed-in artboard could not be scrolled
+           to its own corner.
+        2. `relative`: every overlay below is absolutely positioned, and without
+           a positioned ancestor here they resolve against the outer root
+           instead — so the empty state, the drop outline and the film grain all
+           covered the whole workspace rather than the artwork. That is why
+           clicking anywhere opened the file picker.
       */}
-      <div className="m-auto shrink-0 overflow-hidden rounded-xl shadow-artboard ring-1 ring-[var(--color-on-workspace-hairline)]">
+      <div className="relative m-auto shrink-0 overflow-hidden rounded-xl shadow-artboard ring-1 ring-[var(--color-on-workspace-hairline)]">
         <canvas ref={canvasRef} />
 
         {/* 1. DRAG-AND-DROP ACTIVE OVERLAY */}
