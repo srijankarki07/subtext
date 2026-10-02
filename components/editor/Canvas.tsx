@@ -113,13 +113,18 @@ export default function Canvas() {
     canvas.on("object:removed", handleObjectsChanged)
     canvas.on("object:modified", () => {
       saveHistoryState("Modified Object")
-      triggerContrastCalc()
+      // The drag has ended, so this is the moment for a full-precision read.
+      useEditorStore.getState().calculateContrast("full")
     })
 
+    // While dragging, recalculate at most once per animation frame and on a
+    // coarse pixel stride. Each pass costs a GPU readback, and `object:moving`
+    // fires on every pointer event. The full-precision pass happens on release,
+    // via `object:modified` below.
     const triggerContrastCalc = () => {
       const activeObj = canvas.getActiveObject()
       if (activeObj && activeObj.type === "i-text") {
-        useEditorStore.getState().calculateContrast()
+        useEditorStore.getState().scheduleContrast("fast")
       }
     }
 
