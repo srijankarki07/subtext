@@ -1,15 +1,10 @@
 import { Canvas, FabricObject } from "fabric"
+
+import type { VisibilityReport } from "@/lib/visibility"
 import { CustomFontMetadata } from "@/lib/customFonts"
 
 export type TextBlockType = "quote" | "author" | "handle"
 export type MobileTab = "templates" | "layers" | "edit" | "export" | null
-
-export interface ContrastStats {
-  ratio: number
-  score: number
-  badge: "AAA" | "AA" | "FAIL"
-  bgColor: string
-}
 
 export interface ContextMenuState {
   visible: boolean
@@ -84,7 +79,12 @@ export interface LayerSlice {
  */
 export interface ColorSlice {
   imagePalette: string[]
-  contrastStats: ContrastStats | null
+  /**
+   * The readability report for the selected text: contrast against the worst
+   * part of the background it sits on, plus what the text's own outline and
+   * shadow contribute. Null when nothing textual is selected.
+   */
+  visibility: VisibilityReport | null
   isPickingColor: boolean
   colorPickerTarget: "fill" | "stroke" | "shadow" | "background" | null
   pickerSnapshot: HTMLCanvasElement | null
@@ -92,7 +92,10 @@ export interface ColorSlice {
 
   getCanvasColor: (x: number, y: number) => string | null
   setImagePalette: (colors: string[]) => void
-  calculateContrast: () => void
+  /** Recomputes the visibility report. `quality` trades speed for precision. */
+  calculateContrast: (quality?: "fast" | "full") => void
+  /** Frame-throttled `calculateContrast`, for use while dragging. */
+  scheduleContrast: (quality?: "fast" | "full") => void
   autoColorText: () => void
   startColorPicker: (
     target: "fill" | "stroke" | "shadow" | "background"
