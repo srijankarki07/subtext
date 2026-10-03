@@ -128,6 +128,17 @@ function ColorPopover({
     }
   }
 
+  /**
+   * `<input type="color">` always reports and stores its value in lowercase —
+   * setting `#F3F0E8` reads back as `#f3f0e8`. Feeding it the uppercased
+   * normalised form made React's controlled-input resync detect a difference on
+   * every commit and dispatch a synthetic input event to correct it, which
+   * re-entered `commitDraft`, which set state again — looping until React threw
+   * "Maximum update depth exceeded". Matching the browser's own casing is the
+   * fix; it is not a cosmetic preference.
+   */
+  const nativePickerValue = (normaliseHex(draft) ?? "#FFFFFF").toLowerCase()
+
   const current = value?.toUpperCase() ?? ""
   // The default trigger is a real <button>; a bare swatch <span> would make
   // Base UI drop native button semantics from the trigger.
@@ -219,7 +230,7 @@ function ColorPopover({
             <span className="sr-only">Custom {label.toLowerCase()}</span>
             <input
               type="color"
-              value={normaliseHex(draft) ?? "#FFFFFF"}
+              value={nativePickerValue}
               onChange={(event) => commitDraft(event.target.value)}
               className="size-5 cursor-pointer appearance-none border-0 bg-transparent p-0"
             />
