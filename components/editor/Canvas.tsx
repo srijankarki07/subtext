@@ -1,6 +1,7 @@
 "use client"
 
 import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
+import { grainPreviewStyle } from "@/lib/grain"
 import { importImage, isImageFile } from "@/lib/imageImport"
 import { useEditorStore } from "@/store/useEditorStore"
 import { Canvas as FabricCanvas, FabricObject, IText } from "fabric"
@@ -38,6 +39,7 @@ export default function Canvas() {
     sendToBack,
     duplicateActiveObject,
     grainIntensity,
+    zoom,
   } = useEditorStore()
 
   /**
@@ -429,29 +431,15 @@ export default function Canvas() {
           </div>
         )}
 
-        {/* 3. FILM GRAIN SVG OVERLAY */}
+        {/* 3. FILM GRAIN OVERLAY
+            The same generated texture the export composites, with the same
+            blend mode, so what is on screen is what gets written. */}
         {grainIntensity > 0 && (
           <div
-            className="z-canvas-overlay pointer-events-none absolute inset-0 mix-blend-overlay"
-            style={{ opacity: grainIntensity / 100 }}
-          >
-            <svg
-              viewBox="0 0 200 200"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-full w-full opacity-60"
-              preserveAspectRatio="none"
-            >
-              <filter id="cinematic-noise">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.65"
-                  numOctaves="3"
-                  stitchTiles="stitch"
-                />
-              </filter>
-              <rect width="100%" height="100%" filter="url(#cinematic-noise)" />
-            </svg>
-          </div>
+            data-slot="grain-overlay"
+            className="z-canvas-overlay pointer-events-none absolute inset-0"
+            style={grainPreviewStyle(grainIntensity, zoom)}
+          />
         )}
 
         <input

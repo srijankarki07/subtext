@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { applyGrain } from "@/lib/grain"
 import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
 
@@ -53,6 +54,7 @@ export default function ExportModal() {
   const copyCanvasToClipboard = useEditorStore((s) => s.copyCanvasToClipboard)
   const setAlertDialog = useEditorStore((s) => s.setAlertDialog)
   const documentTitle = useEditorStore((s) => s.documentTitle)
+  const grainIntensity = useEditorStore((s) => s.grainIntensity)
 
   const [format, setFormat] = useState<"png" | "jpg">("png")
   const [quality, setQuality] = useState(0.92)
@@ -79,11 +81,15 @@ export default function ExportModal() {
       canvas.discardActiveObject()
       canvas.requestRenderAll()
 
-      const dataUrl = canvas.toDataURL({
-        format: format === "jpg" ? "jpeg" : "png",
-        quality,
-        multiplier: scale,
-      })
+      // Render to an element rather than straight to a data URL, so the grain
+      // can be composited before the file is written. This is the whole point:
+      // grain used to live in a DOM overlay that no export path could see.
+      const rendered = canvas.toCanvasElement(scale)
+      applyGrain(rendered, grainIntensity, { scale })
+      const dataUrl = rendered.toDataURL(
+        format === "jpg" ? "image/jpeg" : "image/png",
+        quality
+      )
 
       if (activeObj) {
         canvas.setActiveObject(activeObj)
