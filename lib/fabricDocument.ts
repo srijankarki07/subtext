@@ -37,7 +37,38 @@ export const DOCUMENT_PROPERTIES = [
   "stroke",
   "strokeWidth",
   "strokeDashArray",
+  "editorOnly",
 ] as const
+
+/**
+ * Runs `render` with editor-only objects hidden, then restores them.
+ *
+ * Some objects exist only to be manipulated in the editor — the selective-blur
+ * handle is a dashed rectangle you drag. It is a real Fabric object, so it was
+ * being rendered into every export. `excludeFromExport` is no help: Fabric only
+ * consults it when serialising, not when rendering for export, and the handle
+ * *must* stay in the saved JSON because it is what the clip path is rebound
+ * from on load.
+ *
+ * Visibility is restored to its previous value rather than forced visible, and
+ * in a `finally`, so a failed render cannot leave the editor without its
+ * handles.
+ */
+export function withoutEditorChrome<T>(canvas: Canvas, render: () => T): T {
+  const hidden: Array<{ object: any; wasVisible: boolean }> = []
+
+  canvas.getObjects().forEach((object: any) => {
+    if (object.editorOnly !== true) return
+    hidden.push({ object, wasVisible: object.visible })
+    object.set("visible", false)
+  })
+
+  try {
+    return render()
+  } finally {
+    hidden.forEach(({ object, wasVisible }) => object.set("visible", wasVisible))
+  }
+}
 
 /**
  * Re-binds the clip path of selective-blur overlays to their draggable handle.

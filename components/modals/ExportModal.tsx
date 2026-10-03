@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { withoutEditorChrome } from "@/lib/fabricDocument"
 import { applyGrain } from "@/lib/grain"
 import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
@@ -84,8 +85,14 @@ export default function ExportModal() {
       // Render to an element rather than straight to a data URL, so the grain
       // can be composited before the file is written. This is the whole point:
       // grain used to live in a DOM overlay that no export path could see.
-      const rendered = canvas.toCanvasElement(scale)
-      applyGrain(rendered, grainIntensity, { scale })
+      //
+      // Editor-only objects are hidden for the render: the selective-blur
+      // handle is a real Fabric object, so it was being written into exports.
+      const rendered = withoutEditorChrome(canvas, () => {
+        const element = canvas.toCanvasElement(scale)
+        applyGrain(element, grainIntensity, { scale })
+        return element
+      })
       const dataUrl = rendered.toDataURL(
         format === "jpg" ? "image/jpeg" : "image/png",
         quality

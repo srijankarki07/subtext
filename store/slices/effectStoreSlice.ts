@@ -23,6 +23,15 @@ export const createEffectSlice: StateCreator<
 > = (set, get) => ({
   grainIntensity: 0,
   gradientOpacity: 0,
+  // Defaults match the full-strength duotone, so nothing changes visually
+  // until the intensity is touched.
+  duotoneLight: "#FF453A",
+  duotoneDark: "#0A84FF",
+  duotoneIntensity: 100,
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  warmth: 0,
   vignettes: [],
   blurZones: [],
   letterboxes: [],
@@ -143,7 +152,17 @@ export const createEffectSlice: StateCreator<
     ;(blurOverlay as any).isEffect = true
     blurOverlay.set({ selectable: false, evented: false })
 
-    ;(blurOverlay as FabricImage).filters = [new filters.Blur({ blur: 0.3 })]
+    // Append the blur to the background's existing filter chain rather than
+    // replacing it. Replacing it discarded the colour grade inside the blurred
+    // box, so the region was visibly a different grade from the rest of the
+    // photo.
+    const gradedFilters = ((bg.filters ?? []) as any[]).filter(
+      (filter) => filter.type !== "Blur"
+    )
+    ;(blurOverlay as FabricImage).filters = [
+      ...gradedFilters,
+      new filters.Blur({ blur: 0.3 }),
+    ]
     ;(blurOverlay as FabricImage).applyFilters()
 
     const blurHandle = new Rect({
@@ -152,16 +171,23 @@ export const createEffectSlice: StateCreator<
       width: artboard.width / 2,
       height: artboard.height * 0.3,
       fill: "transparent",
-      stroke: "rgba(255,255,255,0.8)",
-      strokeWidth: 4,
-      strokeDashArray: [10, 10],
+      // Restrained on purpose: this is an editor affordance, and at 4px and 80%
+      // white it read as part of the artwork.
+      stroke: "rgba(255,255,255,0.45)",
+      strokeWidth: 2,
+      strokeDashArray: [8, 6],
       selectable: true,
       evented: true,
-      cornerColor: "white",
+      cornerColor: "rgba(255,255,255,0.85)",
+      cornerStrokeColor: "rgba(0,0,0,0.4)",
+      cornerSize: 9,
       transparentCorners: false,
     })
     ;(blurHandle as any).id = id
     ;(blurHandle as any).isEffect = true
+    // Never rendered into an export, but kept in the document because the clip
+    // path is rebound from it on load.
+    ;(blurHandle as any).editorOnly = true
 
     const updateClipPath = () => {
       blurOverlay.set({
@@ -414,8 +440,45 @@ export const createEffectSlice: StateCreator<
   },
 
   applyWarmth: (value) => get().applyPreset(getWarmthMatrix(value)),
-  applyDuotone: (lightHex, darkHex) =>
-    get().applyPreset(getDuotoneMatrix(lightHex, darkHex)),
+  /**
+   * Applies a duotone and records the settings.
+   *
+   * The settings are stored, not just applied, so the panel reflects whatever
+   * the image is actually graded with — including when a template sets it.
+   */
+  applyDuotone: (lightHex, darkHex, intensity = get().duotoneIntensity) => {
+    set({
+      duotoneLight: lightHex,
+      duotoneDark: darkHex,
+      duotoneIntensity: intensity,
+    })
+    get().applyPreset(getDuotoneMatrix(lightHex, darkHex, intensity))
+  },
+
+  setDuotoneColour: (which, hex) => {
+    const { duotoneLight, duotoneDark, duotoneIntensity } = get()
+    get().applyDuotone(
+      which === "light" ? hex : duotoneLight,
+      which === "dark" ? hex : duotoneDark,
+      duotoneIntensity
+    )
+  },
+
+  setDuotoneIntensity: (intensity) => {
+    const { duotoneLight, duotoneDark } = get()
+    get().applyDuotone(duotoneLight, duotoneDark, intensity)
+  },
+
+  setAdjustment: (which, value) => {
+    set({ [which]: value })
+    if (which === "warmth") get().applyWarmth(value)
+    else {
+      get().applyImageFilter(
+        which.charAt(0).toUpperCase() + which.slice(1),
+        { [which]: value }
+      )
+    }
+  },
 
   resetEffect: (category) => {
     const {
@@ -435,9 +498,11 @@ export const createEffectSlice: StateCreator<
       applyImageFilter("Brightness", { brightness: 0 })
       applyImageFilter("Contrast", { contrast: 0 })
       applyImageFilter("Saturation", { saturation: 0 })
+      set({ brightness: 0, contrast: 0, saturation: 0, warmth: 0 })
     }
     if (category === "cinematic" || category === "all") {
       applyPreset(CINEMATIC_PRESETS["None"])
+      set({ duotoneIntensity: 0 })
     }
     if (category === "atmospherics" || category === "all") {
       setGradientOverlay(0, "linear", "transparent", "black")
