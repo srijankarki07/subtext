@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { HelpCircle, MonitorPlay, Plus, RotateCcw, Trash2 } from "lucide-react"
 
 import { AppleSlider, ColorCircle } from "@/components/functions"
@@ -27,7 +26,7 @@ function InfoHint({ label }: { label: string }) {
       <button
         type="button"
         aria-label={label}
-        className="cursor-help rounded-full text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+        className="cursor-help rounded-full text-[var(--text-muted)] transition-colors outline-none hover:text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
       >
         <HelpCircle size={12} aria-hidden="true" />
       </button>
@@ -39,6 +38,11 @@ export default function EffectsPanel() {
   const applyImageFilter = useEditorStore((s) => s.applyImageFilter)
   const applyWarmth = useEditorStore((s) => s.applyWarmth)
   const applyDuotone = useEditorStore((s) => s.applyDuotone)
+  const duotoneLight = useEditorStore((s) => s.duotoneLight)
+  const duotoneDark = useEditorStore((s) => s.duotoneDark)
+  const duotoneIntensity = useEditorStore((s) => s.duotoneIntensity)
+  const setDuotoneColour = useEditorStore((s) => s.setDuotoneColour)
+  const setDuotoneIntensity = useEditorStore((s) => s.setDuotoneIntensity)
   const vignettes = useEditorStore((s) => s.vignettes)
   const addVignette = useEditorStore((s) => s.addVignette)
   const updateVignette = useEditorStore((s) => s.updateVignette)
@@ -48,6 +52,11 @@ export default function EffectsPanel() {
   const removeLetterbox = useEditorStore((s) => s.removeLetterbox)
   const grainIntensity = useEditorStore((s) => s.grainIntensity)
   const setGrainIntensity = useEditorStore((s) => s.setGrainIntensity)
+  const brightness = useEditorStore((s) => s.brightness)
+  const contrast = useEditorStore((s) => s.contrast)
+  const saturation = useEditorStore((s) => s.saturation)
+  const warmth = useEditorStore((s) => s.warmth)
+  const setAdjustment = useEditorStore((s) => s.setAdjustment)
   const blurZones = useEditorStore((s) => s.blurZones)
   const addBlurZone = useEditorStore((s) => s.addBlurZone)
   const updateBlurZone = useEditorStore((s) => s.updateBlurZone)
@@ -56,36 +65,8 @@ export default function EffectsPanel() {
   const gradientOpacity = useEditorStore((s) => s.gradientOpacity)
   const resetEffect = useEditorStore((s) => s.resetEffect)
 
-  // NOTE: these four live in local state, so they reset to 0 when this panel
-  // unmounts (switching tools) while the image keeps its filters — the readout
-  // then disagrees with the image. Moving them into EffectSlice is the fix and
-  // is scheduled with the rest of the grade-state work.
-  const [brightness, setBrightness] = useState(0)
-  const [contrast, setContrast] = useState(0)
-  const [saturation, setSaturation] = useState(0)
-  const [warmth, setWarmth] = useState(0)
-
-  const [lightColor, setLightColor] = useState("#FF453A")
-  const [darkColor, setDarkColor] = useState("#0A84FF")
-
-  const handleDuotoneChange = (type: "light" | "dark", hex: string) => {
-    if (type === "light") {
-      setLightColor(hex)
-      applyDuotone(hex, darkColor)
-    } else {
-      setDarkColor(hex)
-      applyDuotone(lightColor, hex)
-    }
-  }
-
   const handleReset = (category: "adjustments" | "atmospherics") => {
     resetEffect(category)
-    if (category === "adjustments") {
-      setBrightness(0)
-      setContrast(0)
-      setSaturation(0)
-      setWarmth(0)
-    }
   }
 
   const dashedButton =
@@ -110,10 +91,7 @@ export default function EffectsPanel() {
           max={1}
           step={0.05}
           value={brightness}
-          onChange={(value) => {
-            setBrightness(value)
-            applyImageFilter("Brightness", { brightness: value })
-          }}
+          onChange={(value) => setAdjustment("brightness", value)}
         />
         <AppleSlider
           label="Contrast"
@@ -121,10 +99,7 @@ export default function EffectsPanel() {
           max={1}
           step={0.05}
           value={contrast}
-          onChange={(value) => {
-            setContrast(value)
-            applyImageFilter("Contrast", { contrast: value })
-          }}
+          onChange={(value) => setAdjustment("contrast", value)}
         />
         <AppleSlider
           label="Saturation"
@@ -132,20 +107,14 @@ export default function EffectsPanel() {
           max={1}
           step={0.05}
           value={saturation}
-          onChange={(value) => {
-            setSaturation(value)
-            applyImageFilter("Saturation", { saturation: value })
-          }}
+          onChange={(value) => setAdjustment("saturation", value)}
         />
         <AppleSlider
           label="Warmth"
           min={-100}
           max={100}
           value={warmth}
-          onChange={(value) => {
-            setWarmth(value)
-            applyWarmth(value)
-          }}
+          onChange={(value) => setAdjustment("warmth", value)}
         />
       </Section>
 
@@ -170,7 +139,9 @@ export default function EffectsPanel() {
                 Vignette
                 <ColorPopover
                   value={vignette.color}
-                  onChange={(hex) => updateVignette(vignette.id, { color: hex })}
+                  onChange={(hex) =>
+                    updateVignette(vignette.id, { color: hex })
+                  }
                   label="Vignette colour"
                   align="start"
                   trigger={
@@ -215,7 +186,11 @@ export default function EffectsPanel() {
           </div>
         ))}
 
-        <button type="button" onClick={() => addVignette()} className={dashedButton}>
+        <button
+          type="button"
+          onClick={() => addVignette()}
+          className={dashedButton}
+        >
           <Plus size={14} aria-hidden="true" /> Add vignette layer
         </button>
 
@@ -232,7 +207,12 @@ export default function EffectsPanel() {
           max={100}
           value={gradientOpacity}
           onChange={(value) =>
-            setGradientOverlay(value, "linear", "transparent", "rgba(0,0,0,0.9)")
+            setGradientOverlay(
+              value,
+              "linear",
+              "transparent",
+              "rgba(0,0,0,0.9)"
+            )
           }
         />
       </Section>
@@ -247,8 +227,12 @@ export default function EffectsPanel() {
         <div className="flex gap-2">
           {(
             [
-              { key: "light" as const, label: "Highlights", color: lightColor },
-              { key: "dark" as const, label: "Shadows", color: darkColor },
+              {
+                key: "light" as const,
+                label: "Highlights",
+                color: duotoneLight,
+              },
+              { key: "dark" as const, label: "Shadows", color: duotoneDark },
             ] as const
           ).map(({ key, label, color }) => (
             <div
@@ -260,7 +244,7 @@ export default function EffectsPanel() {
               </span>
               <ColorPopover
                 value={color}
-                onChange={(hex) => handleDuotoneChange(key, hex)}
+                onChange={(hex) => setDuotoneColour(key, hex)}
                 label={`${label} colour`}
                 align="start"
                 trigger={
@@ -273,6 +257,14 @@ export default function EffectsPanel() {
             </div>
           ))}
         </div>
+
+        <AppleSlider
+          label="Intensity"
+          min={0}
+          max={100}
+          value={duotoneIntensity}
+          onChange={setDuotoneIntensity}
+        />
       </Section>
 
       <Section

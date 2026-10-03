@@ -1,5 +1,21 @@
-// Dynamic Duotone Matrix Generator
-export function getDuotoneMatrix(lightHex: string, darkHex: string): number[] {
+/** Identity colour matrix: leaves the image untouched. */
+const IDENTITY_MATRIX = [
+  1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+]
+
+/**
+ * Dynamic Duotone Matrix Generator.
+ *
+ * `intensity` blends the duotone against the untouched image. Both operations
+ * are linear maps over RGB, so interpolating their coefficients is exactly the
+ * same as cross-fading the two results — no second filter needed, and 0 gives
+ * back the original image precisely.
+ */
+export function getDuotoneMatrix(
+  lightHex: string,
+  darkHex: string,
+  intensity = 100
+): number[] {
   // Convert Hex to RGB
   const hexToRgb = (hex: string) => {
     const bigint = parseInt(hex.replace("#", ""), 16)
@@ -19,7 +35,7 @@ export function getDuotoneMatrix(lightHex: string, darkHex: string): number[] {
     lG = 0.587,
     lB = 0.114
 
-  return [
+  const duotone = [
     dR * lR,
     dR * lG,
     dR * lB,
@@ -41,6 +57,13 @@ export function getDuotoneMatrix(lightHex: string, darkHex: string): number[] {
     1,
     0,
   ]
+
+  const blend = Math.max(0, Math.min(1, intensity / 100))
+  if (blend >= 1) return duotone
+
+  return duotone.map(
+    (value, index) => IDENTITY_MATRIX[index] * (1 - blend) + value * blend
+  )
 }
 
 // Warmth Matrix Generator (-100 to 100)
