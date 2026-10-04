@@ -143,7 +143,17 @@ export const createEffectSlice: StateCreator<
     ;(blurOverlay as any).isEffect = true
     blurOverlay.set({ selectable: false, evented: false })
 
-    ;(blurOverlay as FabricImage).filters = [new filters.Blur({ blur: 0.3 })]
+    // Append the blur to the background's existing filter chain rather than
+    // replacing it. Replacing it discarded the colour grade inside the blurred
+    // box, so the region was visibly a different grade from the rest of the
+    // photo.
+    const gradedFilters = ((bg.filters ?? []) as any[]).filter(
+      (filter) => filter.type !== "Blur"
+    )
+    ;(blurOverlay as FabricImage).filters = [
+      ...gradedFilters,
+      new filters.Blur({ blur: 0.3 }),
+    ]
     ;(blurOverlay as FabricImage).applyFilters()
 
     const blurHandle = new Rect({
@@ -152,16 +162,23 @@ export const createEffectSlice: StateCreator<
       width: artboard.width / 2,
       height: artboard.height * 0.3,
       fill: "transparent",
-      stroke: "rgba(255,255,255,0.8)",
-      strokeWidth: 4,
-      strokeDashArray: [10, 10],
+      // Restrained on purpose: this is an editor affordance, and at 4px and 80%
+      // white it read as part of the artwork.
+      stroke: "rgba(255,255,255,0.45)",
+      strokeWidth: 2,
+      strokeDashArray: [8, 6],
       selectable: true,
       evented: true,
-      cornerColor: "white",
+      cornerColor: "rgba(255,255,255,0.85)",
+      cornerStrokeColor: "rgba(0,0,0,0.4)",
+      cornerSize: 9,
       transparentCorners: false,
     })
     ;(blurHandle as any).id = id
     ;(blurHandle as any).isEffect = true
+    // Never rendered into an export, but kept in the document because the clip
+    // path is rebound from it on load.
+    ;(blurHandle as any).editorOnly = true
 
     const updateClipPath = () => {
       blurOverlay.set({
