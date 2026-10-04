@@ -21,6 +21,16 @@ const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
+/**
+ * Overlay ids whose clone is currently in flight.
+ *
+ * `buildBlurLayers` awaits `clone()`, and the Fade slider fires on every change,
+ * so two builds can overlap. Both would find ring 3 missing and both would add
+ * one, putting the same object in the canvas twice — which is what produced the
+ * duplicate React key in the layers list.
+ */
+const blurLayerBuilds = new Set<string>()
+
 export const createEffectSlice: StateCreator<
   EditorStore,
   [],
@@ -228,54 +238,56 @@ export const createEffectSlice: StateCreator<
       .find((o) => o.type === "image" && !(o as any).isEffect) as FabricImage
     if (!bg) return []
 
+    const onCanvas = (id: string) =>
+      canvas.getObjects().find((o) => (o as any).id === id) as any
+
     const rings = feather > 0 ? BLUR_FADE_RINGS + 1 : 1
-    const existing: any[] = (handle.overlayIds ?? [])
-      .map((overlayId: string) =>
-        canvas.getObjects().find((o) => (o as any).id === overlayId)
-      )
-      .filter(Boolean)
-
     const layers: any[] = []
+
     for (let ring = 0; ring < rings; ring++) {
-      let overlay = existing[ring]
+      const overlayId = `blur-overlay-${handleId}-${ring}`
 
-      if (!overlay) {
-        overlay = canvas.getObjects().find((o) => (o as any).id === `blur-overlay-${handleId}-${ring}`)
+      // Idempotent by id. A build must reuse what an earlier one made, whether
+      // it finished or is still in flight.
+      let overlay = onCanvas(overlayId)
 
-        if (!overlay) {
-          // The first ring is a clone of the artwork; the feather rings are
-          // clones of the core, which already carries the grade and the blur.
-          // Cloning the core keeps the colour grade identical across rings —
-          // cloning the artwork again would multiply the work.
-          const source = existing[0] ?? bg
-          overlay = await source.clone()
+      if (!overlay && !blurLayerBuilds.has(overlayId)) {
+        blurLayerBuilds.add(overlayId)
+        try {
+          // Feather rings clone the core, which already carries the grade and
+          // the blur, rather than redoing both from the artwork.
+          const source = (onCanvas(`blur-overlay-${handleId}-0`) ?? bg) as FabricImage
+          const created = (await source.clone()) as any
+
+          created.id = overlayId
+          created.isEffect = true
+          created.blurRing = ring
+          created.overlayId = handleId
+          created.set({ selectable: false, evented: false, opacity: ring === 0 ? 1 : BLUR_RING_ALPHA })
+
+          const gradedFilters = ((bg.filters ?? []) as any[]).filter(
+            (filter) => filter.type !== "Blur"
+          )
+          created.filters = [...gradedFilters, new filters.Blur({ blur: 0.3 })]
+          await created.applyFilters()
+
+          // Re-check: an overlapping build may have won the race while the
+          // clone was in flight, in which case that object is the keeper.
+          overlay = onCanvas(overlayId) ?? created
+          if (overlay === created) {
+            canvas.add(created)
+            canvas.sendObjectToBack(created)
+            canvas.bringObjectForward(created)
+          }
+        } finally {
+          blurLayerBuilds.delete(overlayId)
         }
-
-        ;(overlay as any).id = `blur-overlay-${handleId}-${ring}`
-        ;(overlay as any).isEffect = true
-        ;(overlay as any).blurRing = ring
-        ;(overlay as any).overlayId = handle.id
-        overlay.set({
-          selectable: false,
-          evented: false,
-          opacity: ring === 0 ? 1 : BLUR_RING_ALPHA,
-        })
-
-        const gradedFilters = ((bg.filters ?? []) as any[]).filter(
-          (filter) => filter.type !== "Blur"
-        )
-        ;(overlay as FabricImage).filters = [
-          ...gradedFilters,
-          new filters.Blur({ blur: 0.3 }),
-        ]
-        await (overlay as FabricImage).applyFilters()
-
-        canvas.add(overlay)
-        canvas.sendObjectToBack(overlay)
-        canvas.bringObjectForward(overlay)
       }
 
-      overlay.set({ visible: true })
+      // Still being built elsewhere; this call leaves it for the next one.
+      if (!overlay) continue
+
+      overlay.set({ visible: true, opacity: ring === 0 ? 1 : BLUR_RING_ALPHA })
       layers.push(overlay)
     }
 
@@ -363,20 +375,28 @@ export const createEffectSlice: StateCreator<
   removeBlurZone: (id) => {
     const { canvas, blurZones, saveHistoryState } = get()
     if (!canvas) return
-    const state = blurZones.find((b) => b.id === id)
-    if (!state) return
 
-    const handle = canvas.getObjects().find((o) => (o as any).id === state.id)
-    if (handle) canvas.remove(handle)
+    const state = blurZones.find((zone) => zone.id === id)
 
-    state.overlayIds.forEach((overlayId) => {
-      const overlay = canvas
-        .getObjects()
-        .find((o) => (o as any).id === overlayId)
-      if (overlay) canvas.remove(overlay)
-    })
+    // Remove by the recorded list *and* by back-reference and id prefix. A
+    // zone is several objects behind one control, and a half-removed zone left
+    // orphaned overlays in the artwork with nothing in the panel to remove them.
+    canvas
+      .getObjects()
+      .filter((object: any) => {
+        if (object.id === id) return true
+        if (state?.overlayIds?.includes(object.id)) return true
+        if (object.overlayId === id) return true
+        return (
+          typeof object.id === "string" &&
+          object.id.startsWith(`blur-overlay-${id}-`)
+        )
+      })
+      .forEach((object) => canvas.remove(object))
 
-    set({ blurZones: blurZones.filter((b) => b.id !== id) })
+    set({ blurZones: blurZones.filter((zone) => zone.id !== id) })
+    canvas.discardActiveObject()
+    canvas.requestRenderAll()
     saveHistoryState()
   },
 

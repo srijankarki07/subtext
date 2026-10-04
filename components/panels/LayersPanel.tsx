@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import {
-  ArrowDown,
-  ArrowUp,
   Eye,
   EyeOff,
   Image as ImageIcon,
@@ -36,6 +34,17 @@ type Layer = {
   label: string
   icon: typeof Type
   obj: any
+}
+
+/**
+ * Internal objects that implement another control rather than being artwork in
+ * their own right. A blur zone is a handle plus up to four clipped copies of
+ * the image; listing all five as layers buried the real content and let them be
+ * deleted one at a time.
+ */
+function isInternal(obj: any): boolean {
+  const id = String(obj.id ?? "")
+  return id.startsWith("blur-overlay-")
 }
 
 function describe(obj: any): { label: string; icon: typeof Type } {
@@ -71,7 +80,11 @@ export default function LayersPanel() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
-  const objects = canvas?.getObjects() ?? []
+  // `Array.from(new Set(...))` guards the list against the same object being
+  // present twice, which duplicated React keys and collapsed rows together.
+  const objects = Array.from(new Set(canvas?.getObjects() ?? [])).filter(
+    (obj) => !isInternal(obj)
+  )
 
   if (objects.length === 0) {
     return (
@@ -100,7 +113,7 @@ export default function LayersPanel() {
     <div className="flex flex-col gap-6">
       <Section
         title="Layers"
-        description="Top of the list is front-most."
+        description="Top is front-most. Drag a row to reorder."
         action={
           <span className="rounded-full bg-subtle px-1.5 py-0.5 text-[10px] text-[var(--text-muted)] tabular-nums">
             {objects.length}
@@ -108,7 +121,7 @@ export default function LayersPanel() {
         }
       >
         <div className="flex flex-col gap-1">
-          {layers.map((layer, listIndex) => {
+          {layers.map((layer) => {
             const actualIndex = objects.indexOf(layer.obj)
             const isSelected = activeObject === layer.obj
             const isLocked = Boolean(layer.obj.lockMovementX)
@@ -125,7 +138,8 @@ export default function LayersPanel() {
                 onDragOver={(event) => {
                   event.preventDefault()
                   event.dataTransfer.dropEffect = "move"
-                  if (dragOverIndex !== actualIndex) setDragOverIndex(actualIndex)
+                  if (dragOverIndex !== actualIndex)
+                    setDragOverIndex(actualIndex)
                 }}
                 onDrop={(event) => {
                   event.preventDefault()
@@ -176,7 +190,13 @@ export default function LayersPanel() {
                   onClick={(event) => event.stopPropagation()}
                 >
                   <IconButton
-                    icon={layer.obj.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                    icon={
+                      layer.obj.visible ? (
+                        <Eye size={14} />
+                      ) : (
+                        <EyeOff size={14} />
+                      )
+                    }
                     label={layer.obj.visible ? "Hide layer" : "Show layer"}
                     size="sm"
                     tone={layer.obj.visible ? "default" : "danger"}
@@ -188,24 +208,6 @@ export default function LayersPanel() {
                     size="sm"
                     active={isLocked ? true : undefined}
                     onClick={() => toggleLayerLock(layer.obj)}
-                  />
-                  <IconButton
-                    icon={<ArrowUp size={14} />}
-                    label="Move layer forward"
-                    size="sm"
-                    disabled={listIndex === 0}
-                    onClick={() =>
-                      moveLayerToIndex(actualIndex, actualIndex + 1)
-                    }
-                  />
-                  <IconButton
-                    icon={<ArrowDown size={14} />}
-                    label="Move layer backward"
-                    size="sm"
-                    disabled={listIndex === layers.length - 1}
-                    onClick={() =>
-                      moveLayerToIndex(actualIndex, actualIndex - 1)
-                    }
                   />
                 </span>
               </div>
