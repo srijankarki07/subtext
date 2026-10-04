@@ -5,6 +5,12 @@ import {
 } from "@/lib/filters"
 import { EditorStore, EffectSlice } from "@/types/store.types"
 import { FabricImage, filters, Gradient, Rect } from "fabric"
+
+import {
+  BLUR_FADE_RINGS,
+  BLUR_RING_ALPHA,
+  applyBlurClips,
+} from "@/lib/blurZone"
 import { StateCreator } from "zustand"
 
 // Helper to convert hex to rgba for gradient transparency
@@ -145,25 +151,6 @@ export const createEffectSlice: StateCreator<
     if (!bg) return
 
     const id = "blur-handle-" + Date.now()
-    const overlayId = "blur-overlay-" + Date.now()
-
-    const blurOverlay = await bg.clone()
-    ;(blurOverlay as any).id = overlayId
-    ;(blurOverlay as any).isEffect = true
-    blurOverlay.set({ selectable: false, evented: false })
-
-    // Append the blur to the background's existing filter chain rather than
-    // replacing it. Replacing it discarded the colour grade inside the blurred
-    // box, so the region was visibly a different grade from the rest of the
-    // photo.
-    const gradedFilters = ((bg.filters ?? []) as any[]).filter(
-      (filter) => filter.type !== "Blur"
-    )
-    ;(blurOverlay as FabricImage).filters = [
-      ...gradedFilters,
-      new filters.Blur({ blur: 0.3 }),
-    ]
-    ;(blurOverlay as FabricImage).applyFilters()
 
     const blurHandle = new Rect({
       left: artboard.width / 4,
@@ -186,59 +173,192 @@ export const createEffectSlice: StateCreator<
     ;(blurHandle as any).id = id
     ;(blurHandle as any).isEffect = true
     // Never rendered into an export, but kept in the document because the clip
-    // path is rebound from it on load.
+    // paths are recomputed from it on load.
     ;(blurHandle as any).editorOnly = true
+    ;(blurHandle as any).blurFeather = 0
+    ;(blurHandle as any).overlayIds = []
 
-    const updateClipPath = () => {
-      blurOverlay.set({
-        clipPath: new Rect({
-          left: blurHandle.left,
-          top: blurHandle.top,
-          width: blurHandle.getScaledWidth(),
-          height: blurHandle.getScaledHeight(),
-          absolutePositioned: true,
-        }),
-      })
-      canvas.requestRenderAll()
-    }
+    // The handle has to be on the canvas *before* the layers are built:
+    // `buildBlurLayers` looks it up by id, so building first silently produced
+    // no overlays at all and a hard zone did nothing.
+    canvas.add(blurHandle)
 
-    updateClipPath()
-    blurHandle.on("moving", updateClipPath)
-    blurHandle.on("scaling", updateClipPath)
+    const overlays = await get().buildBlurLayers(id, 0)
+    ;(blurHandle as any).overlayIds = overlays.map((o) => (o as any).id)
 
-    canvas.add(blurOverlay, blurHandle)
-    canvas.sendObjectToBack(blurOverlay)
-    canvas.bringObjectForward(blurOverlay)
+    applyBlurClips(canvas)
 
-    set({ blurZones: [...blurZones, { id, overlayId, opacity: 30 }] })
+    blurHandle.on("moving", () => applyBlurClips(canvas))
+    blurHandle.on("scaling", () => applyBlurClips(canvas))
+
+    set({
+      blurZones: [
+        ...blurZones,
+        {
+          id,
+          overlayIds: (blurHandle as any).overlayIds,
+          blur: 30,
+          feather: 0,
+        },
+      ],
+    })
     canvas.setActiveObject(blurHandle)
     saveHistoryState()
   },
 
-  updateBlurZone: (id, opacity) => {
+  /**
+   * Builds the blurred copies for a zone.
+   *
+   * One per ring: ring 0 is the core, matching the handle, and the rest are
+   * clipped progressively wider so the blur can fade out. Rings are only built
+   * when a feather is asked for, so a hard zone — the common case — costs one
+   * clone rather than four.
+   */
+  buildBlurLayers: async (handleId, feather) => {
+    const { canvas } = get()
+    if (!canvas) return []
+
+    const handle = canvas
+      .getObjects()
+      .find((o) => (o as any).id === handleId) as any
+    if (!handle) return []
+
+    const bg = canvas
+      .getObjects()
+      .find((o) => o.type === "image" && !(o as any).isEffect) as FabricImage
+    if (!bg) return []
+
+    const rings = feather > 0 ? BLUR_FADE_RINGS + 1 : 1
+    const existing: any[] = (handle.overlayIds ?? [])
+      .map((overlayId: string) =>
+        canvas.getObjects().find((o) => (o as any).id === overlayId)
+      )
+      .filter(Boolean)
+
+    const layers: any[] = []
+    for (let ring = 0; ring < rings; ring++) {
+      let overlay = existing[ring]
+
+      if (!overlay) {
+        overlay = canvas.getObjects().find((o) => (o as any).id === `blur-overlay-${handleId}-${ring}`)
+
+        if (!overlay) {
+          // The first ring is a clone of the artwork; the feather rings are
+          // clones of the core, which already carries the grade and the blur.
+          // Cloning the core keeps the colour grade identical across rings —
+          // cloning the artwork again would multiply the work.
+          const source = existing[0] ?? bg
+          overlay = await source.clone()
+        }
+
+        ;(overlay as any).id = `blur-overlay-${handleId}-${ring}`
+        ;(overlay as any).isEffect = true
+        ;(overlay as any).blurRing = ring
+        ;(overlay as any).overlayId = handle.id
+        overlay.set({
+          selectable: false,
+          evented: false,
+          opacity: ring === 0 ? 1 : BLUR_RING_ALPHA,
+        })
+
+        const gradedFilters = ((bg.filters ?? []) as any[]).filter(
+          (filter) => filter.type !== "Blur"
+        )
+        ;(overlay as FabricImage).filters = [
+          ...gradedFilters,
+          new filters.Blur({ blur: 0.3 }),
+        ]
+        await (overlay as FabricImage).applyFilters()
+
+        canvas.add(overlay)
+        canvas.sendObjectToBack(overlay)
+        canvas.bringObjectForward(overlay)
+      }
+
+      overlay.set({ visible: true })
+      layers.push(overlay)
+    }
+
+    return layers
+  },
+
+  updateBlurZone: (id, blur) => {
     const { canvas, blurZones } = get()
     if (!canvas) return
 
-    const updated = blurZones.map((b) => (b.id === id ? { ...b, opacity } : b))
+    const updated = blurZones.map((b) => (b.id === id ? { ...b, blur } : b))
     set({ blurZones: updated })
 
     const state = updated.find((b) => b.id === id)
     if (!state) return
 
-    const blurOverlay = canvas
+    state.overlayIds.forEach((overlayId) => {
+      const overlay = canvas
+        .getObjects()
+        .find((o) => (o as any).id === overlayId) as FabricImage
+      if (!overlay?.filters) return
+
+      const blurFilter = overlay.filters.find((f) => f.type === "Blur") as any
+      if (!blurFilter) return
+      blurFilter.blur = blur / 100
+      void overlay.applyFilters()
+    })
+
+    canvas.requestRenderAll()
+  },
+
+  setBlurZoneFeather: async (id, feather) => {
+    const { canvas, blurZones, saveHistoryState } = get()
+    if (!canvas) return
+
+    const handle = canvas.getObjects().find((o) => (o as any).id === id) as any
+    if (!handle) return
+
+    ;(handle as any).blurFeather = feather
+    const layers = await get().buildBlurLayers(id, feather)
+    ;(handle as any).overlayIds = layers.map((layer) => (layer as any).id)
+
+    // Feather rings that are no longer needed stay in the document but stop
+    // rendering, so toggling back is instant.
+    layers.forEach((layer, index) => {
+      const wanted = index === 0 || feather > 0
+      ;(layer as any).set({
+        visible: wanted,
+        opacity: index === 0 ? 1 : BLUR_RING_ALPHA,
+      })
+    })
+
+    // Anything beyond the rings now in use is retired.
+    canvas
       .getObjects()
-      .find((o) => (o as any).id === state.overlayId) as FabricImage
-    if (blurOverlay && blurOverlay.filters) {
-      const blurFilter = blurOverlay.filters.find(
+      .forEach((object: any) => {
+        if (object.blurRing > 0 && !layers.includes(object)) object.set({ visible: false })
+      })
+
+    const blur = blurZones.find((zone) => zone.id === id)?.blur ?? 30
+    layers.forEach((layer) => {
+      const blurFilter = (layer as FabricImage).filters?.find(
         (f) => f.type === "Blur"
       ) as any
-      if (blurFilter) {
-        blurFilter.blur = opacity / 100
-        blurOverlay.applyFilters()
-        canvas.requestRenderAll()
-      }
-    }
+      if (blurFilter) blurFilter.blur = blur / 100
+    })
+
+    set({
+      blurZones: blurZones.map((zone) =>
+        zone.id === id
+          ? {
+              ...zone,
+              feather,
+              overlayIds: layers.map((layer) => (layer as any).id),
+            }
+          : zone
+      ),
+    })
+
+    applyBlurClips(canvas)
+    saveHistoryState()
   },
+
 
   removeBlurZone: (id) => {
     const { canvas, blurZones, saveHistoryState } = get()
@@ -247,12 +367,14 @@ export const createEffectSlice: StateCreator<
     if (!state) return
 
     const handle = canvas.getObjects().find((o) => (o as any).id === state.id)
-    const overlay = canvas
-      .getObjects()
-      .find((o) => (o as any).id === state.overlayId)
-
     if (handle) canvas.remove(handle)
-    if (overlay) canvas.remove(overlay)
+
+    state.overlayIds.forEach((overlayId) => {
+      const overlay = canvas
+        .getObjects()
+        .find((o) => (o as any).id === overlayId)
+      if (overlay) canvas.remove(overlay)
+    })
 
     set({ blurZones: blurZones.filter((b) => b.id !== id) })
     saveHistoryState()
