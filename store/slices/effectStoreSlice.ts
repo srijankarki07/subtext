@@ -54,8 +54,20 @@ export const createEffectSlice: StateCreator<
 
   // --- VIGNETTES ---
   addVignette: (initialConfig) => {
-    const { canvas, vignettes, saveHistoryState } = get()
+    const {
+      canvas,
+      vignettes,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+    } = get()
     if (!canvas) return
+
+    // Adding a layer is several steps — create the object, apply its gradient,
+    // push it to the front, register it in the store — and `updateVignette`
+    // below records one of them. The transaction keeps the final state only, so
+    // the step is titled for what the user did rather than for the internal
+    // call that happened to run last.
+    beginHistoryTransaction("Add vignette")
 
     const w = canvas.getWidth()
     const h = canvas.getHeight()
@@ -92,11 +104,11 @@ export const createEffectSlice: StateCreator<
 
     canvas.bringObjectToFront(vignette)
     canvas.requestRenderAll()
-    saveHistoryState()
+    endHistoryTransaction()
   },
 
   updateVignette: (id, updates) => {
-    const { canvas, vignettes } = get()
+    const { canvas, vignettes, saveHistoryState } = get()
     if (!canvas) return
 
     const updatedVignettes = vignettes.map((v) =>
@@ -139,6 +151,7 @@ export const createEffectSlice: StateCreator<
       obj.setCoords()
       canvas.requestRenderAll()
     }
+    saveHistoryState("Vignette", { coalesceKey: `vignette:${id}` })
   },
 
   removeVignette: (id) => {
@@ -147,7 +160,7 @@ export const createEffectSlice: StateCreator<
     const obj = canvas.getObjects().find((o) => (o as any).id === id)
     if (obj) canvas.remove(obj)
     set({ vignettes: vignettes.filter((v) => v.id !== id) })
-    saveHistoryState()
+    saveHistoryState("Remove vignette")
   },
 
   // --- BLUR ZONES ---
@@ -213,7 +226,7 @@ export const createEffectSlice: StateCreator<
       ],
     })
     canvas.setActiveObject(blurHandle)
-    saveHistoryState()
+    saveHistoryState("Add blur zone")
   },
 
   /**
@@ -256,7 +269,8 @@ export const createEffectSlice: StateCreator<
         try {
           // Feather rings clone the core, which already carries the grade and
           // the blur, rather than redoing both from the artwork.
-          const source = (onCanvas(`blur-overlay-${handleId}-0`) ?? bg) as FabricImage
+          const source = (onCanvas(`blur-overlay-${handleId}-0`) ??
+            bg) as FabricImage
           const created = (await source.clone()) as any
 
           created.id = overlayId
@@ -265,7 +279,11 @@ export const createEffectSlice: StateCreator<
           created.overlayId = handleId
           // Same photo as the artwork, so the same stored asset.
           created.assetId = (source as any).assetId
-          created.set({ selectable: false, evented: false, opacity: ring === 0 ? 1 : BLUR_RING_ALPHA })
+          created.set({
+            selectable: false,
+            evented: false,
+            opacity: ring === 0 ? 1 : BLUR_RING_ALPHA,
+          })
 
           const gradedFilters = ((bg.filters ?? []) as any[]).filter(
             (filter) => filter.type !== "Blur"
@@ -297,7 +315,7 @@ export const createEffectSlice: StateCreator<
   },
 
   updateBlurZone: (id, blur) => {
-    const { canvas, blurZones } = get()
+    const { canvas, blurZones, saveHistoryState } = get()
     if (!canvas) return
 
     const updated = blurZones.map((b) => (b.id === id ? { ...b, blur } : b))
@@ -319,6 +337,7 @@ export const createEffectSlice: StateCreator<
     })
 
     canvas.requestRenderAll()
+    saveHistoryState("Blur radius", { coalesceKey: `blur-radius:${id}` })
   },
 
   setBlurZoneFeather: async (id, feather) => {
@@ -343,11 +362,10 @@ export const createEffectSlice: StateCreator<
     })
 
     // Anything beyond the rings now in use is retired.
-    canvas
-      .getObjects()
-      .forEach((object: any) => {
-        if (object.blurRing > 0 && !layers.includes(object)) object.set({ visible: false })
-      })
+    canvas.getObjects().forEach((object: any) => {
+      if (object.blurRing > 0 && !layers.includes(object))
+        object.set({ visible: false })
+    })
 
     const blur = blurZones.find((zone) => zone.id === id)?.blur ?? 30
     layers.forEach((layer) => {
@@ -370,9 +388,8 @@ export const createEffectSlice: StateCreator<
     })
 
     applyBlurClips(canvas)
-    saveHistoryState()
+    saveHistoryState("Blur fade", { coalesceKey: `blur-feather:${id}` })
   },
-
 
   removeBlurZone: (id) => {
     const { canvas, blurZones, saveHistoryState } = get()
@@ -399,7 +416,7 @@ export const createEffectSlice: StateCreator<
     set({ blurZones: blurZones.filter((zone) => zone.id !== id) })
     canvas.discardActiveObject()
     canvas.requestRenderAll()
-    saveHistoryState()
+    saveHistoryState("Remove blur zone")
   },
 
   // --- LETTERBOX ---
@@ -459,7 +476,7 @@ export const createEffectSlice: StateCreator<
 
     set({ letterboxes: [...letterboxes, { id, topId, bottomId }] })
     canvas.requestRenderAll()
-    saveHistoryState()
+    saveHistoryState("Add letterbox")
   },
 
   // --- SHADOW GRADIENT OVERLAY ---
@@ -522,7 +539,7 @@ export const createEffectSlice: StateCreator<
     }
 
     canvas.requestRenderAll()
-    saveHistoryState()
+    saveHistoryState("Shadow gradient", { coalesceKey: "gradient" })
   },
 
   removeLetterbox: (id) => {
@@ -539,10 +556,13 @@ export const createEffectSlice: StateCreator<
     if (bottom) canvas.remove(bottom)
 
     set({ letterboxes: letterboxes.filter((l) => l.id !== id) })
-    saveHistoryState()
+    saveHistoryState("Remove letterbox")
   },
 
-  setGrainIntensity: (intensity) => set({ grainIntensity: intensity }),
+  setGrainIntensity: (intensity) => {
+    set({ grainIntensity: intensity })
+    get().saveHistoryState("Film grain", { coalesceKey: "grain" })
+  },
 
   applyImageFilter: (type, options) => {
     const { canvas, saveHistoryState } = get()
@@ -564,10 +584,10 @@ export const createEffectSlice: StateCreator<
     }
     bg.applyFilters()
     canvas.requestRenderAll()
-    saveHistoryState()
+    saveHistoryState("Adjust image", { coalesceKey: `filter:${type}` })
   },
 
-  applyPreset: (matrix) => {
+  applyPreset: (matrix, coalesceKey) => {
     const { canvas, saveHistoryState } = get()
     if (!canvas) return
     const bg = canvas
@@ -580,10 +600,17 @@ export const createEffectSlice: StateCreator<
       bg.filters.push(new filters.ColorMatrix({ matrix }))
     bg.applyFilters()
     canvas.requestRenderAll()
-    saveHistoryState()
+    saveHistoryState("Colour grade", { coalesceKey })
   },
 
-  applyWarmth: (value) => get().applyPreset(getWarmthMatrix(value)),
+  /**
+   * Warmth is a colour grade like any other, so it goes through `applyPreset`
+   * and inherits its history handling — passing a coalesce key is what keeps a
+   * slider drag to a single undo step instead of one per pixel of travel.
+   */
+  applyWarmth: (value) =>
+    get().applyPreset(getWarmthMatrix(value), "filter:warmth"),
+
   /**
    * Applies a duotone and records the settings.
    *
@@ -596,7 +623,7 @@ export const createEffectSlice: StateCreator<
       duotoneDark: darkHex,
       duotoneIntensity: intensity,
     })
-    get().applyPreset(getDuotoneMatrix(lightHex, darkHex, intensity))
+    get().applyPreset(getDuotoneMatrix(lightHex, darkHex, intensity), "duotone")
   },
 
   setDuotoneColour: (which, hex) => {
@@ -617,10 +644,9 @@ export const createEffectSlice: StateCreator<
     set({ [which]: value })
     if (which === "warmth") get().applyWarmth(value)
     else {
-      get().applyImageFilter(
-        which.charAt(0).toUpperCase() + which.slice(1),
-        { [which]: value }
-      )
+      get().applyImageFilter(which.charAt(0).toUpperCase() + which.slice(1), {
+        [which]: value,
+      })
     }
   },
 
