@@ -7,11 +7,7 @@ import {
 import { deleteAsset } from "@/lib/assets"
 import { dehydrateCanvas, loadDocument } from "@/lib/snapshot"
 import { applyGrain } from "@/lib/grain"
-import {
-  importImage,
-  pickImageFile,
-  replaceImage,
-} from "@/lib/imageImport"
+import { importImage, pickImageFile, replaceImage } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
 import { Canvas, IText, Shadow } from "fabric"
@@ -355,12 +351,18 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   addImage: async () => {
-    const { canvas, saveHistoryState } = get()
+    const { canvas, beginHistoryTransaction, endHistoryTransaction } = get()
     if (!canvas) return
 
     const file = await pickImageFile()
     if (!file) return
 
+    // Transactional because `importImage` inserts the photo, which fires the
+    // canvas's `object:added` handler and records an entry — and the palette is
+    // only written to the store *after* that, so the two snapshots differ and
+    // the dedupe keeps both. The photo cost two history steps and the first
+    // press of undo appeared to do nothing.
+    beginHistoryTransaction("Upload image")
     try {
       const result = await importImage(canvas, file)
       if (!result) return
@@ -368,27 +370,30 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       // claimed there was no image to sample straight after one was added.
       set({ imagePalette: result.palette })
       canvas.requestRenderAll()
-      saveHistoryState("Upload image")
     } catch (error) {
       console.error("Failed to load image:", error)
+    } finally {
+      endHistoryTransaction()
     }
   },
 
   replaceImage: async () => {
-    const { canvas, saveHistoryState } = get()
+    const { canvas, beginHistoryTransaction, endHistoryTransaction } = get()
     if (!canvas) return
 
     const file = await pickImageFile()
     if (!file) return
 
+    beginHistoryTransaction("Replace image")
     try {
       const result = await replaceImage(canvas, file)
       if (!result) return
       set({ imagePalette: result.palette })
       canvas.requestRenderAll()
-      saveHistoryState("Replace image")
     } catch (error) {
       console.error("Failed to replace image:", error)
+    } finally {
+      endHistoryTransaction()
     }
   },
 
@@ -546,8 +551,15 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   // TEMPLATE INJECTION
   applyTemplate: (templateId) => {
     const store = get() as EditorStore // Access full combined store context
-    const { canvas, saveHistoryState } = store
+    const { canvas, beginHistoryTransaction, endHistoryTransaction } = store
     if (!canvas) return
+
+    // One template application is one undo step, not fifteen: it sets fonts,
+    // positions, grade, grain, vignette and letterbox in separate calls, and
+    // every one of them used to record its own entry. Opened *after* the guard
+    // so that an early return cannot leave a transaction dangling — a dangling
+    // transaction swallows every later snapshot and history stops recording.
+    beginHistoryTransaction("Apply template")
 
     const canvasWidth = canvas.getWidth()
     const canvasHeight = canvas.getHeight()
@@ -708,7 +720,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       }
     }
 
-    saveHistoryState()
+    endHistoryTransaction()
   },
 
   copyCanvasToClipboard: async (scale = 1) => {

@@ -84,7 +84,7 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
 
     canvas.requestRenderAll()
     calculateContrast()
-    saveHistoryState()
+    saveHistoryState(`Change ${key}`, { coalesceKey: `style:${key}` })
   },
 
   getActiveSelectionStyle: (key) => {

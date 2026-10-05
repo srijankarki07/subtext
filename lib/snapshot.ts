@@ -2,6 +2,11 @@ import type { Canvas } from "fabric"
 
 import { getAssetBlob, releaseIssuedAssetUrls } from "@/lib/assets"
 import { DOCUMENT_PROPERTIES } from "@/lib/fabricDocument"
+import type {
+  BlurZoneState,
+  LetterboxState,
+  VignetteState,
+} from "@/types/store.types"
 
 /**
  * Document snapshots.
@@ -24,9 +29,9 @@ import { DOCUMENT_PROPERTIES } from "@/lib/fabricDocument"
 export interface EffectSnapshot {
   grainIntensity: number
   gradientOpacity: number
-  vignettes: unknown[]
-  blurZones: unknown[]
-  letterboxes: unknown[]
+  vignettes: VignetteState[]
+  blurZones: BlurZoneState[]
+  letterboxes: LetterboxState[]
   duotoneLight: string
   duotoneDark: string
   duotoneIntensity: number

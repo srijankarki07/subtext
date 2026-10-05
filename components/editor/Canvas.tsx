@@ -104,10 +104,23 @@ export default function Canvas() {
     )
     canvas.on("selection:cleared", () => setActiveObject(null))
 
-    const handleObjectsChanged = () => {
+    const handleObjectsChanged = (event?: { target?: unknown }) => {
       // Effect layers (vignettes, letterbox bars, gradients) are still objects,
       // so an artboard holding only an effect counts as non-empty too.
       setHasContent(canvas.getObjects().length > 0)
+
+      // An effect layer is a Fabric object like any other, so adding one fires
+      // this handler *and* the action that owns it records its own, correctly
+      // titled entry. Both were kept, so every effect layer cost two history
+      // steps — the first untitled — and the first press of undo looked like it
+      // had done nothing. The owning action is the authority here, because it
+      // is the only place that knows what the layer is called.
+      if (
+        (event?.target as { isEffect?: boolean } | undefined)?.isEffect === true
+      ) {
+        return
+      }
+
       saveHistoryState()
     }
 
@@ -348,6 +361,10 @@ export default function Canvas() {
     if (!canvas) return
 
     setIsProcessingImage(true)
+    // One step: inserting the photo fires the canvas's `object:added` handler
+    // and records an entry, and the palette only reaches the store afterwards,
+    // so the two snapshots differ and both were kept. See `addImage`.
+    useEditorStore.getState().beginHistoryTransaction("Upload image")
     try {
       // Shared with the store's addImage so both upload paths behave the same
       // and always extract a palette.
@@ -356,10 +373,10 @@ export default function Canvas() {
 
       useEditorStore.getState().setImagePalette(result.palette)
       canvas.requestRenderAll()
-      saveHistoryState("Upload image")
     } catch (error) {
       console.error("Failed to load image or extract palette:", error)
     } finally {
+      useEditorStore.getState().endHistoryTransaction()
       setIsProcessingImage(false)
     }
   }
