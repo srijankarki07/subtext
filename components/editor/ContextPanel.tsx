@@ -1,12 +1,14 @@
 "use client"
 
-import { AtSign, Image as ImageIcon, Quote, Type, X } from "lucide-react"
+import { AtSign, PenTool, Quote, Type, X } from "lucide-react"
 
 import { IconButton } from "@/components/ui/icon-button"
 import EffectsPanel from "@/components/panels/EffectPanel"
 import LayersPanel from "@/components/panels/LayersPanel"
 import TemplatesPanel from "@/components/panels/TemplatesPanel"
+import MediaPanel from "@/components/editor/MediaPanel"
 import { useEditorStore } from "@/store/useEditorStore"
+import type { TextBlockType } from "@/types/store.types"
 import type { EditorTool } from "@/components/editor/ToolRail"
 
 /**
@@ -27,7 +29,7 @@ const TOOL_COPY: Record<string, { title: string; hint: string }> = {
   },
   media: {
     title: "Media",
-    hint: "Add a considered starting point, then refine it on the artboard.",
+    hint: "The photo the words sit on.",
   },
   templates: {
     title: "Templates",
@@ -47,6 +49,61 @@ const TOOL_COPY: Record<string, { title: string; hint: string }> = {
   },
 }
 
+/**
+ * The text blocks a composition is built from.
+ *
+ * Each one is a different job in a quote card — the words, who said them, where
+ * to find them, and the signature — rather than variations on the same thing,
+ * which is how the list read when it was four rows of "Typography".
+ */
+function TextBlocks() {
+  const blocks: Array<{
+    type: TextBlockType
+    icon: React.ReactNode
+    title: string
+    eyebrow: string
+  }> = [
+    {
+      type: "quote",
+      icon: <Type size={15} />,
+      title: "Quote",
+      eyebrow: "The words, in a display serif",
+    },
+    {
+      type: "author",
+      icon: <Quote size={15} />,
+      title: "Author",
+      eyebrow: "Who said it",
+    },
+    {
+      type: "handle",
+      icon: <AtSign size={15} />,
+      title: "Social handle",
+      eyebrow: "Wide, small, quiet",
+    },
+    {
+      type: "signature",
+      icon: <PenTool size={15} />,
+      title: "Signature",
+      eyebrow: "A script name, lower third",
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      {blocks.map((block) => (
+        <AddElement
+          key={block.type}
+          icon={block.icon}
+          eyebrow={block.eyebrow}
+          title={block.title}
+          onClick={() => useEditorStore.getState().addText(block.type)}
+        />
+      ))}
+    </div>
+  )
+}
+
 function AddElement({
   icon,
   eyebrow,
@@ -62,7 +119,7 @@ function AddElement({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
+      className="group flex w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition-colors outline-none hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-[var(--text-secondary)] transition-colors group-hover:border-swatch-edge group-hover:text-foreground">
         {icon}
@@ -114,34 +171,10 @@ export default function ContextPanel({
           <LayersPanel />
         ) : activeTool === "cinema" ? (
           <EffectsPanel />
+        ) : activeTool === "media" ? (
+          <MediaPanel />
         ) : (
-          <div className="flex flex-col gap-0.5">
-            <AddElement
-              icon={<Type size={15} />}
-              eyebrow="Typography"
-              title="Quote"
-              onClick={() => useEditorStore.getState().addText("quote")}
-            />
-            <AddElement
-              icon={<Quote size={15} />}
-              eyebrow="Typography"
-              title="Author"
-              onClick={() => useEditorStore.getState().addText("author")}
-            />
-            <AddElement
-              icon={<AtSign size={15} />}
-              eyebrow="Typography"
-              title="Social handle"
-              onClick={() => useEditorStore.getState().addText("handle")}
-            />
-            <div className="my-2 h-px bg-border" />
-            <AddElement
-              icon={<ImageIcon size={15} />}
-              eyebrow="Media"
-              title="Image"
-              onClick={() => useEditorStore.getState().addImage()}
-            />
-          </div>
+          <TextBlocks />
         )}
       </div>
     </aside>

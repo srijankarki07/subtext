@@ -3,7 +3,7 @@ import { Canvas, FabricObject } from "fabric"
 import type { VisibilityReport } from "@/lib/visibility"
 import { CustomFontMetadata } from "@/lib/customFonts"
 
-export type TextBlockType = "quote" | "author" | "handle"
+export type TextBlockType = "quote" | "author" | "handle" | "signature"
 export type MobileTab = "templates" | "layers" | "edit" | "export" | null
 
 export interface ContextMenuState {
@@ -262,7 +262,9 @@ export interface CoreSlice {
   zoomBy: (factor: number) => void
   fitToViewport: () => void
   addText: (type: TextBlockType) => void
-  addImage: () => void
+  addImage: () => Promise<void>
+  /** Swaps the artwork's photo, keeping the composition. */
+  replaceImage: () => Promise<void>
   deleteActiveObject: (targetObj?: FabricObject | null) => void
   clearCanvas: () => void
   applyTemplate: (templateId: string) => void
