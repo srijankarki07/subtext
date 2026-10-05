@@ -79,6 +79,14 @@ export function InspectorPanelContent() {
           <Button
             variant="outline"
             className="w-full justify-between"
+            onClick={() => useEditorStore.getState().addText("signature")}
+          >
+            <span>Signature</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Add</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-between"
             onClick={() => useEditorStore.getState().addImage()}
           >
             <span className="flex items-center gap-1.5">
@@ -120,7 +128,7 @@ export function InspectorPanelContent() {
               aria-selected={selected}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex-1 cursor-pointer rounded-t-md pb-2.5 text-[12px] outline-none transition-colors",
+                "relative flex-1 cursor-pointer rounded-t-md pb-2.5 text-[12px] transition-colors outline-none",
                 "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                 selected
                   ? "font-semibold text-foreground"

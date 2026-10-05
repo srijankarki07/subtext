@@ -81,3 +81,84 @@ export function pickImageFile(): Promise<File | null> {
     input.click()
   })
 }
+
+/**
+ * Swaps the artwork's photo for another, keeping the composition.
+ *
+ * The transform is not copied verbatim: a 4000px replacement at the previous
+ * scale would render four times larger and destroy the layout. The new photo is
+ * scaled to fit the footprint the old one occupied, which is what "replace the
+ * picture, keep the design" has to mean.
+ *
+ * Selective-blur overlays are clones of the photo, so they are repointed at the
+ * new image too — otherwise the blurred region would keep showing the photo the
+ * user just replaced.
+ */
+export async function replaceImage(
+  canvas: Canvas,
+  file: File,
+  { colorCount = 6 }: { colorCount?: number } = {}
+): Promise<{ palette: string[] } | null> {
+  if (!isImageFile(file)) return null
+
+  const previous = canvas
+    .getObjects()
+    .find((object) => object.type === "image" && !(object as any).isEffect) as
+    | FabricImage
+    | undefined
+
+  // Nothing to replace: treat it as a first upload.
+  if (!previous) {
+    const added = await importImage(canvas, file, { colorCount })
+    return added ? { palette: added.palette } : null
+  }
+
+  const dataUrl = await readAsDataUrl(file)
+  const next = await FabricImage.fromURL(dataUrl)
+
+  const footprintWidth = previous.getScaledWidth()
+  const footprintHeight = previous.getScaledHeight()
+  const scale = Math.min(
+    footprintWidth / (next.width || 1),
+    footprintHeight / (next.height || 1)
+  )
+
+  next.set({
+    left: previous.left,
+    top: previous.top,
+    originX: previous.originX,
+    originY: previous.originY,
+    angle: previous.angle,
+    flipX: previous.flipX,
+    flipY: previous.flipY,
+    opacity: previous.opacity,
+    scaleX: scale,
+    scaleY: scale,
+    // The grade belongs to the composition, not to the photo.
+    filters: [...(previous.filters ?? [])],
+    selectable: previous.selectable,
+    evented: previous.evented,
+    lockMovementX: previous.lockMovementX,
+    lockMovementY: previous.lockMovementY,
+    lockScalingX: previous.lockScalingX,
+    lockScalingY: previous.lockScalingY,
+  })
+
+  const index = canvas.getObjects().indexOf(previous)
+  canvas.remove(previous)
+  canvas.insertAt(Math.max(0, index), next)
+  canvas.setActiveObject(next)
+
+  canvas
+    .getObjects()
+    .filter((object: any) => typeof object.id === "string" && object.id.startsWith("blur-overlay-"))
+    .forEach((overlay: any) => {
+      overlay.setElement(next.getElement())
+      overlay.set({ scaleX: scale, scaleY: scale })
+    })
+
+  if ((next.filters ?? []).length > 0) await next.applyFilters()
+
+  const palette = await extractPalette(dataUrl, colorCount)
+  return { palette }
+}

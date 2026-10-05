@@ -5,7 +5,11 @@ import {
   withoutEditorChrome,
 } from "@/lib/fabricDocument"
 import { applyGrain } from "@/lib/grain"
-import { importImage, pickImageFile } from "@/lib/imageImport"
+import {
+  importImage,
+  pickImageFile,
+  replaceImage,
+} from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
 import { Canvas, IText, Shadow } from "fabric"
@@ -343,6 +347,24 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     }
   },
 
+  replaceImage: async () => {
+    const { canvas, saveHistoryState } = get()
+    if (!canvas) return
+
+    const file = await pickImageFile()
+    if (!file) return
+
+    try {
+      const result = await replaceImage(canvas, file)
+      if (!result) return
+      set({ imagePalette: result.palette })
+      canvas.requestRenderAll()
+      saveHistoryState("Replace image")
+    } catch (error) {
+      console.error("Failed to replace image:", error)
+    }
+  },
+
   deleteActiveObject: (targetObj) => {
     const {
       canvas,
@@ -429,12 +451,27 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
           opacity: 0.6,
         })
         break
+      case "signature":
+        textStr = "Your Name"
+        Object.assign(options, {
+          // A script face is what makes a signature read as one rather than as
+          // another line of type. No shadow: script at this weight smears.
+          fontFamily: "Great Vibes",
+          fontSize: 44,
+          shadow: undefined,
+        })
+        break
     }
+
+    // A signature belongs in the lower third, where a signature goes. Everything
+    // else starts centred, which is a neutral place to move from.
+    const verticalPosition =
+      type === "signature" ? canvas.getHeight() * 0.78 : canvas.getHeight() / 2
 
     const textObject = new IText(textStr, {
       ...options,
-      left: canvas.getWidth() / 2, // Place directly in the center of the artboard
-      top: canvas.getHeight() / 2,
+      left: canvas.getWidth() / 2,
+      top: verticalPosition,
     })
 
     canvas.add(textObject)
