@@ -1,4 +1,5 @@
-import { DOCUMENT_PROPERTIES, bindBlurHandleListeners } from "@/lib/fabricDocument"
+import { bindBlurHandleListeners } from "@/lib/fabricDocument"
+import { dehydrateCanvas, loadDocument } from "@/lib/snapshot"
 import { EditorStore, HistoryItem, HistorySlice } from "@/types/store.types"
 import { StateCreator } from "zustand"
 
@@ -21,7 +22,9 @@ export const createHistorySlice: StateCreator<
     if (!canvas || isHistoryProcessing) return
 
     try {
-      const json = JSON.stringify(canvas.toObject(DOCUMENT_PROPERTIES as unknown as string[]))
+      // Dehydrated, so thirty snapshots no longer hold thirty copies of the
+      // photo. Same mechanism as the saved project.
+      const json = JSON.stringify(dehydrateCanvas(canvas))
       const newHistory = history.slice(0, historyIndex + 1)
 
       // Avoid duplicate consecutive saves
@@ -105,7 +108,7 @@ export const createHistorySlice: StateCreator<
 
     try {
       const targetState = history[targetIndex]
-      await canvas.loadFromJSON(JSON.parse(targetState.json))
+      await loadDocument(canvas, JSON.parse(targetState.json))
 
       // Re-bind draggable blur handles if any exist in the restored state
       bindBlurHandleListeners(canvas)

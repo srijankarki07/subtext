@@ -263,6 +263,8 @@ export const createEffectSlice: StateCreator<
           created.isEffect = true
           created.blurRing = ring
           created.overlayId = handleId
+          // Same photo as the artwork, so the same stored asset.
+          created.assetId = (source as any).assetId
           created.set({ selectable: false, evented: false, opacity: ring === 0 ? 1 : BLUR_RING_ALPHA })
 
           const gradedFilters = ((bg.filters ?? []) as any[]).filter(
