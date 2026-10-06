@@ -46,7 +46,7 @@ function MobileTabButton({
       onClick={() => setActiveMobileTab(isActive ? null : tab)}
       aria-pressed={isActive}
       className={cn(
-        "relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] outline-none transition-colors",
+        "relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] transition-colors outline-none",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         isActive
           ? "font-medium text-primary"
@@ -110,6 +110,19 @@ export default function EditorShell() {
    * picking any other tool opens it. "Select" is a mode rather than a panel,
    * so it always collapses.
    */
+  /**
+   * Opens a tool's panel, unconditionally.
+   *
+   * `handleToolChange` is a *toggle* — picking the active tool collapses the
+   * panel — which is right for the rail and wrong for a hand-off from the
+   * inspector: "Open the Cinema panel" while Cinema was already the active tool
+   * closed the very panel it promised to open.
+   */
+  const handleOpenTool = (tool: EditorTool) => {
+    setActiveTool(tool)
+    setIsPanelOpen(tool !== "select")
+  }
+
   const handleToolChange = (tool: EditorTool) => {
     if (tool === "select") {
       setActiveTool("select")
@@ -150,9 +163,9 @@ export default function EditorShell() {
       }
 
       // Never steal keys while a text layer is being edited on the canvas.
-      const active = useEditorStore.getState().activeObject as
-        | { isEditing?: boolean }
-        | null
+      const active = useEditorStore.getState().activeObject as {
+        isEditing?: boolean
+      } | null
       if (active?.isEditing) return
 
       const tool = TOOL_KEYS[event.key.toLowerCase()]
@@ -196,7 +209,10 @@ export default function EditorShell() {
         </main>
 
         {isInspectorOpen && (
-          <Inspector onClose={() => setIsInspectorOpen(false)} />
+          <Inspector
+            onClose={() => setIsInspectorOpen(false)}
+            onOpenTool={handleOpenTool}
+          />
         )}
 
         <nav
@@ -221,7 +237,7 @@ export default function EditorShell() {
           <button
             type="button"
             onClick={() => setIsExportModalOpen(true)}
-            className="relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-[var(--text-muted)] outline-none transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            className="relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-[var(--text-muted)] transition-colors outline-none hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
           >
             <Download size={19} />
             <span>Export</span>
@@ -249,7 +265,9 @@ export default function EditorShell() {
               </div>
               <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
                 {activeMobileTab === "templates" && <TemplatesPanel />}
-                {activeMobileTab === "edit" && <InspectorPanelContent />}
+                {activeMobileTab === "edit" && (
+                  <InspectorPanelContent onOpenTool={handleOpenTool} />
+                )}
                 {activeMobileTab === "layers" && <LayersPanel />}
               </div>
             </div>
@@ -267,7 +285,7 @@ function MobileSheetClose() {
       type="button"
       aria-label="Close panel"
       onClick={() => setActiveMobileTab(null)}
-      className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
     >
       <X size={15} />
     </button>
