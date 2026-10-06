@@ -29,6 +29,7 @@ import {
 } from "@/components/functions"
 import { Button } from "@/components/ui/button"
 import { ColorPopover } from "@/components/ui/color-popover"
+import { Disclosure } from "@/components/ui/disclosure"
 import { Section } from "@/components/ui/section"
 import { useEditorStore } from "@/store/useEditorStore"
 
@@ -53,7 +54,7 @@ function EyedropperButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+      className="flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] text-[var(--text-secondary)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
     >
       <Pipette size={12} aria-hidden="true" />
       Pick
@@ -106,7 +107,9 @@ export default function TextPanel() {
   const activeObject = useEditorStore((s) => s.activeObject)
   const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
   const applyTextStyle = useEditorStore((s) => s.applyTextStyle)
-  const getActiveSelectionStyle = useEditorStore((s) => s.getActiveSelectionStyle)
+  const getActiveSelectionStyle = useEditorStore(
+    (s) => s.getActiveSelectionStyle
+  )
   const alignObjectToCanvas = useEditorStore((s) => s.alignObjectToCanvas)
   const pickColor = useEditorStore((s) => s.pickColor)
 
@@ -288,21 +291,26 @@ export default function TextPanel() {
           step={100}
           onChange={(value) => applyTextStyle("fontWeight", value)}
         />
-        <AppleSlider
-          label="Letter spacing"
-          value={charSpacing}
-          min={-100}
-          max={800}
-          onChange={(value) => applyTextStyle("charSpacing", value)}
-        />
-        <AppleSlider
-          label="Line height"
-          value={lineHeight}
-          min={0.5}
-          max={3}
-          step={0.1}
-          onChange={(value) => applyTextStyle("lineHeight", value)}
-        />
+        {/* Size and weight are what people come here for; the two fine-tuning
+            controls sit behind a disclosure so they do not push the rest of the
+            panel — outline, shadow — off the bottom of a 324px column. */}
+        <Disclosure summary="Spacing">
+          <AppleSlider
+            label="Letter spacing"
+            value={charSpacing}
+            min={-100}
+            max={800}
+            onChange={(value) => applyTextStyle("charSpacing", value)}
+          />
+          <AppleSlider
+            label="Line height"
+            value={lineHeight}
+            min={0.5}
+            max={3}
+            step={0.1}
+            onChange={(value) => applyTextStyle("lineHeight", value)}
+          />
+        </Disclosure>
       </Section>
 
       <Section

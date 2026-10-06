@@ -65,6 +65,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 ) => ({
   canvas: null,
   activeObject: null,
+  selectedObjects: [],
   activeMobileTab: null,
   artboard: { width: 1080, height: 1080 },
   isExportModalOpen: false,
@@ -303,8 +304,23 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   setActiveObject: (activeObject) => {
-    set({ activeObject })
+    set({ activeObject, selectedObjects: activeObject ? [activeObject] : [] })
     // Recalculate text-to-background contrast whenever a new object is selected
+    get().calculateContrast()
+  },
+
+  /**
+   * Records a whole selection in one write.
+   *
+   * The count is kept alongside the first object because the two answer
+   * different questions — what to describe, and how many things the user
+   * thinks they have hold of.
+   */
+  setSelection: (objects) => {
+    set({
+      activeObject: objects[0] ?? null,
+      selectedObjects: objects,
+    })
     get().calculateContrast()
   },
 
@@ -401,38 +417,69 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     const {
       canvas,
       activeObject,
-      saveHistoryState,
+      beginHistoryTransaction,
+      endHistoryTransaction,
       closeContextMenu,
       removeBlurZone,
     } = get()
-    const target = targetObj || activeObject
+    if (!canvas) return
 
-    // Prevent deletion if the object is explicitly locked
-    if (!canvas || !target || target.lockMovementX) return
+    /**
+     * The canvas is the authority on what is selected.
+     *
+     * This used to delete `activeObject`, which is only the *first* member of a
+     * multi-selection — so holding shift, selecting three layers and pressing
+     * Delete removed one and silently discarded the rest. Measured: two objects
+     * selected, one layer left behind.
+     */
+    const selection = canvas.getActiveObjects()
+    const requested = targetObj
+      ? [targetObj]
+      : selection.length
+        ? selection
+        : activeObject
+          ? [activeObject]
+          : []
 
-    // A blur zone is several canvas objects behind one control. Deleting any
-    // part of it has to take the whole zone: removing one overlay left the
-    // handle and the remaining layers behind with nothing to remove them by.
-    const targetId = (target as any).id as string | undefined
-    const blurZoneId = targetId?.startsWith("blur-handle-")
-      ? targetId
-      : targetId?.startsWith("blur-overlay-")
-        ? ((target as any).overlayId as string | undefined)
-        : undefined
+    // Locked objects are skipped rather than blocking the whole delete, so a
+    // locked letterbox bar in a group of three does not make the other two
+    // undeletable.
+    const targets = requested.filter((object) => !object.lockMovementX)
+    if (!targets.length) return
 
-    if (blurZoneId) {
-      removeBlurZone(blurZoneId)
+    beginHistoryTransaction(
+      targets.length > 1 ? "Delete layers" : "Delete layer"
+    )
+
+    try {
+      // A blur zone is several canvas objects behind one control. Deleting any
+      // part of it has to take the whole zone: removing one overlay left the
+      // handle and the remaining layers behind with nothing to remove them by.
+      const zoneIds = new Set<string>()
+      const plain: typeof targets = []
+
+      targets.forEach((object) => {
+        const id = (object as any).id as string | undefined
+        const zoneId = id?.startsWith("blur-handle-")
+          ? id
+          : id?.startsWith("blur-overlay-")
+            ? ((object as any).overlayId as string | undefined)
+            : undefined
+        if (zoneId) zoneIds.add(zoneId)
+        else plain.push(object)
+      })
+
+      zoneIds.forEach((zoneId) => removeBlurZone(zoneId))
+      if (plain.length) canvas.remove(...plain)
+
+      canvas.discardActiveObject()
+      canvas.requestRenderAll()
+
+      set({ activeObject: null, selectedObjects: [], visibility: null })
       closeContextMenu()
-      return
+    } finally {
+      endHistoryTransaction()
     }
-
-    canvas.remove(target)
-    canvas.discardActiveObject()
-    canvas.requestRenderAll()
-
-    set({ activeObject: null, visibility: null })
-    closeContextMenu()
-    saveHistoryState()
   },
 
   addText: (type) => {
@@ -505,6 +552,12 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       left: canvas.getWidth() / 2,
       top: verticalPosition,
     })
+
+    // Stamp the block's role. Templates already did this; blocks added from the
+    // Text panel did not, so nothing downstream could tell a quote from a
+    // signature — the inspector could only call them all "Text layer", and the
+    // role was not written to the saved document either.
+    ;(textObject as any).textType = type
 
     canvas.add(textObject)
     canvas.setActiveObject(textObject)

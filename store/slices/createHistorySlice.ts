@@ -257,12 +257,18 @@ export const createHistorySlice: StateCreator<
 
         canvas.requestRenderAll()
 
+        // Restored from `getActiveObjects` rather than `getActiveObject`, so a
+        // load that leaves several objects selected reports the same count the
+        // selection events would — otherwise the inspector described one layer
+        // while the artboard showed a group.
+        const restored = canvas.getActiveObjects()
         set({
           historyIndex: targetIndex,
           canUndo: targetIndex > 0,
           canRedo: targetIndex < history.length - 1,
           isHistoryProcessing: false,
-          activeObject: canvas.getActiveObject() || null,
+          activeObject: restored[0] ?? null,
+          selectedObjects: restored,
         })
 
         get().calculateContrast()

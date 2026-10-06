@@ -10,6 +10,7 @@ import {
 import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Disclosure } from "@/components/ui/disclosure"
 import { Section } from "@/components/ui/section"
 import { rankColours, recommend } from "@/lib/visibility"
 import { useEditorStore } from "@/store/useEditorStore"
@@ -130,27 +131,6 @@ export default function ColorPanel() {
           </span>
         </div>
 
-        <div className="flex flex-col gap-1.5 border-t border-border pt-3">
-          <Metric
-            label="Worst case"
-            ratio={visibility.worstRatio}
-            color={visibility.worstHex}
-            hint="hardest part"
-          />
-          <Metric
-            label="Typical"
-            ratio={visibility.typicalRatio}
-            color={visibility.typicalHex}
-            hint="most of it"
-          />
-          <Metric
-            label="Area mean"
-            ratio={visibility.meanRatio}
-            color={visibility.meanHex}
-            hint="averaging"
-          />
-        </div>
-
         <p className="flex flex-wrap items-center gap-x-1.5 text-[11px] text-[var(--text-muted)]">
           <span>
             {visibility.isLargeText ? "Large text" : "Body text"} · needs{" "}
@@ -166,56 +146,85 @@ export default function ColorPanel() {
           </span>
         </p>
 
-        {visibility.notes.length > 0 && (
-          <ul className="flex flex-col gap-1 border-t border-border pt-3">
-            {visibility.notes.map((note) => (
-              <li
-                key={note}
-                className="text-[11px] leading-relaxed text-[var(--text-secondary)]"
-              >
-                {note}
-              </li>
-            ))}
-          </ul>
-        )}
+        {/*
+          The score and its verdict stay on screen — they are the point of the
+          panel. Everything that *supports* the number is folded away, because
+          three metrics, a list of notes and an arithmetic table is most of a
+          324px column, and it was pushing the suggestions and the colour picker
+          off the bottom of it.
+        */}
+        <Disclosure summary="Why this score">
+          <div className="flex flex-col gap-1.5">
+            <Metric
+              label="Worst case"
+              ratio={visibility.worstRatio}
+              color={visibility.worstHex}
+              hint="hardest part"
+            />
+            <Metric
+              label="Typical"
+              ratio={visibility.typicalRatio}
+              color={visibility.typicalHex}
+              hint="most of it"
+            />
+            <Metric
+              label="Area mean"
+              ratio={visibility.meanRatio}
+              color={visibility.meanHex}
+              hint="averaging"
+            />
+          </div>
 
-        {/* The score's arithmetic, so it can be argued with. */}
-        <details className="border-t border-border pt-3">
-          <summary className="cursor-pointer list-none text-[11px] text-[var(--text-muted)] outline-none hover:text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring">
-            How this is scored
-          </summary>
-          <ul className="mt-2 flex flex-col gap-1">
-            {visibility.breakdown.map((row) => (
-              <li
-                key={row.label}
-                className="flex items-start justify-between gap-2 text-[11px]"
-              >
-                <span className="text-[var(--text-secondary)]">
-                  {row.label}
-                  <span className="block text-[10px] text-[var(--text-muted)]">
-                    {row.detail}
-                  </span>
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0 tabular-nums",
-                    row.delta < 0 ? "text-[var(--text-muted)]" : "text-foreground"
-                  )}
+          {visibility.notes.length > 0 && (
+            <ul className="flex flex-col gap-1">
+              {visibility.notes.map((note) => (
+                <li
+                  key={note}
+                  className="text-[11px] leading-relaxed text-[var(--text-secondary)]"
                 >
-                  {row.delta > 0 ? "+" : ""}
-                  {row.delta}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
+                  {note}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        {visibility.source !== "fill" && (
-          <p className="rounded-lg bg-subtle p-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
-            The {carriedBy} is doing the work here. The fill alone would give{" "}
-            {visibility.edges[0].ratio.toFixed(1)}:1.
-          </p>
-        )}
+          {visibility.source !== "fill" && (
+            <p className="rounded-lg bg-subtle p-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+              The {carriedBy} is doing the work here. The fill alone would give{" "}
+              {visibility.edges[0].ratio.toFixed(1)}:1.
+            </p>
+          )}
+
+          {/* The arithmetic, so the score can be argued with. */}
+          <Disclosure summary="How this is scored" className="border-t-0 pt-0">
+            <ul className="flex flex-col gap-1">
+              {visibility.breakdown.map((row) => (
+                <li
+                  key={row.label}
+                  className="flex items-start justify-between gap-2 text-[11px]"
+                >
+                  <span className="text-[var(--text-secondary)]">
+                    {row.label}
+                    <span className="block text-[10px] text-[var(--text-muted)]">
+                      {row.detail}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 tabular-nums",
+                      row.delta < 0
+                        ? "text-[var(--text-muted)]"
+                        : "text-foreground"
+                    )}
+                  >
+                    {row.delta > 0 ? "+" : ""}
+                    {row.delta}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+        </Disclosure>
       </Section>
 
       {suggestions.length > 0 && (
@@ -284,7 +293,7 @@ export default function ColorPanel() {
               onClick={() => applyTextStyle("fill", candidate.color)}
               aria-label={`Use ${candidate.color}, ${candidate.label}, ${candidate.ratio.toFixed(1)} to 1`}
               className={cn(
-                "flex cursor-pointer flex-col items-center gap-1 rounded-lg p-1.5 outline-none transition-colors",
+                "flex cursor-pointer flex-col items-center gap-1 rounded-lg p-1.5 transition-colors outline-none",
                 "hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                 candidate.origin === "current" && "bg-primary/[0.08]"
               )}
@@ -337,7 +346,7 @@ export default function ColorPanel() {
                   type="button"
                   onClick={() => applyTextStyle("fill", color)}
                   aria-label={`Apply ${color}`}
-                  className="flex cursor-pointer flex-col items-center gap-1 rounded-lg p-1.5 outline-none transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                  className="flex cursor-pointer flex-col items-center gap-1 rounded-lg p-1.5 transition-colors outline-none hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                 >
                   <span
                     className="aspect-square w-full rounded-md border border-swatch-edge"

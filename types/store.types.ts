@@ -245,6 +245,15 @@ export interface CoreSlice {
 
   canvas: Canvas | null
   activeObject: FabricObject | null
+  /**
+   * Everything currently selected, in Fabric's order.
+   *
+   * `activeObject` is only the first of them, so on its own it could not tell
+   * the inspector that three layers are selected — the panel described one
+   * object while the artboard showed a group, and Delete removed one object and
+   * discarded the rest.
+   */
+  selectedObjects: FabricObject[]
   activeMobileTab: MobileTab
   artboard: { width: number; height: number }
   isExportModalOpen: boolean
@@ -270,6 +279,8 @@ export interface CoreSlice {
 
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
+  /** Records a whole selection; the first object becomes `activeObject`. */
+  setSelection: (objects: FabricObject[]) => void
   setDocumentTitle: (title: string) => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
