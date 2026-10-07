@@ -2,6 +2,16 @@
 
 import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
 import { grainPreviewStyle } from "@/lib/grain"
+import CompositionGuides from "@/components/editor/CompositionGuides"
+import {
+  artboardGuides,
+  boxOf,
+  layerGuides,
+  snapThreshold,
+  solveSnap,
+  type BoxLike,
+  type SnapLine,
+} from "@/lib/composition"
 import { importImage, isImageFile } from "@/lib/imageImport"
 import { useEditorStore } from "@/store/useEditorStore"
 import { Canvas as FabricCanvas, FabricObject, IText } from "fabric"
@@ -147,8 +157,84 @@ export default function Canvas() {
       }
     }
 
+    /**
+     * Pulls the object being dragged onto any guide it comes close to.
+     *
+     * Runs on every pointer event of the drag, so it must stay cheap: the guide
+     * list is rebuilt each time (objects can be added mid-drag by a paste or a
+     * duplicate) but it is a handful of numbers per object, and the solver is a
+     * nested loop over tens of values.
+     *
+     * Holding Alt bypasses it, which is the usual escape hatch when the pull is
+     * fighting a deliberate off-grid placement.
+     */
+    const snapWhileMoving = (event: { target: FabricObject; e?: unknown }) => {
+      const target = event.target
+      if (!target) return
+
+      const release = (event.e as MouseEvent | undefined)?.altKey === true
+      if (release) {
+        clearSnapGuides()
+        return
+      }
+
+      const guides = artboardGuides(canvas.getWidth(), canvas.getHeight())
+
+      canvas.getObjects().forEach((object) => {
+        // Comparing the object with itself would snap it to where it already
+        // is, and the editor's own chrome is not something to align to.
+        if (object === target) return
+        if ((object as { editorOnly?: boolean }).editorOnly === true) return
+        guides.push(...layerGuides(boxOf(object as unknown as BoxLike)))
+      })
+
+      const threshold = snapThreshold(useEditorStore.getState().zoom)
+      const outcome = solveSnap(
+        boxOf(target as unknown as BoxLike),
+        guides,
+        threshold
+      )
+
+      if (outcome.dx !== 0 || outcome.dy !== 0) {
+        target.set({
+          left: (target.left ?? 0) + outcome.dx,
+          top: (target.top ?? 0) + outcome.dy,
+        })
+        target.setCoords()
+      }
+
+      publishSnapGuides(outcome.guides)
+    }
+
+    /** Clearing an already-empty list would re-render the overlay for nothing. */
+    const clearSnapGuides = () => {
+      const store = useEditorStore.getState()
+      if (store.activeGuides.length > 0) store.setActiveGuides([])
+    }
+
+    const publishSnapGuides = (guides: SnapLine[]) => {
+      const store = useEditorStore.getState()
+      // Identity-compare the positions rather than the arrays: the solver
+      // allocates a fresh list on every pointer event, and re-rendering the
+      // overlay 60 times a second for an unchanged set of lines is pure waste.
+      const same =
+        store.activeGuides.length === guides.length &&
+        store.activeGuides.every(
+          (line, i) =>
+            line.axis === guides[i].axis && line.position === guides[i].position
+        )
+      if (!same) store.setActiveGuides(guides)
+    }
+
     canvas.on("object:moving", triggerContrastCalc)
     canvas.on("object:scaling", triggerContrastCalc)
+    canvas.on("object:moving", snapWhileMoving)
+    // The drag is over either way — released, or the object was dropped onto
+    // nothing. `object:modified` follows a move; `mouse:up` also catches the
+    // case where the object did not move at all.
+    canvas.on("object:modified", clearSnapGuides)
+    canvas.on("mouse:up", clearSnapGuides)
+    canvas.on("selection:cleared", clearSnapGuides)
 
     canvas.on("mouse:move", (opt) => {
       if (useEditorStore.getState().isPickingColor) {
@@ -452,7 +538,12 @@ export default function Canvas() {
           </div>
         )}
 
-        {/* 3. FILM GRAIN OVERLAY
+        {/* 3. COMPOSITION GUIDES
+            Thirds, centre and safe area, plus the lines that fire while
+            something is being dragged. Above the artwork, below the grain. */}
+        <CompositionGuides />
+
+        {/* 4. FILM GRAIN OVERLAY
             The same generated texture the export composites, with the same
             blend mode, so what is on screen is what gets written. */}
         {grainIntensity > 0 && (
