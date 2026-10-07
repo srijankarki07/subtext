@@ -81,6 +81,11 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   zoom: 1,
   isFit: true,
   viewport: { width: 0, height: 0 },
+  // Off by default: guides are a tool you reach for, and a grid drawn over the
+  // artwork on first open would read as part of the design. Snapping, which is
+  // the half that does real work, is always on.
+  guides: { thirds: false, centre: false, safeArea: false },
+  activeGuides: [],
 
   /**
    * Registers the Fabric canvas and immediately applies the current view scale.
@@ -325,6 +330,13 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
+
+  toggleGuide: (key) =>
+    set((state) => ({
+      guides: { ...state.guides, [key]: !state.guides[key] },
+    })),
+
+  setActiveGuides: (activeGuides) => set({ activeGuides }),
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
   setAspectRatio: (width, height) => {
     const { canvas, saveHistoryState, isFit, zoom } = get()

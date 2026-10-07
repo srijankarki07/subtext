@@ -1,10 +1,18 @@
 import { Canvas, FabricObject } from "fabric"
 
+import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
 import type { VisibilityReport } from "@/lib/visibility"
 import { CustomFontMetadata } from "@/lib/customFonts"
 
 export type TextBlockType = "quote" | "author" | "handle" | "signature"
+
+/** Which composition guides are drawn over the artboard. */
+export interface GuidesState {
+  thirds: boolean
+  centre: boolean
+  safeArea: boolean
+}
 export type MobileTab = "templates" | "layers" | "edit" | "export" | null
 
 export interface ContextMenuState {
@@ -277,10 +285,22 @@ export interface CoreSlice {
   /** Last measured size of the scrollable workspace, used to compute fit. */
   viewport: { width: number; height: number }
 
+  /** Which composition guides are drawn. Snapping is independent of this. */
+  guides: GuidesState
+  /**
+   * The guides that fired under the object being dragged right now.
+   *
+   * Transient: set while the pointer is down and cleared on release. It is not
+   * part of the document, so it is not snapshot, saved, or undone.
+   */
+  activeGuides: SnapLine[]
+
   setCanvas: (canvas: Canvas) => void
   setActiveObject: (obj: FabricObject | null) => void
   /** Records a whole selection; the first object becomes `activeObject`. */
   setSelection: (objects: FabricObject[]) => void
+  toggleGuide: (key: keyof GuidesState) => void
+  setActiveGuides: (guides: SnapLine[]) => void
   setDocumentTitle: (title: string) => void
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
