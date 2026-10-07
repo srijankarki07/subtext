@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Download, Layers, LayoutTemplate, Settings2, X } from "lucide-react"
 
 import CanvasWorkspace from "@/components/editor/CanvasWorkspace"
 import ContextPanel from "@/components/editor/ContextPanel"
+import Autosave from "@/components/editor/Autosave"
 import Inspector, { InspectorPanelContent } from "@/components/editor/Inspector"
+import RestoredNotice from "@/components/editor/RestoredNotice"
 import TopBar from "@/components/editor/TopBar"
 import ToolRail, { type EditorTool } from "@/components/editor/ToolRail"
 import ContextMenu from "@/components/editor/contextMenu"
@@ -69,7 +71,9 @@ export default function EditorShell() {
   const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
   const checkSavedProject = useEditorStore((s) => s.checkSavedProject)
   const initializeCustomFonts = useEditorStore((s) => s.initializeCustomFonts)
+  const canvas = useEditorStore((s) => s.canvas)
 
+  const hasRestored = useRef(false)
   const [activeTool, setActiveTool] = useState<EditorTool>("text")
   /**
    * Whether the context panel is showing.
@@ -94,6 +98,30 @@ export default function EditorShell() {
   useEffect(() => {
     checkSavedProject()
   }, [checkSavedProject])
+
+  /**
+   * Brings the stored document back, once, when the canvas exists.
+   *
+   * This is a single-document editor, so the alternative — opening empty every
+   * time while the previous document sits in storage — is the worse failure: it
+   * looks like the work is gone. The notice below is what makes it legible
+   * rather than mysterious.
+   *
+   * `canvas` is the dependency, not a mount flag: the Fabric canvas is built by
+   * the Canvas component, and restoring before it exists silently does nothing.
+   */
+  useEffect(() => {
+    if (!canvas) return
+    // Once per mount, and the ref is not decoration: development builds run
+    // effects twice, and the second restore set the "already announced" flag on
+    // its first pass and then cleared `restoredAt` on its second — so the notice
+    // never appeared in dev while working in production. A ref survives the
+    // double invocation; state would not.
+    if (hasRestored.current) return
+    hasRestored.current = true
+    // No-op when nothing is stored, so a fresh session opens empty.
+    void useEditorStore.getState().loadProjectFromStorage()
+  }, [canvas])
 
   useEffect(() => {
     void initializeCustomFonts()
@@ -186,6 +214,8 @@ export default function EditorShell() {
         <ContextMenu />
         <ExportModal />
         <GlobalDialogs />
+        {/* Renders nothing; it writes the document to storage as it changes. */}
+        <Autosave />
 
         <ToolRail
           activeTool={activeTool}
@@ -205,6 +235,7 @@ export default function EditorShell() {
             isInspectorOpen={isInspectorOpen}
             onToggleInspector={handleToggleInspector}
           />
+          <RestoredNotice />
           <CanvasWorkspace />
         </main>
 

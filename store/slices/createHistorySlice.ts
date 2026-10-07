@@ -1,4 +1,5 @@
 import { bindBlurHandleListeners } from "@/lib/fabricDocument"
+import { isDocumentEmpty, signatureFromParts } from "@/lib/persistence"
 import {
   captureEffects,
   dehydrateCanvas,
@@ -107,15 +108,27 @@ export const createHistorySlice: StateCreator<
     lastCommitAt = Date.now()
     const newIndex = next.length - 1
 
+    const state = get()
+
     set({
       history: next,
       historyIndex: newIndex,
       canUndo: newIndex > 0,
       canRedo: false,
-      // A new entry means the document actually changed; the duplicate check in
-      // `saveHistoryState` has already returned for no-op edits. Loading and
-      // saving clear it again.
-      isDirty: true,
+      // Compared against what is *stored*, not assumed from the fact that
+      // something was committed. That is what makes undo-back-to-the-saved-state
+      // read as saved: it is a commit, but it is not a change. An empty
+      // artboard never counts, so booting the editor — which commits "Initial
+      // Canvas" — does not mark a brand-new session dirty.
+      isDirty:
+        !isDocumentEmpty(objectCount) &&
+        state.savedSignature !==
+          signatureFromParts({
+            canvasJson: json,
+            effects,
+            documentTitle: state.documentTitle,
+            artboard: state.artboard,
+          }),
     })
   }
 
@@ -262,6 +275,7 @@ export const createHistorySlice: StateCreator<
         // selection events would — otherwise the inspector described one layer
         // while the artboard showed a group.
         const restored = canvas.getActiveObjects()
+        const state = get()
         set({
           historyIndex: targetIndex,
           canUndo: targetIndex > 0,
@@ -269,6 +283,18 @@ export const createHistorySlice: StateCreator<
           isHistoryProcessing: false,
           activeObject: restored[0] ?? null,
           selectedObjects: restored,
+          // Undo is not an edit; it is a move to another state, which may or may
+          // not be the stored one. Asking the signature is the only way to know,
+          // and it is what makes the badge honest after an undo.
+          isDirty:
+            !isDocumentEmpty(canvas.getObjects().length) &&
+            state.savedSignature !==
+              signatureFromParts({
+                canvasJson: targetState.json,
+                effects: targetState.effects,
+                documentTitle: state.documentTitle,
+                artboard: state.artboard,
+              }),
         })
 
         get().calculateContrast()
