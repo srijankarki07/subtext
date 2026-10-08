@@ -177,7 +177,18 @@
 
   /* Text hierarchy is built from alpha on ink, per DESIGN/. */
   --text-secondary: #615d59; /* DESIGN/ graphite */
-  --text-muted: #757575; /* DESIGN/ stone */
+  /*
+   * DESIGN/ stone, nudged darker.
+   *
+   * #757575 measures 4.23:1 against the paper background — under the 4.5:1 that
+   * body copy needs, and this is the colour every small label in the app uses.
+   * An editor whose whole argument is that text should be measured cannot ship
+   * its own UI at a failing ratio. #6B6B6B clears the bar on every surface it
+   * sits on: 4.89:1 on paper, 5.33:1 on a white card, 4.68:1 on the muted
+   * surface — while staying clearly lighter than `--text-secondary`, so the
+   * hierarchy is unchanged.
+   */
+  --text-muted: #6b6b6b;
 
   /* Focus ring geometry, shared by every focus style in the app. */
   --focus-ring-width: 2px;
