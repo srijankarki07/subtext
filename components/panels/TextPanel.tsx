@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button"
 import { ColorPopover } from "@/components/ui/color-popover"
 import { Disclosure } from "@/components/ui/disclosure"
 import { Section } from "@/components/ui/section"
+import { readFontWeight } from "@/lib/fabricDocument"
 import { useEditorStore } from "@/store/useEditorStore"
 
 /**
@@ -132,13 +133,7 @@ export default function TextPanel() {
   const lineHeight = getActiveSelectionStyle("lineHeight") || 1.1
   const fill = getActiveSelectionStyle("fill") || "#ffffff"
 
-  const rawWeight = getActiveSelectionStyle("fontWeight")
-  const fontWeight =
-    typeof rawWeight === "number"
-      ? rawWeight
-      : rawWeight === "bold"
-        ? 700
-        : parseInt(rawWeight as string) || 400
+  const fontWeight = readFontWeight(getActiveSelectionStyle("fontWeight"))
   const isItalic = getActiveSelectionStyle("fontStyle") === "italic"
   const isUnderline = !!getActiveSelectionStyle("underline")
   const isLinethrough = !!getActiveSelectionStyle("linethrough")

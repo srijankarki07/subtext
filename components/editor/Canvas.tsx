@@ -3,6 +3,8 @@
 import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
 import { grainPreviewStyle } from "@/lib/grain"
 import CompositionGuides from "@/components/editor/CompositionGuides"
+import SelectionToolbar from "@/components/editor/SelectionToolbar"
+import { applySelectionStyle } from "@/lib/selectionStyle"
 import {
   artboardGuides,
   boxOf,
@@ -119,6 +121,10 @@ export default function Canvas() {
     canvas.on("selection:cleared", () => setSelection([]))
 
     const handleObjectsChanged = (event?: { target?: unknown }) => {
+      // New objects join the selection language as they arrive, and the handle
+      // size has to follow the current zoom rather than the default 1.
+      applySelectionStyle(canvas, useEditorStore.getState().zoom)
+
       // Effect layers (vignettes, letterbox bars, gradients) are still objects,
       // so an artboard holding only an effect counts as non-empty too.
       setHasContent(canvas.getObjects().length > 0)
@@ -537,6 +543,11 @@ export default function Canvas() {
             </span>
           </div>
         )}
+
+        {/* The floating actions for the current selection. Inside this container
+            rather than the artboard box, because it must be able to sit above the
+            artboard's top edge without being clipped by it. */}
+        <SelectionToolbar containerRef={containerRef} />
 
         {/* 3. COMPOSITION GUIDES
             Thirds, centre and safe area, plus the lines that fire while
