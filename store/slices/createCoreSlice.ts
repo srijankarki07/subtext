@@ -14,6 +14,7 @@ import {
   type ProjectPayload,
 } from "@/lib/persistence"
 import { applyGrain } from "@/lib/grain"
+import { applySelectionStyle } from "@/lib/selectionStyle"
 import { importImage, pickImageFile, replaceImage } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
@@ -114,6 +115,9 @@ function applyCanvasZoom(
     },
     { cssOnly: true }
   )
+  // Handle sizes are in canvas units, so they have to be restated whenever the
+  // scale changes or they grow and shrink with it.
+  applySelectionStyle(canvas, zoom)
 }
 
 /** The largest scale at which the whole artboard fits the available space. */

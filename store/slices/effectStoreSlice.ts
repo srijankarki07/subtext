@@ -90,8 +90,6 @@ export const createEffectSlice: StateCreator<
       height: h,
       selectable: true,
       evented: true,
-      cornerColor: "white",
-      transparentCorners: false,
     })
 
     ;(vignette as any).id = id
@@ -188,9 +186,6 @@ export const createEffectSlice: StateCreator<
       strokeDashArray: [8, 6],
       selectable: true,
       evented: true,
-      cornerColor: "rgba(255,255,255,0.85)",
-      cornerStrokeColor: "rgba(0,0,0,0.4)",
-      cornerSize: 9,
       transparentCorners: false,
     })
     ;(blurHandle as any).id = id
