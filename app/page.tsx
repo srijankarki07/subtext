@@ -98,7 +98,20 @@ export default function LandingPage() {
             <RevealGroup className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {HOW_IT_WORKS.map((step, index) => (
                 <RevealItem key={step.title}>
-                  <div className="flex flex-col">
+                  {/*
+                    A rule between the steps rather than a box around each. Four
+                    columns of grey text with nothing between them run together —
+                    the eye cannot tell where one step ends, which is the thing
+                    that made this section hard to read. The first has no rule, so
+                    the row does not start with a stray line.
+                  */}
+                  <div
+                    className={
+                      index === 0
+                        ? "flex flex-col"
+                        : "flex flex-col border-t border-border pt-7 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-8"
+                    }
+                  >
                     <div className="flex items-center gap-2.5">
                       <span className="flex size-8 items-center justify-center rounded-lg bg-subtle text-[var(--text-secondary)]">
                         <step.icon size={15} aria-hidden="true" />
