@@ -1,301 +1,324 @@
 import Link from "next/link"
-import {
-  Contrast,
-  Download,
-  Grid2x2,
-  LayoutTemplate,
-  Lock,
-  Sparkles,
-} from "lucide-react"
+import { Download, Grid2x2, RotateCcw, Sparkles, Wand2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { GalleryGrid } from "@/components/landing/GalleryGrid"
-import LogoIcon from "@/assets/logo-icon"
+import Bento from "@/components/landing/Bento"
+import { Container } from "@/components/landing/Container"
+import Gallery from "@/components/landing/Gallery"
+import Hero from "@/components/landing/Hero"
+import LiveContrast from "@/components/landing/LiveContrast"
+import LiveGrade from "@/components/landing/LiveGrade"
+import LiveSnap from "@/components/landing/LiveSnap"
+import Nav from "@/components/landing/Nav"
+import { Reveal, RevealGroup, RevealItem } from "@/components/landing/Reveal"
+import SiteFooter from "@/components/landing/SiteFooter"
+import TemplateShowcase from "@/components/landing/TemplateShowcase"
+import { Module, ModuleHeading } from "@/components/landing/Module"
 import { GALLERY } from "@/lib/gallery.generated"
 
 /**
  * The landing page.
  *
- * One page, and it leads with the output rather than with claims about it: every
- * image below is a real export from the editor, produced by
- * `scratch/build-gallery.mjs` applying that template to that photo at that
- * canvas size and capturing what the Download button renders. If a template
- * changes, the gallery is rebuilt; the page cannot advertise something the tool
- * does not do.
+ * One page, laid out as modules: every section is a rounded panel inside a
+ * 1248px measure rather than a full-width band, so the page reads as a set of
+ * composed objects instead of one continuous poster.
  *
- * Written in the DESIGN/ voice — warm paper, sentence case, no exclamation
- * marks, and no numbers that are not either a standard (WCAG's 3:1 and 4.5:1)
- * or something the app itself computes.
+ * The rule it holds itself to is that nothing here claims a capability the
+ * editor does not have. The hero image and the gallery are real exports; the
+ * readability panel is the real engine reading a canvas painted on this page;
+ * the snapping demo is the real solver. `scratch/build-gallery.mjs` regenerates
+ * the images from the app, so the page cannot drift away from the product.
  */
 
-const FEATURES = [
+const HOW_IT_WORKS = [
   {
-    icon: Contrast,
-    title: "A contrast score that means something",
-    body: "Most checkers sample the average colour behind your text and call it fine. Text fails where the background is at its worst, so Subtext measures the hardest part of what the text actually crosses, and counts the outline and shadow that are doing the work.",
-  },
-  {
-    icon: LayoutTemplate,
-    title: "Twenty templates, five moods",
-    body: "Cinematic, editorial, aesthetic, bold and vintage type pairings, each with its own grade, grain and framing. Apply one, then move everything.",
-  },
-  {
-    icon: Sparkles,
-    title: "Film grain, duotone, vignette, letterbox",
-    body: "The effects are composited into the file, not faked with a CSS overlay — what you see on the artboard is what lands in the download.",
-  },
-  {
-    icon: Grid2x2,
-    title: "Guides that hold things in place",
-    body: "Rule of thirds, centre lines and a safe area, with snapping to the guides, to other layers and to the frame centre. Hold Alt to place something off-grid on purpose.",
-  },
-  {
-    icon: Download,
-    title: "Export at the size you need",
-    body: "Square, portrait, story or widescreen, at up to 3× resolution as PNG or JPG, with your document's name on the file.",
-  },
-  {
-    icon: Lock,
-    title: "Nothing leaves your browser",
-    body: "No account, no upload, no server. Your photo is read in the tab you are looking at and stored on your own device.",
-  },
-]
-
-const STEPS = [
-  {
+    icon: Wand2,
     title: "Bring a photo",
     body: "Drop it on the artboard. It fills the frame, and its colours are read for the palette and the contrast score.",
   },
   {
+    icon: Sparkles,
     title: "Set the words",
     body: "Pick a template or start from a quote, an author line, a handle or a signature. Type, size and position are yours.",
   },
   {
+    icon: RotateCcw,
     title: "Check it reads",
-    body: "Select the text and the panel reports how it holds up against the worst part of the background, and offers colours that pass.",
+    body: "Select the text and the panel reports how it holds up against the worst part of the background, then offers colours that pass.",
+  },
+  {
+    icon: Download,
+    title: "Export it",
+    body: "Square, portrait, story or widescreen, up to 3× resolution, as PNG or JPG, named after your document.",
   },
 ]
 
 export default function LandingPage() {
   const hero = GALLERY[0]
+  const rest = GALLERY.slice(1)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-5">
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-md text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            <LogoIcon className="h-5 w-auto" />
-            <span className="text-[15px] font-semibold tracking-[-0.01em]">
-              Subtext
-            </span>
-          </Link>
-          <nav className="flex items-center gap-1">
-            <a
-              href="#gallery"
-              className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-secondary)] transition-colors hover:bg-subtle-hover hover:text-foreground sm:block"
-            >
-              Gallery
-            </a>
-            <a
-              href="#features"
-              className="hidden rounded-md px-2.5 py-1.5 text-[13px] text-[var(--text-secondary)] transition-colors hover:bg-subtle-hover hover:text-foreground sm:block"
-            >
-              Features
-            </a>
-            <Button
-              size="sm"
-              className="ml-1"
-              nativeButton={false}
-              render={<Link href="/editor" />}
-            >
-              Open the editor
-            </Button>
-          </nav>
-        </div>
-      </header>
+    <>
+      <span id="top" />
+      <Nav />
 
-      <main>
-        {/* ---------------------------------------------------------- hero */}
-        <section className="mx-auto max-w-6xl px-5 pt-14 pb-10 sm:pt-20">
-          <p className="text-[13px] font-medium tracking-[0.14em] text-[var(--text-muted)] uppercase">
-            Free · no account · runs in your browser
-          </p>
+      <main className="flex flex-col gap-6 pb-6">
+        <Hero image={hero} count={GALLERY.length} />
 
-          <h1
-            className="mt-5 max-w-3xl text-[38px] leading-[1.08] font-medium tracking-[-0.02em] text-balance sm:text-[54px]"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
-            Your words, on a photo, actually readable.
-          </h1>
-
-          <p className="mt-6 max-w-2xl text-[16px] leading-relaxed text-[var(--text-secondary)] sm:text-[17px]">
-            Subtext is a small editor for quotes over photographs. It sets the
-            type, grades the picture, and — the part most tools skip — tells you
-            how the text holds up against the hardest part of the background
-            behind it, then helps you fix it.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button
-              size="lg"
-              nativeButton={false}
-              render={<Link href="/editor" />}
-            >
-              Start a composition
-            </Button>
-            <a
-              href="#gallery"
-              className="rounded-md px-3 py-2 text-[14px] text-[var(--text-secondary)] transition-colors hover:bg-subtle-hover hover:text-foreground"
-            >
-              See what it makes →
-            </a>
-          </div>
-
-          {hero && (
-            <figure className="mt-12">
-              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/gallery/${hero.file}`}
-                  width={hero.width}
-                  height={hero.height}
-                  alt={`A composition made in Subtext: “Tears in rain.” in a display serif over a dusk photograph, with widescreen bars.`}
-                  className="block h-auto w-full"
-                  fetchPriority="high"
-                />
+        {/* ----------------------------------------- the live engine, up top */}
+        <Container>
+          <Module tone="dark" id="how">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-32 -right-24 size-[520px] rounded-full opacity-70 [background:radial-gradient(circle,var(--module-glow),transparent_64%)]"
+            />
+            <div className="relative">
+              <ModuleHeading
+                tone="dark"
+                eyebrow="Running live on this page"
+                title="It measures the part of the background your text actually fails on."
+                body="A checker that averages the area behind the words will happily pass a quote crossing a bright cloud. This panel is not an illustration of that idea — it is the engine from the editor, reading the pixels behind the text as the light drifts across them."
+              />
+              <div className="mt-10">
+                <LiveContrast />
               </div>
-              <figcaption className="mt-3 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--text-muted)]">
-                <span>Made in Subtext</span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  {hero.template} template, {hero.ratio}
-                </span>
-              </figcaption>
-            </figure>
-          )}
-        </section>
-
-        {/* ------------------------------------------------------- problem */}
-        <section className="border-y border-border bg-card">
-          <div className="mx-auto grid max-w-6xl gap-8 px-5 py-14 sm:grid-cols-2 sm:gap-12">
-            <h2 className="text-[22px] leading-snug font-medium tracking-[-0.01em] text-balance sm:text-[26px]">
-              A contrast checker that samples the average will pass text that
-              nobody can read.
-            </h2>
-            <div className="space-y-4 text-[15px] leading-relaxed text-[var(--text-secondary)]">
-              <p>
-                A quote crossing a bright sky and a dark branch has a perfectly
-                respectable average. It is unreadable in exactly one place — the
-                place the text sits on.
-              </p>
-              <p>
-                Subtext samples the region behind the selection and reports the
-                ratio against its <em>worst</em> part, so the number describes
-                the hardest thing your reader will hit. Large type needs 3:1;
-                body copy needs 4.5:1. Those are the WCAG thresholds, and they
-                are the bar the score is measured against.
-              </p>
             </div>
-          </div>
-        </section>
+          </Module>
+        </Container>
 
-        {/* ------------------------------------------------------ features */}
-        <section
-          id="features"
-          className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16"
-        >
-          <h2 className="text-[22px] font-medium tracking-[-0.01em] sm:text-[26px]">
-            What is in it
-          </h2>
-          <div className="mt-8 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <div key={feature.title}>
-                <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-primary">
-                  <feature.icon size={15} aria-hidden="true" />
-                </span>
-                <h3 className="mt-3.5 text-[15px] font-semibold">
-                  {feature.title}
-                </h3>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--text-secondary)]">
-                  {feature.body}
-                </p>
+        {/* ------------------------------------------------ how it works */}
+        <Container>
+          <Module tone="raised">
+            <ModuleHeading
+              eyebrow="Four steps, about a minute"
+              title="From a photograph to a poster that reads."
+              body="No sign-up, no file management, no export settings to decode. The editor opens on a blank artboard and everything else follows from the photo you drop on it."
+            />
+
+            <RevealGroup className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+              {HOW_IT_WORKS.map((step, index) => (
+                <RevealItem key={step.title}>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex size-8 items-center justify-center rounded-lg bg-subtle text-[var(--text-secondary)]">
+                        <step.icon size={15} aria-hidden="true" />
+                      </span>
+                      <span className="font-mono text-[11px] text-[var(--text-muted)] tabular-nums">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-[15px] font-bold tracking-[-0.01em]">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                      {step.body}
+                    </p>
+                  </div>
+                </RevealItem>
+              ))}
+            </RevealGroup>
+          </Module>
+        </Container>
+
+        {/* ------------------------------------------------- what is in it */}
+        <Container>
+          <Module
+            tone="paper"
+            id="features"
+            className="px-0 py-0 sm:px-0 sm:py-0"
+          >
+            <ModuleHeading
+              eyebrow="What is in it"
+              title="Every part earns its place."
+              body="The editor is deliberately small. These are the pieces that make a quote over a photograph look composed rather than assembled."
+            />
+            <div className="mt-9">
+              <Bento />
+            </div>
+          </Module>
+        </Container>
+
+        {/* -------------------------------------- templates and guides, live */}
+        <Container>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Module tone="dark" id="templates">
+              <ModuleHeading
+                tone="dark"
+                eyebrow="Templates"
+                title="A template is a whole composition."
+                body="Type, grade, grain and framing chosen together. Applying one is a starting point you then move — not a font you pick."
+              />
+              <div className="mt-8">
+                <TemplateShowcase items={GALLERY} />
               </div>
-            ))}
+            </Module>
+
+            <Module tone="dark">
+              <ModuleHeading
+                tone="dark"
+                eyebrow="Guides and snapping"
+                title="Things land where you meant them to."
+                body="Thirds, centre lines and a safe area, with a pull toward the guides, the other layers and the frame centre. The card below is being moved by the same solver the editor uses mid-drag."
+              />
+              <div className="mt-8">
+                <LiveSnap />
+              </div>
+            </Module>
           </div>
-        </section>
+        </Container>
+
+        {/* ------------------------------------------- grain and grade, live */}
+        <Container>
+          <Module tone="dark">
+            <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12">
+              <div>
+                <ModuleHeading
+                  tone="dark"
+                  eyebrow="Grain and grade"
+                  title="Effects that reach the file."
+                  body="Film grain used to live in an overlay only the screen could see, so every export came out clean. Both effects here run from the editor's own code — the grain tile the export composites, and the same colour matrix Fabric applies."
+                />
+                <div className="mt-8">
+                  <LiveGrade item={GALLERY[5] ?? GALLERY[1]} />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 lg:pl-4">
+                {[
+                  {
+                    title: "The grain is a tile, not a filter",
+                    body: "A generated texture at a fixed amplitude, blended the same way on screen and on export. That is why 28 on the slider means the same thing in the file as it does on the artboard.",
+                  },
+                  {
+                    title: "The grade is one matrix",
+                    body: "Duotone maps luminance between two colours with a 4×5 transform. The panel above hands that matrix straight to the browser, which is the same transform the canvas applies.",
+                  },
+                  {
+                    title: "Everything is undoable",
+                    body: "Grain, grade, vignette and letterbox sit in the document, so undo restores the panel and the artwork together rather than half of one.",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl border border-module-dark-border bg-module-dark-raised p-4"
+                  >
+                    <h3 className="text-[14px] font-bold text-on-module">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-on-module-muted">
+                      {item.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Module>
+        </Container>
 
         {/* ------------------------------------------------------- gallery */}
-        <section
-          id="gallery"
-          className="scroll-mt-20 border-y border-border bg-card"
-        >
-          <div className="mx-auto max-w-6xl px-5 py-16">
-            <div className="max-w-2xl">
-              <h2 className="text-[22px] font-medium tracking-[-0.01em] sm:text-[26px]">
-                Made with it, not mocked up
-              </h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-[var(--text-secondary)]">
-                Every image below came out of the editor — the template applied,
-                the photo graded, the export captured. Nothing here is a
-                screenshot of a design file.
-              </p>
+        <Container>
+          <Module tone="raised" id="gallery">
+            <ModuleHeading
+              eyebrow="Gallery"
+              title="Made with it, not mocked up."
+              body="Every image below came out of the editor: that template applied to that photograph at that canvas size, captured from the export the Download button renders. Nothing here is a screenshot of a design file."
+            />
+            <div className="mt-9">
+              <Gallery items={rest} />
             </div>
-            <GalleryGrid items={GALLERY.slice(1)} />
-          </div>
-        </section>
+          </Module>
+        </Container>
 
-        {/* --------------------------------------------------- how it works */}
-        <section className="mx-auto max-w-6xl px-5 py-16">
-          <h2 className="text-[22px] font-medium tracking-[-0.01em] sm:text-[26px]">
-            How it goes
-          </h2>
-          <ol className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-10">
-            {STEPS.map((step, index) => (
-              <li key={step.title}>
-                <span className="font-mono text-[12px] text-[var(--text-muted)] tabular-nums">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-2 text-[15px] font-semibold">{step.title}</h3>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--text-secondary)]">
-                  {step.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
+        {/* ---------------------------------------------------- why it exists */}
+        <Container>
+          <Module tone="dark">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+              <ModuleHeading
+                tone="dark"
+                eyebrow="Why it exists"
+                title="Text over a photo is the most common way to make something unreadable."
+                body="The words are the point, and they are usually the last thing anyone checks. Subtext puts the measurement in the loop, so the decision about colour and contrast is made while you can still change it — instead of after somebody cannot read your post."
+              />
 
-        {/* ----------------------------------------------------------- cta */}
-        <section className="border-t border-border bg-card">
-          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 py-16 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2
-                className="text-[26px] leading-tight font-medium tracking-[-0.01em]"
-                style={{ fontFamily: "var(--font-playfair)" }}
-              >
-                Open it and make something.
-              </h2>
-              <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-                No sign-up, no upload, no cost. Your work stays on your device.
-              </p>
+              <div className="flex flex-col gap-4">
+                {[
+                  {
+                    icon: Grid2x2,
+                    title: "The background is the problem, not the text",
+                    body: "A photo has no single colour behind your words. The engine reads the region the text crosses and reports against its extremes.",
+                  },
+                  {
+                    icon: Sparkles,
+                    title: "Outline and shadow count",
+                    body: "They are readability mechanisms, and the score credits them — but only as far as they actually hold up the text.",
+                  },
+                  {
+                    icon: Download,
+                    title: "The measurement survives the export",
+                    body: "Grain, grade and framing are composited into the file. What the panel measured is what the download contains.",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex gap-3.5 rounded-2xl border border-module-dark-border bg-module-dark-raised p-4"
+                  >
+                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/6 text-on-module">
+                      <item.icon size={14} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-on-module">
+                        {item.title}
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-on-module-muted">
+                        {item.body}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <Button
-              size="lg"
-              nativeButton={false}
-              render={<Link href="/editor" />}
-            >
-              Open the editor
-            </Button>
-          </div>
-        </section>
+          </Module>
+        </Container>
+
+        {/* ------------------------------------------------------------ cta */}
+        <Container>
+          <Reveal>
+            <Module tone="dark" id="privacy" className="text-center">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-[280px] opacity-80 [background:radial-gradient(58%_100%_at_50%_100%,var(--module-glow),transparent_70%)]"
+              />
+              <div className="relative">
+                <ModuleHeading
+                  align="center"
+                  tone="dark"
+                  eyebrow="Free, and it stays that way"
+                  title="Open it and make something worth reading."
+                  body="No sign-up, no upload, no cost. Your photograph is read in the tab you are looking at, and your work is saved on your own device."
+                />
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    size="lg"
+                    className="h-11 rounded-full px-6 text-[14px]"
+                    nativeButton={false}
+                    render={<Link href="/editor" />}
+                  >
+                    Open the editor
+                  </Button>
+                  <a
+                    href="#gallery"
+                    className="rounded-full px-4 py-2.5 text-[14px] font-medium text-on-module-muted transition-colors outline-none hover:bg-white/6 hover:text-on-module focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    Look at the gallery again
+                  </a>
+                </div>
+              </div>
+            </Module>
+          </Reveal>
+        </Container>
       </main>
 
-      <footer className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-8 text-[12px] text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
-        <span>Subtext — a quote editor that checks its own work.</span>
-        <span>Free to use. Nothing is uploaded anywhere.</span>
-      </footer>
-    </div>
+      <SiteFooter />
+    </>
   )
 }

@@ -61,6 +61,8 @@ import {
   Yeseva_One,
 } from "next/font/google"
 
+import localFont from "next/font/local"
+
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Metadata } from "next"
@@ -76,6 +78,77 @@ const geist = Geist({
   // and the two definitions collided (globals.css had a circular
   // `--font-sans: var(--font-sans)` as a result).
   variable: "--font-geist-sans",
+})
+
+/**
+ * The product's UI face, self-hosted from `public/assets/fonts`.
+ *
+ * Open Sauce Sans is the whole interface — chrome and marketing alike — so the
+ * brand is one typeface rather than a landing page in one font and an app in
+ * another. Geist stays loaded behind it as a fallback for the metrics-sensitive
+ * cases, and the editor's *canvas* is untouched: documents are set in the
+ * display families the quote templates ask for, which is a different concern
+ * from the chrome around them.
+ *
+ * Static weights rather than a variable file, because that is what the family
+ * ships with. Six weights covers the range the design uses; the black and
+ * extra-bold italics are not loaded because nothing asks for them.
+ */
+const openSauce = localFont({
+  src: [
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/assets/fonts/open-sauce/OpenSauceSans-ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
+  ],
+  variable: "--font-open-sauce",
+  display: "swap",
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+})
+
+/** A single heavy display cut, for the largest labels and numbers. */
+const peaceSans = localFont({
+  src: [
+    {
+      path: "../public/assets/fonts/Peace-Sans/Peace Sans Webfont.ttf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-peace-sans",
+  display: "swap",
+  fallback: [
+    "var(--font-open-sauce)",
+    "ui-sans-serif",
+    "system-ui",
+    "sans-serif",
+  ],
 })
 
 const fontMono = Geist_Mono({
@@ -417,6 +490,8 @@ export default function RootLayout({
       className={cn(
         "antialiased",
         fontMono.variable,
+        openSauce.variable,
+        peaceSans.variable,
         "font-sans",
         geist.variable
       )}
