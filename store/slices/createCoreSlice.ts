@@ -160,6 +160,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   // the half that does real work, is always on.
   guides: { thirds: false, centre: false, safeArea: false },
   activeGuides: [],
+  isComparing: false,
 
   /**
    * Registers the Fabric canvas and immediately applies the current view scale.
@@ -453,6 +454,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     })),
 
   setActiveGuides: (activeGuides) => set({ activeGuides }),
+
+  setComparing: (isComparing) => set({ isComparing }),
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
   setAspectRatio: (width, height) => {
     const { canvas, saveHistoryState, isFit, zoom } = get()

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useTheme } from "@/components/theme-provider"
 import {
   Check,
+  Columns2,
   Download,
   FolderOpen,
   Moon,
@@ -42,6 +43,53 @@ import { cn } from "@/lib/utils"
  * the wrong one. The placeholder keeps the top bar from reflowing when it
  * appears.
  */
+/**
+ * Before and after, from the top bar.
+ *
+ * The same label as the command palette entry and the focus bar's button, so the
+ * one feature reads as one feature wherever it is met. It is offered only when
+ * there is a photograph: with no image, grading cannot have changed anything, and
+ * a control that does nothing is worse than an absent one.
+ */
+function CompareToggle() {
+  const canvas = useEditorStore((s) => s.canvas)
+  const isComparing = useEditorStore((s) => s.isComparing)
+  const setComparing = useEditorStore((s) => s.setComparing)
+  const [hasPhoto, setHasPhoto] = useState(false)
+
+  useEffect(() => {
+    if (!canvas) return
+    const check = () =>
+      setHasPhoto(
+        canvas
+          .getObjects()
+          .some(
+            (object) =>
+              object.type === "image" &&
+              !(object as { isEffect?: boolean }).isEffect
+          )
+      )
+    check()
+    canvas.on("object:added", check)
+    canvas.on("object:removed", check)
+    return () => {
+      canvas.off("object:added", check)
+      canvas.off("object:removed", check)
+    }
+  }, [canvas])
+
+  if (!hasPhoto) return null
+
+  return (
+    <IconButton
+      icon={<Columns2 size={15} />}
+      label={isComparing ? "Hide the comparison" : "Compare with the original"}
+      active={isComparing}
+      onClick={() => setComparing(!isComparing)}
+    />
+  )
+}
+
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -365,6 +413,8 @@ export default function TopBar({
           <Download size={14} />
           <span>Export</span>
         </Button>
+
+        <CompareToggle />
 
         <ThemeToggle />
 

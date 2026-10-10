@@ -2,6 +2,7 @@
 
 import { DEFAULT_ARTBOARD_BACKGROUND } from "@/lib/fabricDocument"
 import { grainPreviewStyle } from "@/lib/grain"
+import CompareOverlay from "@/components/editor/CompareOverlay"
 import CompositionGuides from "@/components/editor/CompositionGuides"
 import SelectionToolbar from "@/components/editor/SelectionToolbar"
 import { applySelectionStyle } from "@/lib/selectionStyle"
@@ -549,6 +550,10 @@ export default function Canvas() {
             </span>
           </div>
         )}
+
+        {/* Before and after, over the artwork. Mounted inside the artboard box so
+            it is clipped to the composition rather than the workspace. */}
+        <CompareOverlay />
 
         {/* 3. COMPOSITION GUIDES
             Thirds, centre and safe area, plus the lines that fire while

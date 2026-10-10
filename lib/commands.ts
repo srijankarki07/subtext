@@ -32,6 +32,7 @@ export interface CommandHandlers {
   onToggleInspector: () => void
   onToggleTheme: () => void
   onExport: () => void
+  onToggleFocusMode: () => void
 }
 
 const RATIOS = [
@@ -253,6 +254,20 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       group: "View",
       keywords: "panel properties hide show",
       run: () => handlers.onToggleInspector(),
+    },
+    {
+      id: "toggle-focus",
+      title: "Focus mode",
+      group: "View",
+      keywords: "distraction free fullscreen hide panels zen",
+      run: () => handlers.onToggleFocusMode(),
+    },
+    {
+      id: "toggle-compare",
+      title: "Compare with the original photo",
+      group: "View",
+      keywords: "before after split grade original",
+      run: () => store().setComparing(!store().isComparing),
     },
     {
       id: "toggle-theme",
