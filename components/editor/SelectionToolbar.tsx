@@ -170,11 +170,19 @@ export default function SelectionToolbar() {
     }
   }, [canvas, place])
 
-  // Hidden while a text layer is being edited: the caret and the bar would be
-  // competing for the same space, and the bar's actions do not apply mid-edit.
-  const isEditing = (selectedObjects[0] as { isEditing?: boolean } | undefined)
-    ?.isEditing
-  if (!placement || summary.kind === "none" || isEditing) return null
+  /*
+   * Shown while a text layer is being edited, deliberately.
+   *
+   * It used to hide itself mid-edit on the reasoning that its actions "do not
+   * apply" then — which was wrong, and the wrongness was the point. Double-click
+   * into a text layer, select one word, and every action here applies to *that
+   * range*: `applyTextStyle` routes through Fabric's `setSelectionStyles`
+   * whenever an edit selection exists, and `getActiveSelectionStyle` reads the
+   * range back, so the Bold and colour controls show and change the selected
+   * word's own style. Hiding the bar during an edit hid the one interaction that
+   * makes per-word styling possible, and it read as the feature not existing.
+   */
+  if (!placement || summary.kind === "none") return null
 
   return (
     <div
@@ -191,8 +199,22 @@ export default function SelectionToolbar() {
         "z-popover fixed flex items-center gap-0.5 rounded-xl border border-border bg-card p-1",
         "shadow-[0_1px_2px_rgb(0_0_0/0.06),0_8px_24px_-8px_rgb(0_0_0/0.28)]"
       )}
-      // The toolbar is chrome, so a drag started on it must not move the object.
+      /*
+       * Two handlers, for two different failures.
+       *
+       * `onPointerDown` stops the canvas seeing the press, so a drag begun on the
+       * toolbar cannot move the object underneath it.
+       *
+       * `onMouseDown` calling `preventDefault` is the one that makes per-word
+       * styling work: Fabric keeps its edit caret in a hidden text area, and a
+       * plain mousedown moves focus out of it, which ends the edit *before* the
+       * button's action runs. `applyTextStyle` then takes its whole-object branch
+       * — measured: selecting a word and pressing Bold changed the entire quote's
+       * weight and left `styles` empty. Preventing the default keeps the caret,
+       * and therefore the selection, alive through the click.
+       */
       onPointerDown={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.preventDefault()}
     >
       <Actions summary={summary} />
     </div>

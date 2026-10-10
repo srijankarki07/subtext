@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { getDuotoneMatrix } from "@/lib/filters"
 import { grainPreviewStyle } from "@/lib/grain"
@@ -30,6 +30,13 @@ const RAMP = { light: "#FFD9A0", dark: "#2B1B4D" }
 export default function LiveGrade({ item }: { item: GalleryItem }) {
   const [grain, setGrain] = useState(28)
   const [duotone, setDuotone] = useState(0)
+  /*
+   * The grain overlay is built from a canvas, which only exists in a browser.
+   * Rendering it after mount keeps the server pass free of it and avoids the
+   * hydration mismatch that returning a different style on each side would give.
+   */
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const matrix = useMemo(
     () => getDuotoneMatrix(RAMP.light, RAMP.dark, duotone),
@@ -61,11 +68,13 @@ export default function LiveGrade({ item }: { item: GalleryItem }) {
           style={{ filter }}
         />
         {/* The grain preview, at the intensity the export would composite. */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={grainPreviewStyle(grain, 1)}
-        />
+        {mounted && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={grainPreviewStyle(grain, 1)}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-3.5">

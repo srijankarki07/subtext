@@ -58,9 +58,10 @@ export default function ContextMenu() {
   const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
 
   const menuRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(
-    null
-  )
+  const [position, setPosition] = useState<{
+    left: number
+    top: number
+  } | null>(null)
   const isMac = useIsMac()
   const mod = isMac ? "⌘" : "Ctrl"
 
@@ -90,7 +91,12 @@ export default function ContextMenu() {
         )
       ),
     })
-  }, [contextMenu.visible, contextMenu.x, contextMenu.y, contextMenu.targetObject])
+  }, [
+    contextMenu.visible,
+    contextMenu.x,
+    contextMenu.y,
+    contextMenu.targetObject,
+  ])
 
   useEffect(() => {
     if (!contextMenu.visible) return
@@ -111,7 +117,7 @@ export default function ContextMenu() {
   if (!contextMenu.visible) return null
 
   const target = contextMenu.targetObject
-  const isLocked = Boolean(target?.lockMovementX)
+  const isLocked = Boolean((target as { locked?: boolean } | undefined)?.locked)
   const isVisible = target ? target.visible : true
   const isImage = target?.type === "image"
 

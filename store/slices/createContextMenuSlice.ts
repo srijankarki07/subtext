@@ -19,7 +19,7 @@ export const createContextMenuSlice: StateCreator<
     const { canvas } = get()
 
     // Automatically select the object under the cursor if it isn't locked
-    if (obj && canvas && !obj.lockMovementX) {
+    if (obj && canvas && !(obj as { locked?: boolean }).locked) {
       canvas.setActiveObject(obj)
       canvas.requestRenderAll()
     }

@@ -5,7 +5,7 @@ import { Download, Layers, LayoutTemplate, Settings2, X } from "lucide-react"
 
 import CanvasWorkspace from "@/components/editor/CanvasWorkspace"
 import ContextPanel from "@/components/editor/ContextPanel"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 
 import Autosave from "@/components/editor/Autosave"
 import CommandPalette from "@/components/editor/CommandPalette"

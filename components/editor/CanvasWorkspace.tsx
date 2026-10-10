@@ -103,7 +103,7 @@ function ZoomControls() {
         <Maximize size={13} aria-hidden="true" />
       </button>
 
-      <GuideControls className={button} />
+      <GuideControls />
 
       <span className="px-1.5 font-mono text-[10px] text-[var(--color-on-workspace-faint)] tabular-nums">
         {artboard.width}×{artboard.height}
