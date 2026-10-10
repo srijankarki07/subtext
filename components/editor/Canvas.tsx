@@ -550,6 +550,11 @@ export default function Canvas() {
           </div>
         )}
 
+        {/* The floating actions for the current selection. Inside this container
+            rather than the artboard box, because it must be able to sit above the
+            artboard's top edge without being clipped by it. */}
+        <SelectionToolbar containerRef={containerRef} />
+
         {/* 3. COMPOSITION GUIDES
             Thirds, centre and safe area, plus the lines that fire while
             something is being dragged. Above the artwork, below the grain. */}
