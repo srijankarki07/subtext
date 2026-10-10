@@ -11,7 +11,7 @@ import { useEditorStore } from "@/store/useEditorStore"
  * The point is that nobody should lose work by forgetting to press Save, or by
  * closing the tab. Saving on *every* change would be wrong in a different way:
  * a slider drag commits dozens of snapshots a second, and `localStorage` writes
- * are synchronous — the drag would stutter. So changes are batched, and the
+ * are synchronous - the drag would stutter. So changes are batched, and the
  * batch is flushed early when the tab is about to go away.
  *
  * `isDirty` is the trigger, and it is a comparison against what is stored rather
@@ -21,7 +21,7 @@ import { useEditorStore } from "@/store/useEditorStore"
  *
  * There is deliberately **no `beforeunload` prompt.** With a flush on
  * `pagehide`/`visibilitychange` the window in which work could be lost is a
- * couple of seconds, and a modal "leave site?" dialog is a poor trade for that —
+ * couple of seconds, and a modal "leave site?" dialog is a poor trade for that -
  * it also makes the page ineligible for the back/forward cache. The flush is the
  * mechanism; the prompt would only be noise.
  */
@@ -50,7 +50,7 @@ export default function Autosave() {
       useEditorStore.getState().autosaveDocument()
     }
 
-    // `visibilitychange` to hidden is the reliable one — `pagehide` and
+    // `visibilitychange` to hidden is the reliable one - `pagehide` and
     // `beforeunload` do not fire on mobile Safari when the app is backgrounded.
     const onVisibility = () => {
       if (document.visibilityState === "hidden") flush()

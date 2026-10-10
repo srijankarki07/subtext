@@ -9,9 +9,9 @@ import { useEditorStore } from "@/store/useEditorStore"
  * Before and after, side by side with a divider you can drag.
  *
  * "Before" is the photograph as it came out of the camera; "after" is the live
- * canvas with its grade, grain and effect layers. The two are stacked — the raw
+ * canvas with its grade, grain and effect layers. The two are stacked - the raw
  * photo underneath, the Fabric canvas on top clipped to the right of the divider
- * — so the split is a CSS `clip-path` over the real canvas rather than a second
+ * - so the split is a CSS `clip-path` over the real canvas rather than a second
  * rendering of the document. Nothing here re-implements the artwork, which means
  * it cannot disagree with it.
  *
@@ -50,8 +50,8 @@ export default function CompareOverlay() {
    *
    * Not by setting a `dragging` flag and attaching them in an effect: React runs
    * effects after the render that the flag triggers, so a `pointermove` arriving
-   * before that — which the editor's own harness demonstrated by dispatching both
-   * in one task — is missed and the divider does not move at all. Listening from
+   * before that - which the editor's own harness demonstrated by dispatching both
+   * in one task - is missed and the divider does not move at all. Listening from
    * the press is the usual pattern and has no such window.
    */
   const startDrag = (event: React.PointerEvent) => {
@@ -142,7 +142,7 @@ export default function CompareOverlay() {
         Labelled precisely rather than "before" and "after".
         
         The left side is the photograph as it was imported and the right is the
-        whole composition — grade, grain, effects and type. "Before/after" would
+        whole composition - grade, grain, effects and type. "Before/after" would
         invite the reading that the only difference is the grade, and the type
         appearing on one side would then look like a bug.
       */}
@@ -160,7 +160,7 @@ export default function CompareOverlay() {
  * A second view of the same Fabric canvas.
  *
  * Fabric renders into a `<canvas>` element, and a canvas cannot be shown in two
- * places — so this draws the live canvas onto a surface of its own, once per
+ * places - so this draws the live canvas onto a surface of its own, once per
  * frame the editor renders. `drawImage` from the real canvas is the cheapest
  * honest way to do it, and it goes through the same renderer, so the "after"
  * side is the artwork rather than a copy of it.

@@ -8,7 +8,7 @@ import type { GalleryItem } from "@/lib/gallery.generated"
 /**
  * The templates, cycling through real exports.
  *
- * Every frame here came out of the editor — they are the same files the gallery
+ * Every frame here came out of the editor - they are the same files the gallery
  * shows, at the canvas size each template was designed for. Cycling them makes
  * the point that a template is a *whole* composition: type, grade, grain and
  * framing chosen together, not a font.
@@ -22,7 +22,7 @@ import type { GalleryItem } from "@/lib/gallery.generated"
  * The inner frame's height, in pixels, and the only number the layout needs.
  *
  * The width is derived from it and the image's aspect ratio, so the frame is
- * exactly the shape of what it holds — which means `object-cover` has nothing to
+ * exactly the shape of what it holds - which means `object-cover` has nothing to
  * crop. If these two ever disagree the image is quietly clipped, so the outer box
  * is sized from the same constant rather than from a class that could drift.
  */
@@ -51,7 +51,7 @@ export default function TemplateShowcase({ items }: { items: GalleryItem[] }) {
         
         It used to be a fixed 4:3 box with the image `object-contain` inside, so a
         16:9 composition sat in a band of empty panel with margins top and bottom
-        — the picture looked parked rather than presented. `object-cover` would
+        - the picture looked parked rather than presented. `object-cover` would
         have filled it by cropping, which is worse here: these are complete
         compositions, and cutting the edges off one to fit a template is exactly
         what the tool is for avoiding.
@@ -76,7 +76,7 @@ export default function TemplateShowcase({ items }: { items: GalleryItem[] }) {
             {/*
               A blurred copy of the same frame fills the panel behind it.
 
-              The frame keeps the image's exact shape so nothing is cropped — but
+              The frame keeps the image's exact shape so nothing is cropped - but
               that leaves the panel's sides empty for a portrait or square
               composition, and the section read as a picture floating in a black
               box. Scaling one copy to cover and blurring it fills that space with

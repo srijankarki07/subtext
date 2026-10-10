@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils"
  *    `height: 100%` resolved to `auto` and its inner `flex-1 overflow-y-auto`
  *    list never became a scroll container. Search, upload, the current-font
  *    card and the category filters therefore scrolled away with the list.
- *    There is now exactly one scroll region — the parent's — and the controls
+ *    There is now exactly one scroll region - the parent's - and the controls
  *    stick to its top.
  *
  * 2. Each row was a `<button>` containing another element with
@@ -60,7 +60,9 @@ export default function FontPicker() {
   const canvas = useEditorStore((s) => s.canvas)
   const activeObject = useEditorStore((s) => s.activeObject)
   const applyTextStyle = useEditorStore((s) => s.applyTextStyle)
-  const getActiveSelectionStyle = useEditorStore((s) => s.getActiveSelectionStyle)
+  const getActiveSelectionStyle = useEditorStore(
+    (s) => s.getActiveSelectionStyle
+  )
   const customFonts = useEditorStore((s) => s.customFonts)
   const customFontsLoading = useEditorStore((s) => s.customFontsLoading)
   const customFontError = useEditorStore((s) => s.customFontError)
@@ -118,14 +120,20 @@ export default function FontPicker() {
         ) {
           matchesCategory = font.category === activeCategory
         }
-        if (activeCategory === "Premium") matchesCategory = font.premium === true
+        if (activeCategory === "Premium")
+          matchesCategory = font.premium === true
         if (activeCategory === "Recommended") {
           matchesCategory =
             font.premium === true ||
             font.useCases?.some((useCase) =>
-              ["hero", "title", "poster", "cinematic", "fashion", "luxury"].includes(
-                useCase
-              )
+              [
+                "hero",
+                "title",
+                "poster",
+                "cinematic",
+                "fashion",
+                "luxury",
+              ].includes(useCase)
             ) === true
         }
         if (activeCategory === "Uploaded") {
@@ -137,7 +145,9 @@ export default function FontPicker() {
           font.name.toLowerCase().includes(query) ||
           font.category.toLowerCase().includes(query) ||
           font.description?.toLowerCase().includes(query) ||
-          font.useCases?.some((useCase) => useCase.toLowerCase().includes(query))
+          font.useCases?.some((useCase) =>
+            useCase.toLowerCase().includes(query)
+          )
 
         return matchesCategory && matchesSearch
       })
@@ -167,7 +177,7 @@ export default function FontPicker() {
 
   const categoryChip = (active: boolean) =>
     cn(
-      "flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium outline-none transition-colors",
+      "flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors outline-none",
       "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
       active
         ? "bg-foreground text-background"
@@ -190,14 +200,14 @@ export default function FontPicker() {
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search fonts"
-            className="w-full rounded-lg border border-border bg-card py-2 pr-9 pl-9 text-[13px] text-foreground outline-none transition-colors placeholder:text-[var(--text-muted)] focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring"
+            className="w-full rounded-lg border border-border bg-card py-2 pr-9 pl-9 text-[13px] text-foreground transition-colors outline-none placeholder:text-[var(--text-muted)] focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
               aria-label="Clear search"
-              className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-[var(--text-muted)] outline-none transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+              className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-[var(--text-muted)] transition-colors outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
             >
               <X size={14} />
             </button>
@@ -218,7 +228,7 @@ export default function FontPicker() {
           type="button"
           onClick={() => uploadInputRef.current?.click()}
           disabled={customFontsLoading}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-edge-strong py-2 text-[12px] font-medium text-[var(--text-secondary)] outline-none transition-colors hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-edge-strong py-2 text-[12px] font-medium text-[var(--text-secondary)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60"
         >
           {customFontsLoading ? (
             <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -228,7 +238,10 @@ export default function FontPicker() {
           {customFontsLoading ? "Loading font…" : "Upload a font"}
         </button>
         {customFontError && (
-          <p role="alert" className="text-[11px] leading-relaxed text-destructive">
+          <p
+            role="alert"
+            className="text-[11px] leading-relaxed text-destructive"
+          >
             {customFontError}
           </p>
         )}
@@ -296,7 +309,7 @@ export default function FontPicker() {
         </p>
       </div>
 
-      {/* Flows in the parent's scroll region — no nested scroller. */}
+      {/* Flows in the parent's scroll region - no nested scroller. */}
       {filteredFonts.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-[13px] text-[var(--text-muted)]">No fonts found</p>
@@ -379,7 +392,8 @@ export default function FontPicker() {
                         title: "Remove font",
                         message: `Remove ${font.name} from your uploaded fonts?`,
                         confirmText: "Remove",
-                        onConfirm: () => void removeCustomFont(font.customFontId!),
+                        onConfirm: () =>
+                          void removeCustomFont(font.customFontId!),
                       })
                     }
                   />

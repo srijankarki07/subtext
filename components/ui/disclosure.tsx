@@ -58,7 +58,7 @@ function Disclosure({
         Hiding is done here rather than left to the browser.
 
         A closed `<details>` is *supposed* to hide its content, and the styling
-        was written as though it did — but measured, `details.open` was false
+        was written as though it did - but measured, `details.open` was false
         while the content sat on screen with `display: block`. Chrome no longer
         hides it with a `display` rule on the children (its chrome lives behind
         `::details-content`), and any `display` utility on the direct child

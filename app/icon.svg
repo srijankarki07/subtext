@@ -7,7 +7,7 @@
     1. **Square, with its own background.** The mark is 785×506, and a tab icon
        is drawn at 16–32px in whatever colour the browser chrome happens to be.
        A bare shape in `currentColor` would vanish against a dark tab bar, and a
-       1.55:1 mark becomes a smudge at 16px — so it sits on a square of the brand
+       1.55:1 mark becomes a smudge at 16px - so it sits on a square of the brand
        blue with the eyes knocked out of it in the same blue.
     2. **The eyes are the background colour, not black.** The component draws them
        black because it is meant for light surfaces; here they are cut out of the

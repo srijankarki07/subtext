@@ -6,7 +6,7 @@ import * as React from "react"
  * The theme.
  *
  * This replaces `next-themes`, which did the same job but rendered its script
- * through React in a client component — and React 19 warns about that on every
+ * through React in a client component - and React 19 warns about that on every
  * page load: "Encountered a script tag while rendering React component. Scripts
  * inside React components are never executed when rendering on the client."
  *
@@ -14,10 +14,10 @@ import * as React from "react"
  * and the landing page alike, and it was reported as a bug. It is not actionable
  * *within* next-themes: the package has to inject that script, and React has to
  * complain about where it is injected. So the fix is to own the twenty lines
- * ourselves — see `components/theme-script.tsx` for the half that must not be a
+ * ourselves - see `components/theme-script.tsx` for the half that must not be a
  * client component.
  *
- * What is preserved, deliberately — these are the reasons the dependency was
+ * What is preserved, deliberately - these are the reasons the dependency was
  * worth having in the first place:
  *
  * - **No flash of the wrong theme.** The class is on `<html>` from the parsed

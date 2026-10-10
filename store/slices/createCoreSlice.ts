@@ -25,7 +25,7 @@ import { StateCreator } from "zustand"
  * Serialises the current document and writes it to one of the two slots.
  *
  * Shared by Save and by autosave so the two can never drift into writing
- * different shapes — a slot read back by Restore has to be understood by both
+ * different shapes - a slot read back by Restore has to be understood by both
  * paths. Returns the payload so the caller can record its signature.
  */
 function persistToSlot(
@@ -53,7 +53,7 @@ function persistToSlot(
   try {
     // Dehydrated: the photo's pixels live in IndexedDB under its asset id, so
     // what goes to localStorage is a few kilobytes of canvas JSON rather than
-    // an embedded copy of a multi-megabyte photo — which is what made saving a
+    // an embedded copy of a multi-megabyte photo - which is what made saving a
     // real photo fail on the storage quota.
     const payload: ProjectPayload = {
       canvasJson: dehydrateCanvas(canvas),
@@ -168,7 +168,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
    * The scale has to be applied here as well as on viewport change. The
    * workspace measures itself and fits on mount, but `next/dynamic` (ssr:false)
    * mounts the Fabric canvas *after* that, so the fit ran while `canvas` was
-   * still null and the artboard was left rendering at 100% — overflowing the
+   * still null and the artboard was left rendering at 100% - overflowing the
    * whole workspace. Besides looking wrong, that made the empty-state overlay
    * cover everything, so a click anywhere opened the file picker.
    */
@@ -190,8 +190,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
    * Renaming is a change to the document, not to the chrome.
    *
    * The name is what a downloaded file is called, so losing it on reload is
-   * losing work. It commits history — coalesced, so a typed name is one undo
-   * step rather than one per keystroke — which is also what makes the rename
+   * losing work. It commits history - coalesced, so a typed name is one undo
+   * step rather than one per keystroke - which is also what makes the rename
    * reachable by the dirty check and therefore by autosave.
    */
   setDocumentTitle: (documentTitle) => {
@@ -367,7 +367,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       //
       // Two things this gets right that a hand-built signature did not. The
       // commit above ran against whatever baseline was in force *before* the
-      // load — `null` on a fresh boot — so it left the freshly restored document
+      // load - `null` on a fresh boot - so it left the freshly restored document
       // reading as dirty. And after a Restore, the two slots must agree with
       // what is on screen: without this, reloading straight after a Restore
       // would bring back the document that was there before it.
@@ -381,8 +381,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
       // Drives the notice: the user is told their session came back rather than
       // finding someone else's document on their canvas. Only for the automatic
-      // path — announcing a restore the user just asked for would be telling
-      // them what they did — and only once per tab session, after which it is
+      // path - announcing a restore the user just asked for would be telling
+      // them what they did - and only once per tab session, after which it is
       // nagging on every reload.
       set({
         restoredAt:
@@ -435,7 +435,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
    * Records a whole selection in one write.
    *
    * The count is kept alongside the first object because the two answer
-   * different questions — what to describe, and how many things the user
+   * different questions - what to describe, and how many things the user
    * thinks they have hold of.
    */
   setSelection: (objects) => {
@@ -464,7 +464,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     set({ artboard: { width, height } })
 
     // 1. Synchronize logical canvas coordinate dimensions. This is the document
-    //    size — the thing that gets exported — and is independent of zoom.
+    //    size - the thing that gets exported - and is independent of zoom.
     canvas.setDimensions({ width, height })
 
     // 2. Re-fit, or re-apply the user's zoom to the new aspect. The old code
@@ -505,7 +505,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (!file) return
 
     // Transactional because `importImage` inserts the photo, which fires the
-    // canvas's `object:added` handler and records an entry — and the palette is
+    // canvas's `object:added` handler and records an entry - and the palette is
     // only written to the store *after* that, so the two snapshots differ and
     // the dedupe keeps both. The photo cost two history steps and the first
     // press of undo appeared to do nothing.
@@ -559,7 +559,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
      * The canvas is the authority on what is selected.
      *
      * This used to delete `activeObject`, which is only the *first* member of a
-     * multi-selection — so holding shift, selecting three layers and pressing
+     * multi-selection - so holding shift, selecting three layers and pressing
      * Delete removed one and silently discarded the rest. Measured: two objects
      * selected, one layer left behind.
      */
@@ -646,7 +646,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         })
         break
       case "author":
-        textStr = "— Albert Camus"
+        textStr = "- Albert Camus"
         Object.assign(options, {
           fontFamily: "Montserrat",
           fontSize: 24,
@@ -688,7 +688,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     // Stamp the block's role. Templates already did this; blocks added from the
     // Text panel did not, so nothing downstream could tell a quote from a
-    // signature — the inspector could only call them all "Text layer", and the
+    // signature - the inspector could only call them all "Text layer", and the
     // role was not written to the saved document either.
     ;(textObject as any).textType = type
 
@@ -703,7 +703,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
    * describes it, but keeps the Fabric canvas alive.
    *
    * The previous implementation called `canvas.dispose()` and set `canvas:
-   * null`, which permanently killed the editor — the Canvas component only
+   * null`, which permanently killed the editor - the Canvas component only
    * constructs the Fabric canvas on mount, so nothing would ever rebuild it.
    * That is presumably why this was never wired to any UI.
    */
@@ -739,7 +739,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     // The document slot is overwritten with the empty document, and the saved
     // copy is left alone.
     //
-    // That distinction is the dialog's promise — clearing the artboard must not
+    // That distinction is the dialog's promise - clearing the artboard must not
     // delete the copy the user asked for, so Restore can still bring it back.
     // Overwriting rather than removing is what stops a reload resurrecting the
     // discarded document *and* keeps the saved copy out of reach of the boot
@@ -759,7 +759,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     // One template application is one undo step, not fifteen: it sets fonts,
     // positions, grade, grain, vignette and letterbox in separate calls, and
     // every one of them used to record its own entry. Opened *after* the guard
-    // so that an early return cannot leave a transaction dangling — a dangling
+    // so that an early return cannot leave a transaction dangling - a dangling
     // transaction swallows every later snapshot and history stops recording.
     beginHistoryTransaction("Apply template")
 
@@ -847,7 +847,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
           tConfig.type === "quote"
             ? '"To create is to live twice."'
             : tConfig.type === "author"
-              ? "— ALBERT CAMUS"
+              ? "- ALBERT CAMUS"
               : "@Subtext"
       }
 

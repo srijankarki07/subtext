@@ -170,7 +170,7 @@ export interface EffectSlice {
 
   /*
    * Duotone lives here rather than in the panel's own state. It was local, so
-   * leaving the Cinema tool reset the controls while the image kept its grade —
+   * leaving the Cinema tool reset the controls while the image kept its grade -
    * the sliders then disagreed with the artwork, and the next nudge applied a
    * delta from a stale base.
    */
@@ -257,7 +257,7 @@ export interface CoreSlice {
    * Everything currently selected, in Fabric's order.
    *
    * `activeObject` is only the first of them, so on its own it could not tell
-   * the inspector that three layers are selected — the panel described one
+   * the inspector that three layers are selected - the panel described one
    * object while the artboard showed a group, and Delete removed one object and
    * discarded the rest.
    */
@@ -272,7 +272,7 @@ export interface CoreSlice {
   /** The workspace name. Persisted with the project and used for export filenames. */
   documentTitle: string
   /**
-   * True when the document differs from the autosaved copy — that is, there are
+   * True when the document differs from the autosaved copy - that is, there are
    * changes not yet written. Drives autosave and the status badge, and means
    * "would I lose work?", not "have I pressed Save?".
    */

@@ -48,7 +48,7 @@ export function slugifyTitle(title: string): string {
  * Export.
  *
  * Rebuilt on the Dialog primitive, so it gains Escape, backdrop dismissal, a
- * focus trap and proper dialog roles — previously the only way out was a 28px
+ * focus trap and proper dialog roles - previously the only way out was a 28px
  * unlabelled X, and the backdrop's `stopPropagation` implied a dismissal that
  * did not exist. Format and scale now share one selection language instead of
  * `bg-white` for one and gold for the other, and the two competing radius
@@ -73,7 +73,7 @@ export default function ExportModal() {
    * Which part of the export is running.
    *
    * Fabric renders and encodes in one synchronous call, so there is no real
-   * percentage to report — a determinate bar would be a lie. These are the
+   * percentage to report - a determinate bar would be a lie. These are the
    * genuine steps, and naming them is honest about what is happening on a large
    * export: the render is the slow half, the save is instant.
    */
@@ -170,7 +170,7 @@ export default function ExportModal() {
            * Anchored under the Export button rather than centred.
            *
            * A modal in the middle of the window covers the artwork, and choosing
-           * an export size is a decision you make *by looking at* the artwork — so
+           * an export size is a decision you make *by looking at* the artwork - so
            * the panel that changes it should not be the one thing hiding it.
            */
           className="top-16 right-3 left-auto w-[360px] max-w-[calc(100vw-1.5rem)] translate-x-0 translate-y-0 sm:right-4"

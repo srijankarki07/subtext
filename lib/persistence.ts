@@ -11,12 +11,12 @@ import type {
  * There is one slot and one document: this is a single-document editor, so
  * "save" means "write the document you are looking at", not "save as". Autosave
  * writes the same slot, which makes an honest answer to "are there unsaved
- * changes?" the whole point of the exercise — a badge that says "Saved" while
+ * changes?" the whole point of the exercise - a badge that says "Saved" while
  * the canvas differs from storage is worse than no badge.
  *
  * The answer is a *signature*: everything the payload carries, serialised in a
  * fixed order. Comparing signatures is what lets the badge be right in the
- * cases the old `isDirty` flag could not be — undoing back to the stored state,
+ * cases the old `isDirty` flag could not be - undoing back to the stored state,
  * or renaming the document and undoing that.
  */
 
@@ -33,13 +33,13 @@ export const STORAGE_KEY = "Subtext_saved_project"
  *
  * Two slots rather than one, because "the document I am working on" and "the
  * copy I asked for" are different things and the UI already treats them as
- * different things — there is a Restore button and a separate Delete saved
+ * different things - there is a Restore button and a separate Delete saved
  * project. Collapsing them into one slot made New canvas delete the saved copy,
  * contradicting its own dialog, and made a reload resurrect a project the user
  * had just discarded. Keeping them apart lets both promises hold: autosave
  * restores your session, and New canvas leaves your saved copy alone.
  *
- * The document slot is written only by autosave and by Save — the latter so that
+ * The document slot is written only by autosave and by Save - the latter so that
  * what you saved is also what you come back to.
  */
 export const DOCUMENT_KEY = "Subtext_document"
@@ -49,7 +49,7 @@ export const DOCUMENT_KEY = "Subtext_document"
  *
  * In `sessionStorage`, not `localStorage`: the notice exists to explain a
  * document appearing by itself the first time, and after that it is nagging.
- * Session scope gives exactly that — it survives a reload, so a refresh does not
+ * Session scope gives exactly that - it survives a reload, so a refresh does not
  * re-announce the same document, and it is gone once the tab is closed, so the
  * next visit is told again.
  */
@@ -58,7 +58,7 @@ export const RESTORE_NOTICE_KEY = "Subtext_restore_notice_shown"
 /**
  * How long an edit waits before being written.
  *
- * Long enough that a burst of edits — a slider drag, a typed sentence — is one
+ * Long enough that a burst of edits - a slider drag, a typed sentence - is one
  * write; short enough that a crash costs seconds of work rather than minutes.
  */
 export const AUTOSAVE_DELAY_MS = 2500
@@ -105,7 +105,7 @@ export function signatureOf(payload: Omit<ProjectPayload, "savedAt">): string {
  * The history slice already holds a serialised canvas and a captured effect
  * snapshot, and re-serialising both on every commit just to ask this question
  * would double the cost of a slider drag. Same order as {@link signatureOf}, so
- * the two agree — which the persistence suite checks directly by saving and then
+ * the two agree - which the persistence suite checks directly by saving and then
  * asserting the document reads as clean without another commit.
  */
 export function signatureFromParts(parts: {
@@ -132,7 +132,7 @@ export function signatureFromParts(parts: {
  * Whether an empty artboard counts as a change.
  *
  * It must not. Booting the editor commits an "Initial Canvas" snapshot, so
- * treating any commit as a change marked a brand-new session dirty — which then
+ * treating any commit as a change marked a brand-new session dirty - which then
  * autosaved an empty document, so a user who never drew anything had a "saved
  * project" to be offered back on their next visit.
  */

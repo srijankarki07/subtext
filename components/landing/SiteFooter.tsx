@@ -15,7 +15,7 @@ import { Container } from "@/components/landing/Container"
  *   anyone being able to say why.
  * - The links are real destinations. The block accepts any groups, and inventing
  *   a "Company / Careers" column for a project that has neither would be the sort
- *   of filler that makes a page untrustworthy — so the columns that exist are the
+ *   of filler that makes a page untrustworthy - so the columns that exist are the
  *   ones about the product itself.
  *
  * The logo is the brand mark, sized to sit with the wordmark rather than beside

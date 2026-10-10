@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
  *
  * The chips follow the reference: they let you narrow the grid by mood, which
  * turns a wall of pictures into something you can interrogate. Filtering
- * re-flows the columns with a short fade rather than a layout animation — a
+ * re-flows the columns with a short fade rather than a layout animation - a
  * masonry re-flow mid-flight is nauseating, and the fade covers the jump.
  *
  * `layout` is enabled on the items so the browser's own position transition

@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils"
  * The command palette.
  *
  * `⌘K` for everything the editor can do. The panels are for making things and
- * the palette is for *finding* things — the twentieth template, "send to back",
- * "toggle the safe area" — none of which are worth a permanent control and all of
+ * the palette is for *finding* things - the twentieth template, "send to back",
+ * "toggle the safe area" - none of which are worth a permanent control and all of
  * which are annoying to hunt for.
  *
  * Two decisions worth naming:
@@ -51,7 +51,7 @@ export default function CommandPalette({
    * Every match, with no cap.
    *
    * There was a 40-result ceiling, which with an empty query silently hid whole
-   * groups — Templates and Document were simply not in the list, so browsing the
+   * groups - Templates and Document were simply not in the list, so browsing the
    * palette gave a false picture of what the editor can do, and a palette that
    * hides things is worse than one that makes you scroll. Sixty rows in a
    * scrollable list costs nothing.

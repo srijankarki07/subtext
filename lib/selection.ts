@@ -1,14 +1,14 @@
 /**
  * What is selected, and what that means for the inspector.
  *
- * The inspector used to branch on one thing — `activeObject.type === "image"` —
+ * The inspector used to branch on one thing - `activeObject.type === "image"` -
  * and treat everything else as text. So selecting a vignette, a letterbox bar or
  * the selective-blur handle offered font, weight and letter-spacing controls:
  * a whole tab of settings that could not apply, because the object is not a text
  * block. The classification lives here, as a pure function over the handful of
  * attributes it needs, so it can be tested without a browser.
  *
- * `isEffect` is the authority on whether something is an effect layer — every
+ * `isEffect` is the authority on whether something is an effect layer - every
  * effect object sets it (`effectStoreSlice`). The id prefixes are the fallback
  * for telling the effect layers apart, which is the same convention
  * `lib/fabricDocument.ts` and `deleteActiveObject` already use.
@@ -50,8 +50,8 @@ const TEXT_LABELS: Record<string, string> = {
 /**
  * Which effect layer an object is, or `undefined` if it is not one.
  *
- * A blur zone is several objects behind one control — the handle you drag and
- * the blurred copies beneath it — so both report as `blur` and both resolve to
+ * A blur zone is several objects behind one control - the handle you drag and
+ * the blurred copies beneath it - so both report as `blur` and both resolve to
  * the *zone* id, which is the handle's. The panel and the store address a zone
  * by that id, not by the overlay's.
  */

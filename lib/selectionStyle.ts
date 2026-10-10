@@ -3,8 +3,8 @@ import type { Canvas } from "fabric"
 /**
  * How a selection looks.
  *
- * Fabric's defaults are the 2010s set — mid-grey square handles with a thin
- * border — and they are the loudest thing on the artboard. Everything that
+ * Fabric's defaults are the 2010s set - mid-grey square handles with a thin
+ * border - and they are the loudest thing on the artboard. Everything that
  * touches selection appearance goes through here so the editor has one
  * selection language rather than one per code path: the vignette and the
  * letterbox bars were each setting their own `cornerColor`, which is how a
@@ -19,7 +19,7 @@ const HANDLE_FILL = "#FFFFFF"
  * A handle should be the same size on screen whatever the zoom.
  *
  * Control sizes are in *canvas* units, so a fixed 10 shrinks to 6px at 59% and
- * balloons past 30px at 300% — the difference between a handle you can grab and
+ * balloons past 30px at 300% - the difference between a handle you can grab and
  * one you cannot. Dividing by the zoom keeps it constant, which is why this
  * takes the zoom at all.
  */
@@ -72,8 +72,8 @@ export function applySelectionStyle(canvas: Canvas, zoom: number): void {
 
   canvas.getObjects().forEach((object) => {
     if ((object as { editorOnly?: boolean }).editorOnly === true) {
-      // Editor chrome keeps its own dashed border — the blur handle says "this
-      // is a region, not a layer" with it — but takes the same *handles*, so the
+      // Editor chrome keeps its own dashed border - the blur handle says "this
+      // is a region, not a layer" with it - but takes the same *handles*, so the
       // affordance for "grab this" looks the same everywhere.
       object.set({
         cornerColor: style.cornerColor,

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
  * A labelled slider.
  *
  * The interactive region is the Control (32px tall via `py-2.5`), not the 4px
- * track — the previous hand-rolled range input was a 6px-tall strip with
+ * track - the previous hand-rolled range input was a 6px-tall strip with
  * `outline-none`, which was both hard to grab and invisible to keyboard users.
  * Base UI supplies keyboard stepping, the hidden range input for form/a11y
  * integration, and `aria-valuetext` wiring.

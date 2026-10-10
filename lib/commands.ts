@@ -6,9 +6,9 @@ import type { EditorTool } from "@/components/editor/ToolRail"
  * Everything the editor can do, as data.
  *
  * One list rather than a set of menus scattered across panels, for two reasons.
- * A command palette is only worth having if it is *complete* — a palette that
+ * A command palette is only worth having if it is *complete* - a palette that
  * knows about forty of the editor's sixty actions teaches people not to trust it
- * — and a list in one place is the only way to notice that something is missing.
+ * - and a list in one place is the only way to notice that something is missing.
  *
  * Every entry calls a store action that a control already calls. Nothing here is
  * a new code path; that is deliberate, because a second implementation of an

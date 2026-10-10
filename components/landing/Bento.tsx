@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils"
  *
  * A bento rather than a row of equal cards, following the reference: the tiles
  * differ in size because the features differ in weight, and an even grid would
- * say they matter equally. Two tiles are wide because what they describe — the
- * engine and the export — is what people are actually choosing between.
+ * say they matter equally. Two tiles are wide because what they describe - the
+ * engine and the export - is what people are actually choosing between.
  *
  * Each tile carries a small mock of the thing it describes. Not screenshots: a
  * screenshot inside a marketing card is usually too small to read and dates the
@@ -56,14 +56,14 @@ const TILES = [
   {
     icon: Download,
     title: "Exports at the size you need",
-    body: "Square, portrait, story and widescreen, up to 3× resolution, PNG or JPG — named after your document.",
+    body: "Square, portrait, story and widescreen, up to 3× resolution, PNG or JPG - named after your document.",
     span: "",
     mock: "sizes",
   },
   {
     icon: Layers3,
     title: "Real layers",
-    body: "Reorder by dragging, group what belongs together, and undo anything — thirty steps deep.",
+    body: "Reorder by dragging, group what belongs together, and undo anything - thirty steps deep.",
     span: "lg:col-span-2",
     mock: "layers",
   },
@@ -102,7 +102,7 @@ export default function Bento() {
               `mt-auto` rather than `grow`: the tiles in a row share a height, so
               a short one has slack. Pushing the mock to the bottom puts that
               slack between the copy and the diagram, which reads as breathing
-              room — with `grow` it pooled underneath as a hole.
+              room - with `grow` it pooled underneath as a hole.
             */}
             <div className="mt-5 pt-1" aria-hidden="true">
               <Mock kind={tile.mock} />
@@ -121,7 +121,7 @@ function Mock({ kind }: { kind: string }) {
       /*
        * A miniature of the panel the editor actually shows: a score, a verdict,
        * and the two readings the disagreement is between. The previous version
-       * was three anonymous bars in a grey box — a chart of nothing, and at that
+       * was three anonymous bars in a grey box - a chart of nothing, and at that
        * size it read as a loading skeleton.
        */
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-subtle p-3.5">

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
  * The composition-guides control, in the workspace toolbar beside the zoom.
  *
  * It belongs here rather than in the inspector because it is a property of the
- * *view*, not of the document or of any one layer — turning the grid on is not
+ * *view*, not of the document or of any one layer - turning the grid on is not
  * an edit, it should not be undoable, and it should be reachable whether or not
  * anything is selected.
  *
@@ -46,13 +46,13 @@ export default function GuideControls() {
             type="button"
             aria-label="Composition guides"
             aria-expanded={isOpen}
-            title="Rule of thirds, centre lines and the safe area — and the snapping they drive"
+            title="Rule of thirds, centre lines and the safe area - and the snapping they drive"
             className={cn(
               /*
                * Labelled, not the icon-only size the zoom buttons use.
                *
                * This was a bare grid glyph sitting between the zoom controls, and
-               * the report was simply "I am not able to see it" — the feature
+               * the report was simply "I am not able to see it" - the feature
                * worked and nobody could find it. A word costs about 40px and is
                * the difference between a feature existing and a feature being
                * discoverable.

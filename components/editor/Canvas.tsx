@@ -61,7 +61,7 @@ export default function Canvas() {
    * The empty-state prompt is gated on this rather than on whether an image is
    * present. That prompt covers the artboard and captures pointer events, so
    * gating it on the image alone made the whole artboard dead in a text-only
-   * document — a quote you had just added could not be clicked or dragged.
+   * document - a quote you had just added could not be clicked or dragged.
    */
   const [hasContent, setHasContent] = useState(false)
 
@@ -133,7 +133,7 @@ export default function Canvas() {
       // An effect layer is a Fabric object like any other, so adding one fires
       // this handler *and* the action that owns it records its own, correctly
       // titled entry. Both were kept, so every effect layer cost two history
-      // steps — the first untitled — and the first press of undo looked like it
+      // steps - the first untitled - and the first press of undo looked like it
       // had done nothing. The owning action is the authority here, because it
       // is the only place that knows what the layer is called.
       if (
@@ -236,7 +236,7 @@ export default function Canvas() {
     canvas.on("object:moving", triggerContrastCalc)
     canvas.on("object:scaling", triggerContrastCalc)
     canvas.on("object:moving", snapWhileMoving)
-    // The drag is over either way — released, or the object was dropped onto
+    // The drag is over either way - released, or the object was dropped onto
     // nothing. `object:modified` follows a move; `mouse:up` also catches the
     // case where the object did not move at all.
     canvas.on("object:modified", clearSnapGuides)
@@ -376,8 +376,8 @@ export default function Canvas() {
         e.preventDefault()
 
         // Cancel the eyedropper. This was never handled anywhere, so Escape
-        // left the canvas in sampling mode and the next click — meant as a
-        // deselect — sampled a colour instead.
+        // left the canvas in sampling mode and the next click - meant as a
+        // deselect - sampled a colour instead.
         if (store.isPickingColor) {
           store.stopColorPicker()
         }
@@ -510,7 +510,7 @@ export default function Canvas() {
            to its own corner.
         2. `relative`: every overlay below is absolutely positioned, and without
            a positioned ancestor here they resolve against the outer root
-           instead — so the empty state, the drop outline and the film grain all
+           instead - so the empty state, the drop outline and the film grain all
            covered the whole workspace rather than the artwork. That is why
            clicking anywhere opened the file picker.
       */}
@@ -618,13 +618,13 @@ export default function Canvas() {
           </div>
         )}
 
-        {/* 5. CANVAS EMPTY STATE — only on a genuinely empty artboard, so it
+        {/* 5. CANVAS EMPTY STATE - only on a genuinely empty artboard, so it
             never blocks interaction with existing layers. */}
         {!hasContent && (
           <div
             // The whole artboard is a drop target and now a click target too.
             // It used to be `pointer-events-none` with a single text button
-            // enabled, so the obvious affordance — click the artwork area —
+            // enabled, so the obvious affordance - click the artwork area -
             // did nothing.
             role="button"
             tabIndex={0}

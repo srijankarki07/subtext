@@ -8,7 +8,7 @@ const IDENTITY_MATRIX = [
  *
  * `intensity` blends the duotone against the untouched image. Both operations
  * are linear maps over RGB, so interpolating their coefficients is exactly the
- * same as cross-fading the two results — no second filter needed, and 0 gives
+ * same as cross-fading the two results - no second filter needed, and 0 gives
  * back the original image precisely.
  */
 export function getDuotoneMatrix(

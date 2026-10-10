@@ -20,7 +20,7 @@ import { extractPalette } from "@/lib/colorUtils"
 /**
  * An imported photo fills the artboard.
  *
- * It used to be scaled to 90% of it and centred, "leaving a margin" — which on
+ * It used to be scaled to 90% of it and centred, "leaving a margin" - which on
  * a photo whose job is to be the backdrop reads as an unfilled frame, not as a
  * designed border: the margin is the artboard's own dark background, so every
  * composition had black bars down the sides or across the top and bottom. A 4:5
@@ -29,7 +29,7 @@ import { extractPalette } from "@/lib/colorUtils"
  *
  * Covering crops instead, which is the trade: a mismatched aspect loses the
  * photo's edges rather than showing all of it inset. For a quote poster that is
- * the right way round — the photo is the ground the type sits on — and the
+ * the right way round - the photo is the ground the type sits on - and the
  * result is that the frame is full. The layer can still be scaled down by hand
  * if the whole photo matters more than the composition.
  */
@@ -125,7 +125,7 @@ export function pickImageFile(): Promise<File | null> {
  * picture, keep the design" has to mean.
  *
  * Selective-blur overlays are clones of the photo, so they are repointed at the
- * new image too — otherwise the blurred region would keep showing the photo the
+ * new image too - otherwise the blurred region would keep showing the photo the
  * user just replaced.
  */
 export async function replaceImage(
@@ -204,8 +204,8 @@ export async function replaceImage(
 
   if ((next.filters ?? []).length > 0) await next.applyFilters()
 
-  // The previous photo is no longer referenced by anything — the overlays were
-  // just repointed — so its bytes would otherwise sit in the asset store for
+  // The previous photo is no longer referenced by anything - the overlays were
+  // just repointed - so its bytes would otherwise sit in the asset store for
   // good, one orphan per replacement.
   const previousAssetId = (previous as any).assetId as string | undefined
   if (previousAssetId && previousAssetId !== assetId) {

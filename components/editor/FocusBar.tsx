@@ -9,8 +9,8 @@ import { useEditorStore } from "@/store/useEditorStore"
  * The only chrome left in focus mode.
  *
  * Focus mode hides the tool rail, the context panel and the inspector so the
- * artwork gets the whole window. Leaving *nothing* would be a trap — there would
- * be no way back and no way to act on what you are looking at — so this strip
+ * artwork gets the whole window. Leaving *nothing* would be a trap - there would
+ * be no way back and no way to act on what you are looking at - so this strip
  * floats over the artwork with the few things that are still worth having: undo
  * and redo, export, the before/after comparison, and the way out.
  *

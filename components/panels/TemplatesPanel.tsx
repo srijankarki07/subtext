@@ -59,7 +59,7 @@ function TemplateThumbnailCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left outline-none transition-colors hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left transition-colors outline-none hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
       {/* Mini artboard, 4:5 */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-workspace">
@@ -99,7 +99,7 @@ function TemplateThumbnailCard({
             (isQuote
               ? '"Your quote here"'
               : text.type === "author"
-                ? "— AUTHOR"
+                ? "- AUTHOR"
                 : "@handle")
 
           return (
@@ -154,7 +154,9 @@ function TemplateThumbnailCard({
 }
 
 export default function TemplatesPanel() {
-  const [activeSubTab, setActiveSubTab] = useState<"layouts" | "luts">("layouts")
+  const [activeSubTab, setActiveSubTab] = useState<"layouts" | "luts">(
+    "layouts"
+  )
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>("All")
   const [showInfo, setShowInfo] = useState(true)
   const [selectedLut, setSelectedLut] = useState<string>("None")
@@ -240,7 +242,7 @@ export default function TemplatesPanel() {
                   onClick={() => setActiveCategory(category)}
                   aria-pressed={active}
                   className={cn(
-                    "cursor-pointer rounded-full px-2.5 py-1 text-[11px] outline-none transition-colors",
+                    "cursor-pointer rounded-full px-2.5 py-1 text-[11px] transition-colors outline-none",
                     "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                     active
                       ? "bg-foreground font-medium text-background"
@@ -284,7 +286,7 @@ export default function TemplatesPanel() {
                 onClick={() => handleApplyLut(meta.name)}
                 aria-pressed={active}
                 className={cn(
-                  "group flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border p-2.5 text-left outline-none transition-colors",
+                  "group flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border p-2.5 text-left transition-colors outline-none",
                   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]",
                   active
                     ? "border-primary/40 bg-primary/[0.06]"

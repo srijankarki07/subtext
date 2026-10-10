@@ -6,7 +6,7 @@ import { getPalette } from "colorthief"
  * This file used to hold a second, hand-rolled implementation of WCAG
  * luminance and contrast alongside the palette extractor, plus a bespoke
  * HSL-harmony colour recommender. All of it was superseded by
- * `lib/visibility.ts`, which does the colour maths through `culori` — so the
+ * `lib/visibility.ts`, which does the colour maths through `culori` - so the
  * app had two answers to "what is this colour's contrast" and only one of them
  * was being maintained. The dead helpers are gone; the palette extractor stays.
  */

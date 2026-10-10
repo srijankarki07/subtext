@@ -37,7 +37,7 @@ export default function Nav() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 pt-3 sm:pt-4">
-      <div className="mx-auto w-full max-w-[1248px] px-5 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[800px] px-5 sm:px-6 lg:px-8">
         <motion.nav
           animate={
             reduced
@@ -76,12 +76,12 @@ export default function Nav() {
           </ul>
 
           <Button
-            size="sm"
+            size="lg"
             className="rounded-full px-3.5"
             nativeButton={false}
             render={<Link href="/editor" />}
           >
-            Open the editor
+            Open editor
           </Button>
         </motion.nav>
       </div>

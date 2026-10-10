@@ -2,7 +2,7 @@
  * Film grain.
  *
  * Grain used to be an SVG `feTurbulence` overlay in the DOM, which meant it was
- * visible in the editor and absent from every export — `canvas.toDataURL()`
+ * visible in the editor and absent from every export - `canvas.toDataURL()`
  * never sees DOM siblings. Templates set grain as their primary "film" signal,
  * so most of them exported as something other than what was on screen.
  *
@@ -14,14 +14,14 @@
  *    the 30 history snapshots would carry a copy of the noise. That storage
  *    problem is being fixed separately, and this is the wrong place to add to
  *    it.
- * 2. One generator means the preview and the export cannot drift apart — which
+ * 2. One generator means the preview and the export cannot drift apart - which
  *    is the bug being fixed.
  *
  * The noise is monochrome, unlike `feTurbulence`, which produces coloured
  * speckle across all four channels. Film grain is monochrome.
  *
  * Making grain a first-class, undoable document object still belongs on the
- * list — see the history work.
+ * list - see the history work.
  */
 
 /** Deterministic PRNG, so the same seed always produces the same grain. */
@@ -104,7 +104,7 @@ export function grainTileDataUrl(): string {
  *
  * `scale` is the export multiplier: at 2× the tile is drawn twice as large, so
  * the grain stays the same size *relative to the artwork* rather than becoming
- * twice as fine — which is how film behaves and what the preview shows.
+ * twice as fine - which is how film behaves and what the preview shows.
  *
  * `globalCompositeOperation: "overlay"` is the canvas equivalent of the CSS
  * `mix-blend-mode: overlay` the preview uses, so the two agree.
@@ -150,7 +150,7 @@ export function grainPreviewStyle(
    * No tile without a DOM.
    *
    * The tile is drawn on a canvas, so this cannot be evaluated while rendering
-   * on the server — and it *is* called during render by the landing page's grade
+   * on the server - and it *is* called during render by the landing page's grade
    * demo, which server-renders: `document is not defined`, and the page returned
    * a 500. Returning a transparent overlay keeps the call site simple, and the
    * callers render the overlay only after mount anyway, so the server pass never

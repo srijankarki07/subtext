@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
  * Popover primitives.
  *
  * Everything renders through `Popover.Portal`, so popover content escapes the
- * `overflow` of whatever panel it was declared in — the previous hand-rolled
+ * `overflow` of whatever panel it was declared in - the previous hand-rolled
  * dropdowns were absolutely positioned inside scroll containers and were
  * clipped. Base UI's Positioner also does collision detection and exposes
  * `--available-width` / `--available-height`, so the popup flips and shrinks to
@@ -41,22 +41,25 @@ function PopoverContent({
   children,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset"
+  >) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
         align={align}
         sideOffset={sideOffset}
-        className="isolate z-popover"
+        className="z-popover isolate"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
             // DESIGN/ §Popovers: soft elevated surface, 12px radius, 1px
             // low-opacity border, quiet shadow, ~180ms fade/slide.
-            "relative z-popover max-h-[var(--available-height)] max-w-[var(--available-width)]",
+            "z-popover relative max-h-[var(--available-height)] max-w-[var(--available-width)]",
             "origin-[var(--transform-origin)] overflow-y-auto rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg",
-            "outline-none transition-[opacity,transform] duration-150 ease-out",
+            "transition-[opacity,transform] duration-150 ease-out outline-none",
             "data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",
             "data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0",
             className
@@ -93,10 +96,4 @@ function PopoverClose({ className, ...props }: PopoverPrimitive.Close.Props) {
   )
 }
 
-export {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverTitle,
-  PopoverClose,
-}
+export { Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverClose }

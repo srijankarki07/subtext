@@ -112,7 +112,7 @@ function ThemeToggle() {
 /**
  * Secondary document actions.
  *
- * These live in a menu rather than on the bar itself — DESIGN/ §5 asks for a
+ * These live in a menu rather than on the bar itself - DESIGN/ §5 asks for a
  * quiet top bar, and "start over" and "delete the saved project" are both rare
  * and destructive. Both previously existed in the store with no way to reach
  * them.
@@ -187,7 +187,7 @@ function DocumentMenu() {
  * The top bar carries global actions only.
  *
  * DESIGN/ §5: the bar stays quiet. Document identity sits on the left, and
- * Export is the only strongly emphasised control — everything else is a ghost
+ * Export is the only strongly emphasised control - everything else is a ghost
  * or icon button. Restore is de-emphasised rather than advertised; it lives
  * next to Save as a tertiary action.
  */
@@ -276,7 +276,7 @@ export default function TopBar({
   /**
    * What the badge answers: "would I lose work if this tab died?"
    *
-   * Not "have I pressed Save?" — that was the old rule, and it predates
+   * Not "have I pressed Save?" - that was the old rule, and it predates
    * autosave: it read as a warning whenever there was no *explicit* copy, even
    * though the document was written and would come back. `isDirty` already means
    * "there are changes not yet written", which is the only state that risks
