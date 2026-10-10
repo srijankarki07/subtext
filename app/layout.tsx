@@ -63,6 +63,8 @@ import {
 
 import localFont from "next/font/local"
 
+import Script from "next/script"
+
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { Metadata } from "next"
@@ -568,6 +570,12 @@ export default function RootLayout({
           "antialiased"
         )}
       >
+        {/*
+          The pre-paint theme script, as a preloaded same-origin file rather than
+          an inline script. See `public/theme-init.js` for why: every inline
+          variant is either warned about by React or hydrated inconsistently.
+        */}
+        <Script src="/theme-init.js" strategy="beforeInteractive" />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

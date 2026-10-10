@@ -572,7 +572,9 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     // Locked objects are skipped rather than blocking the whole delete, so a
     // locked letterbox bar in a group of three does not make the other two
     // undeletable.
-    const targets = requested.filter((object) => !object.lockMovementX)
+    const targets = requested.filter(
+      (object) => !(object as { locked?: boolean }).locked
+    )
     if (!targets.length) return
 
     beginHistoryTransaction(
@@ -984,7 +986,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   // ELEMENT CLIPBOARD
   copyActiveObject: async () => {
     const { activeObject } = get()
-    if (!activeObject || activeObject.lockMovementX) return
+    if (!activeObject || (activeObject as { locked?: boolean }).locked) return
 
     // Clone the active element and keep an in-memory reference
     const cloned = await activeObject.clone(
@@ -995,7 +997,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
   cutActiveObject: async () => {
     const { activeObject, copyActiveObject, deleteActiveObject } = get()
-    if (!activeObject || activeObject.lockMovementX) return
+    if (!activeObject || (activeObject as { locked?: boolean }).locked) return
 
     await copyActiveObject()
     deleteActiveObject(activeObject)

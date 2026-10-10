@@ -175,6 +175,8 @@ export async function replaceImage(
     filters: [...(previous.filters ?? [])],
     selectable: previous.selectable,
     evented: previous.evented,
+    // The app's own lock, so replacing the photo cannot unlock a locked layer.
+    locked: (previous as { locked?: boolean }).locked,
     lockMovementX: previous.lockMovementX,
     lockMovementY: previous.lockMovementY,
     lockScalingX: previous.lockScalingX,

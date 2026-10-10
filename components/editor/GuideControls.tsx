@@ -31,7 +31,7 @@ const ROWS: Array<{ key: keyof GuidesState; label: string; hint: string }> = [
   { key: "safeArea", label: "Safe area", hint: "5% margin, for UI overlays" },
 ]
 
-export default function GuideControls({ className }: { className?: string }) {
+export default function GuideControls() {
   const [isOpen, setIsOpen] = useState(false)
   const guides = useEditorStore((s) => s.guides)
   const toggleGuide = useEditorStore((s) => s.toggleGuide)
@@ -46,13 +46,25 @@ export default function GuideControls({ className }: { className?: string }) {
             type="button"
             aria-label="Composition guides"
             aria-expanded={isOpen}
-            title="Composition guides"
+            title="Rule of thirds, centre lines and the safe area — and the snapping they drive"
             className={cn(
-              className,
-              anyOn && "text-[var(--color-on-workspace)]"
+              /*
+               * Labelled, not the icon-only size the zoom buttons use.
+               *
+               * This was a bare grid glyph sitting between the zoom controls, and
+               * the report was simply "I am not able to see it" — the feature
+               * worked and nobody could find it. A word costs about 40px and is
+               * the difference between a feature existing and a feature being
+               * discoverable.
+               */
+              "flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[11px] font-medium transition-colors outline-none",
+              "text-[var(--color-on-workspace-muted)] hover:bg-white/10 hover:text-[var(--color-on-workspace)]",
+              "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-on-workspace-muted)]",
+              anyOn && "bg-white/10 text-[var(--color-on-workspace)]"
             )}
           >
             <Grid2x2 size={13} aria-hidden="true" />
+            <span>Guides</span>
           </button>
         }
       />

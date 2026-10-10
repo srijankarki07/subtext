@@ -438,6 +438,7 @@ export const createEffectSlice: StateCreator<
       fill: "black",
       selectable: true,
       evented: true,
+      locked: true,
       lockMovementX: true,
       lockScalingX: true,
     })
@@ -453,6 +454,7 @@ export const createEffectSlice: StateCreator<
       fill: "black",
       selectable: true,
       evented: true,
+      locked: true,
       lockMovementX: true,
       lockScalingX: true,
     })

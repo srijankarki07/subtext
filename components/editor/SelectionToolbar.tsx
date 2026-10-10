@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState, type RefObject } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import {
   AlignCenter,
   AlignLeft,
@@ -54,11 +60,7 @@ interface Placement {
   above: boolean
 }
 
-export default function SelectionToolbar({
-  containerRef,
-}: {
-  containerRef: RefObject<HTMLDivElement | null>
-}) {
+export default function SelectionToolbar() {
   const canvas = useEditorStore((s) => s.canvas)
   const selectedObjects = useEditorStore((s) => s.selectedObjects)
   const zoom = useEditorStore((s) => s.zoom)
@@ -67,42 +69,81 @@ export default function SelectionToolbar({
   const summary = classifySelection(selectedObjects)
 
   /**
-   * Where the toolbar goes, in the workspace container's coordinates.
+   * Where the toolbar goes, in **viewport** coordinates.
+   *
+   * Viewport, and positioned `fixed`, because of two bugs that shared one cause.
+   * The toolbar used to be a child of the artboard box while being positioned in
+   * the outer container's coordinates, and those differ by the artboard's offset
+   * inside the workspace:
+   *
+   * 1. Every toolbar sat one offset too low — on top of the text it belonged to.
+   * 2. A child of the artboard box is clipped by it, and that box is
+   *    `overflow-hidden`, so a bar reaching past the artwork's edge was cut off
+   *    and unreachable, because a scroll container cannot scroll to a negative
+   *    offset.
+   *
+   * `fixed` sidesteps the family: nothing between the bar and the viewport can
+   * clip it or shift it.
    *
    * Recomputed from scratch rather than tracked incrementally, because every
-   * input to it can change independently: the object moves, the artboard zooms,
-   * the panel opens and narrows the workspace, the page scrolls.
+   * input can change independently: the object moves, the artboard zooms or
+   * changes shape, a panel opens and narrows the workspace, the page scrolls.
    */
   const place = useCallback(() => {
-    const container = containerRef.current
     const target = selectedObjects[0]
-    if (!container || !canvas || !target) {
+    if (!canvas || !target) {
       setPlacement(null)
       return
     }
 
-    const canvasElement = canvas.getElement()
-    const canvasBox = canvasElement.getBoundingClientRect()
-    const containerBox = container.getBoundingClientRect()
+    const canvasBox = canvas.getElement().getBoundingClientRect()
     const rect = target.getBoundingRect()
 
-    const left = canvasBox.left - containerBox.left + rect.left * zoom
-    const top = canvasBox.top - containerBox.top + rect.top * zoom
-    const width = rect.width * zoom
-
     setPlacement({
-      left: left + width / 2,
-      top,
-      bottom: top + rect.height * zoom,
-      // Measured against the container, not the window: the bar lives inside the
-      // workspace, so that is the edge it has to clear.
-      above: top > 56,
+      left: canvasBox.left + (rect.left + rect.width / 2) * zoom,
+      top: canvasBox.top + rect.top * zoom,
+      bottom: canvasBox.top + (rect.top + rect.height) * zoom,
+      // Room above it *in the viewport*, which is the edge that matters now.
+      above: canvasBox.top + rect.top * zoom > 64,
     })
-  }, [canvas, containerRef, selectedObjects, zoom])
+  }, [canvas, selectedObjects, zoom])
 
   useEffect(() => {
     place()
   }, [place])
+
+  /**
+   * Keeps the bar inside the window.
+   *
+   * Written straight to the element rather than into state, because it depends on
+   * the bar's own measured size: holding it in state means render → measure →
+   * render, and a loop waiting to happen. This costs one DOM write.
+   */
+  const barRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const bar = barRef.current
+    if (!bar || !placement) return
+
+    const width = bar.offsetWidth || 320
+    const half = width / 2
+    bar.style.left = `${Math.min(
+      Math.max(placement.left, half + 8),
+      window.innerWidth - half - 8
+    )}px`
+
+    // The object can be taller than the window — a full-bleed composition is —
+    // and then neither side has room and the bar would be off-screen entirely.
+    // Pinned inside the viewport it overlaps the artwork, which is worse to look
+    // at and much better than being invisible.
+    const height = bar.offsetHeight || 40
+    const wanted = placement.above
+      ? placement.top - GAP - height
+      : placement.bottom + GAP
+    bar.style.top = `${Math.min(
+      Math.max(wanted, 8),
+      window.innerHeight - height - 8
+    )}px`
+  }, [placement])
 
   useEffect(() => {
     if (!canvas) return
@@ -129,33 +170,51 @@ export default function SelectionToolbar({
     }
   }, [canvas, place])
 
-  // Hidden while a text layer is being edited: the caret and the bar would be
-  // competing for the same space, and the bar's actions do not apply mid-edit.
-  const isEditing = (selectedObjects[0] as { isEditing?: boolean } | undefined)
-    ?.isEditing
-  if (!placement || summary.kind === "none" || isEditing) return null
+  /*
+   * Shown while a text layer is being edited, deliberately.
+   *
+   * It used to hide itself mid-edit on the reasoning that its actions "do not
+   * apply" then — which was wrong, and the wrongness was the point. Double-click
+   * into a text layer, select one word, and every action here applies to *that
+   * range*: `applyTextStyle` routes through Fabric's `setSelectionStyles`
+   * whenever an edit selection exists, and `getActiveSelectionStyle` reads the
+   * range back, so the Bold and colour controls show and change the selected
+   * word's own style. Hiding the bar during an edit hid the one interaction that
+   * makes per-word styling possible, and it read as the feature not existing.
+   */
+  if (!placement || summary.kind === "none") return null
 
   return (
     <div
       data-slot="selection-toolbar"
       role="toolbar"
       aria-label={`Actions for ${summary.label}`}
+      ref={barRef}
       style={{
         left: placement.left,
-        // Centred on the object, above it when there is room and below it when
-        // there is not — an object at the top of the artboard would otherwise put
-        // the bar over the toolbar or off the workspace entirely.
         top: placement.above ? placement.top - GAP : placement.bottom + GAP,
-        transform: placement.above
-          ? "translate(-50%, -100%)"
-          : "translate(-50%, 0)",
+        transform: "translateX(-50%)",
       }}
       className={cn(
-        "z-popover absolute flex items-center gap-0.5 rounded-xl border border-border bg-card p-1",
+        "z-popover fixed flex items-center gap-0.5 rounded-xl border border-border bg-card p-1",
         "shadow-[0_1px_2px_rgb(0_0_0/0.06),0_8px_24px_-8px_rgb(0_0_0/0.28)]"
       )}
-      // The toolbar is chrome, so a drag started on it must not move the object.
+      /*
+       * Two handlers, for two different failures.
+       *
+       * `onPointerDown` stops the canvas seeing the press, so a drag begun on the
+       * toolbar cannot move the object underneath it.
+       *
+       * `onMouseDown` calling `preventDefault` is the one that makes per-word
+       * styling work: Fabric keeps its edit caret in a hidden text area, and a
+       * plain mousedown moves focus out of it, which ends the edit *before* the
+       * button's action runs. `applyTextStyle` then takes its whole-object branch
+       * — measured: selecting a word and pressing Bold changed the entire quote's
+       * weight and left `styles` empty. Preventing the default keeps the caret,
+       * and therefore the selection, alive through the click.
+       */
       onPointerDown={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.preventDefault()}
     >
       <Actions summary={summary} />
     </div>

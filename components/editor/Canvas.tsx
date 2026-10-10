@@ -495,6 +495,12 @@ export default function Canvas() {
       }}
     >
       {/*
+        Fixed-positioned, so it lives outside the artboard box: that box is
+        `overflow-hidden`, and a toolbar inside it is clipped at the artwork's edge.
+      */}
+      <SelectionToolbar />
+
+      {/*
         The artboard box. Two things here are load-bearing:
 
         1. `m-auto` rather than flex centring on the parent: centring an
