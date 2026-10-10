@@ -1,11 +1,14 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Download, Layers, LayoutTemplate, Settings2, X } from "lucide-react"
 
 import CanvasWorkspace from "@/components/editor/CanvasWorkspace"
 import ContextPanel from "@/components/editor/ContextPanel"
+import { useTheme } from "next-themes"
+
 import Autosave from "@/components/editor/Autosave"
+import CommandPalette from "@/components/editor/CommandPalette"
 import Inspector, { InspectorPanelContent } from "@/components/editor/Inspector"
 import RestoredNotice from "@/components/editor/RestoredNotice"
 import TopBar from "@/components/editor/TopBar"
@@ -73,6 +76,9 @@ export default function EditorShell() {
   const initializeCustomFonts = useEditorStore((s) => s.initializeCustomFonts)
   const canvas = useEditorStore((s) => s.canvas)
 
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+
   const hasRestored = useRef(false)
   const [activeTool, setActiveTool] = useState<EditorTool>("text")
   /**
@@ -85,6 +91,7 @@ export default function EditorShell() {
    */
   const [isPanelOpen, setIsPanelOpen] = useState(true)
   const [isInspectorOpen, setIsInspectorOpen] = useState(false)
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false)
   const [userToggledInspector, setUserToggledInspector] = useState(false)
 
   // Auto-open the inspector on the first selection, but never fight the user
@@ -127,6 +134,25 @@ export default function EditorShell() {
     void initializeCustomFonts()
   }, [initializeCustomFonts])
 
+  /**
+   * The palette's shortcut.
+   *
+   * Registered here rather than in the palette itself so it works whether or not
+   * the palette is mounted, and deliberately above the canvas's own key handler
+   * in precedence: ⌘K is not a canvas action, and a text layer being edited
+   * should not swallow it.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "k") return
+      if (!(event.metaKey || event.ctrlKey)) return
+      event.preventDefault()
+      setIsPaletteOpen((open) => !open)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
+
   const handleToggleInspector = () => {
     setIsInspectorOpen((open) => !open)
     setUserToggledInspector(true)
@@ -166,6 +192,19 @@ export default function EditorShell() {
     setActiveTool(tool)
     setIsPanelOpen(true)
   }
+
+  const paletteHandlers = useMemo(
+    () => ({
+      onOpenTool: handleOpenTool,
+      onToggleInspector: () => {
+        setIsInspectorOpen((open) => !open)
+        setUserToggledInspector(true)
+      },
+      onToggleTheme: () => setTheme(isDark ? "light" : "dark"),
+      onExport: () => setIsExportModalOpen(true),
+    }),
+    [isDark, setTheme, setIsExportModalOpen]
+  )
 
   // The tool rail advertises these keys in its tooltips, so they need to work.
   useEffect(() => {
@@ -214,6 +253,11 @@ export default function EditorShell() {
         <ContextMenu />
         <ExportModal />
         <GlobalDialogs />
+        <CommandPalette
+          open={isPaletteOpen}
+          onOpenChange={setIsPaletteOpen}
+          handlers={paletteHandlers}
+        />
         {/* Renders nothing; it writes the document to storage as it changes. */}
         <Autosave />
 
