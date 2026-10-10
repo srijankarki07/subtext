@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ActiveSelection } from "fabric"
 import {
   Eye,
   EyeOff,
@@ -69,9 +70,97 @@ function describe(obj: any): { label: string; icon: typeof Type } {
   return { label: obj.type ?? "Layer", icon: Square }
 }
 
+/**
+ * A row's preview.
+ *
+ * The list was a column of identical glyphs — a text row, an image row and a
+ * vignette row all read the same at a glance, so finding a layer meant reading
+ * every label. Each kind now shows what it is: text renders in its own face and
+ * colour, an image shows its own pixels, and the effect layers show the thing
+ * they do to the picture.
+ *
+ * Deliberately cheap. The image row points at the object's existing source
+ * rather than rendering a thumbnail onto a canvas: the browser is already
+ * scaling it, and a `toDataURL` per row per render would make the panel the
+ * slowest thing in the editor.
+ */
+function LayerThumb({ obj, icon: Icon }: { obj: any; icon: typeof Type }) {
+  const frame =
+    "flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/15"
+
+  if (obj.type === "i-text") {
+    return (
+      <span
+        className={cn(frame, "bg-subtle")}
+        style={{ color: obj.fill as string }}
+        aria-hidden="true"
+      >
+        <span
+          className="text-[17px] leading-none"
+          style={{
+            fontFamily: obj.fontFamily as string,
+            fontWeight: (obj.fontWeight as string) ?? "normal",
+            fontStyle: (obj.fontStyle as string) ?? "normal",
+          }}
+        >
+          {String(obj.text ?? "T")
+            .replace(/["“”]/g, "")
+            .trim()
+            .charAt(0) || "T"}
+        </span>
+      </span>
+    )
+  }
+
+  if (obj.type === "image" && typeof obj.getSrc === "function") {
+    const src = obj.getSrc() as string
+    if (src) {
+      return (
+        <span className={frame} aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="size-full object-cover" />
+        </span>
+      )
+    }
+  }
+
+  const id = String(obj.id ?? "")
+  const swatch = id.startsWith("vignette")
+    ? "radial-gradient(circle at 50% 50%, transparent 35%, #000 100%)"
+    : id.includes("gradient")
+      ? "linear-gradient(to top, #000 0%, transparent 70%)"
+      : id.startsWith("letterbox") ||
+          id.endsWith("-top") ||
+          id.endsWith("-bottom")
+        ? "linear-gradient(to bottom, #000 0 40%, #555 40% 60%, #000 60% 100%)"
+        : id.includes("blur")
+          ? "linear-gradient(to bottom right, #6b7280 0%, #d1d5db 50%, #6b7280 100%)"
+          : null
+
+  if (swatch) {
+    return (
+      <span
+        className={frame}
+        style={{ background: swatch }}
+        aria-hidden="true"
+      />
+    )
+  }
+
+  return (
+    <span
+      className={cn(frame, "bg-subtle text-[var(--text-muted)]")}
+      aria-hidden="true"
+    >
+      <Icon size={14} />
+    </span>
+  )
+}
+
 export default function LayersPanel() {
   const canvas = useEditorStore((s) => s.canvas)
   const activeObject = useEditorStore((s) => s.activeObject)
+  const selectedObjects = useEditorStore((s) => s.selectedObjects)
   const moveLayerToIndex = useEditorStore((s) => s.moveLayerToIndex)
   const toggleLayerLock = useEditorStore((s) => s.toggleLayerLock)
   const toggleLayerVisibility = useEditorStore((s) => s.toggleLayerVisibility)
@@ -103,10 +192,34 @@ export default function LayersPanel() {
     }))
     .reverse()
 
-  const select = (obj: any) => {
-    canvas?.setActiveObject(obj)
-    canvas?.requestRenderAll()
-    useEditorStore.getState().setActiveObject(obj)
+  /**
+   * Selects a row, optionally adding to what is already selected.
+   *
+   * A group is a real `ActiveSelection` on the canvas rather than a list of ids
+   * in this component, so everything downstream — the inspector, the floating
+   * toolbar, delete, drag — sees the same selection the canvas does. Holding a
+   * private notion of "selected layers" in the panel is how two views of one
+   * state drift apart.
+   */
+  const select = (obj: any, additive = false) => {
+    if (!canvas) return
+
+    const current = canvas.getActiveObjects()
+    const next = !additive
+      ? [obj]
+      : current.includes(obj)
+        ? current.filter((candidate) => candidate !== obj)
+        : [...current, obj]
+
+    if (next.length === 0) {
+      canvas.discardActiveObject()
+    } else if (next.length === 1) {
+      canvas.setActiveObject(next[0])
+    } else {
+      canvas.setActiveObject(new ActiveSelection(next, { canvas } as never))
+    }
+    canvas.requestRenderAll()
+    useEditorStore.getState().setSelection(next)
   }
 
   return (
@@ -123,7 +236,7 @@ export default function LayersPanel() {
         <div className="flex flex-col gap-1">
           {layers.map((layer) => {
             const actualIndex = objects.indexOf(layer.obj)
-            const isSelected = activeObject === layer.obj
+            const isSelected = selectedObjects.includes(layer.obj)
             const isLocked = Boolean(layer.obj.lockMovementX)
             const Icon = layer.icon
 
@@ -153,7 +266,22 @@ export default function LayersPanel() {
                   setDraggedIndex(null)
                   setDragOverIndex(null)
                 }}
-                onClick={() => select(layer.obj)}
+                onClick={(event) =>
+                  select(
+                    layer.obj,
+                    event.shiftKey || event.metaKey || event.ctrlKey
+                  )
+                }
+                onContextMenu={(event) => {
+                  // Selected first, so the shared menu's actions apply to the row
+                  // that was right-clicked rather than to whatever happened to be
+                  // selected before.
+                  event.preventDefault()
+                  if (!isSelected) select(layer.obj)
+                  useEditorStore
+                    .getState()
+                    .openContextMenu(event.clientX, event.clientY, layer.obj)
+                }}
                 className={cn(
                   "relative flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors",
                   isSelected ? "bg-primary/[0.08]" : "hover:bg-subtle-hover",
@@ -167,20 +295,18 @@ export default function LayersPanel() {
                   )}
 
                 <span className="flex min-w-0 items-center gap-2.5">
-                  <Icon
-                    size={15}
-                    aria-hidden="true"
-                    className={cn(
-                      "shrink-0",
-                      isSelected ? "text-primary" : "text-[var(--text-muted)]"
-                    )}
-                  />
+                  <LayerThumb obj={layer.obj} icon={Icon} />
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-[12px] font-medium text-foreground">
                       {layer.label}
                     </span>
                     <span className="text-[10px] text-[var(--text-muted)]">
-                      Layer {actualIndex + 1}
+                      {layer.obj.type === "i-text"
+                        ? "Text"
+                        : layer.obj.type === "image"
+                          ? "Photo"
+                          : "Effect"}{" "}
+                      · {actualIndex + 1}
                     </span>
                   </span>
                 </span>
