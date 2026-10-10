@@ -40,8 +40,10 @@ next-env.d.ts
 PLAN.md
 design.md
 project-plan.jsx
-image.png
-image-*.png
+# Anchored to the repo root. These were bare patterns, so `image.png` also
+# matched `public/image.png` - which is served, and is the hero's source photo.
+/image.png
+/image-*.png
 issue.md
 
 # design references. `public/` is served, so anything here ships on every deploy;

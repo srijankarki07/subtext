@@ -9,8 +9,8 @@ import { useEditorStore } from "@/store/useEditorStore"
 /**
  * The Media tool's panel.
  *
- * It used to be the same list as the Text tool — three text blocks and a single
- * "Image" row — so the media tool offered one action. This is the media
+ * It used to be the same list as the Text tool - three text blocks and a single
+ * "Image" row - so the media tool offered one action. This is the media
  * workflow instead: bring a photo in, swap it without losing the layout, change
  * how it sits on the artboard, or take it out.
  */

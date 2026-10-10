@@ -4,7 +4,7 @@ import { applyBlurClips } from "@/lib/blurZone"
 
 /**
  * The artboard's default fill, used until an image covers it. This is artwork
- * background, not chrome — it is what a text-only composition exports against.
+ * background, not chrome - it is what a text-only composition exports against.
  */
 export const DEFAULT_ARTBOARD_BACKGROUND = "#1C1C1E"
 
@@ -41,7 +41,7 @@ export const DOCUMENT_PROPERTIES = [
    *
    * Fabric sets `lockMovementX` on a text object *while it is being edited*
    * (`_setEditingProps`), and the app was reading that same property as "the user
-   * locked this layer" — so a dozen guards silently refused to act on text that
+   * locked this layer" - so a dozen guards silently refused to act on text that
    * was merely being typed into: you could not copy it, align it, delete it, or
    * style a *word* of it, because styling a range only happens during an edit and
    * the guard bailed out on the flag Fabric had just set.
@@ -60,7 +60,7 @@ export const DOCUMENT_PROPERTIES = [
 /**
  * Runs `render` with editor-only objects hidden, then restores them.
  *
- * Some objects exist only to be manipulated in the editor — the selective-blur
+ * Some objects exist only to be manipulated in the editor - the selective-blur
  * handle is a dashed rectangle you drag. It is a real Fabric object, so it was
  * being rendered into every export. `excludeFromExport` is no help: Fabric only
  * consults it when serialising, not when rendering for export, and the handle
@@ -93,7 +93,7 @@ export function withoutEditorChrome<T>(canvas: Canvas, render: () => T): T {
  * Re-binds the clip path of selective-blur overlays to their draggable handle.
  *
  * `loadFromJSON` replaces every object, which drops the listeners registered
- * when the handle was created — so this has to run after any load: undo, redo,
+ * when the handle was created - so this has to run after any load: undo, redo,
  * jump-to-history and restoring a saved project. It was duplicated verbatim in
  * both history and save code, which meant a fix in one place could miss the
  * other.
@@ -113,8 +113,8 @@ export function bindBlurHandleListeners(canvas: Canvas): void {
 /**
  * A text object's weight, as a number.
  *
- * Fabric accepts either — the templates say `fontWeight: "bold"` and the
- * inspector's slider works in hundreds — so every reader has to normalise, and
+ * Fabric accepts either - the templates say `fontWeight: "bold"` and the
+ * inspector's slider works in hundreds - so every reader has to normalise, and
  * two readers normalising differently is how a Bold button ends up looking
  * unpressed on text that is visibly bold. It was doing exactly that: the toolbar
  * compared the raw value to 700, got `NaN` from `"bold"`, and reported "not

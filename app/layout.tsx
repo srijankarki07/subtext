@@ -85,7 +85,7 @@ const geist = Geist({
 /**
  * The product's UI face, self-hosted from `public/assets/fonts`.
  *
- * Open Sauce Sans is the whole interface — chrome and marketing alike — so the
+ * Open Sauce Sans is the whole interface - chrome and marketing alike - so the
  * brand is one typeface rather than a landing page in one font and an app in
  * another. Geist stays loaded behind it as a fallback for the metrics-sensitive
  * cases, and the editor's *canvas* is untouched: documents are set in the

@@ -8,14 +8,14 @@ import { cn } from "@/lib/utils"
  * Every reference the user supplied does the same thing: the content lives in a
  * rounded container inset from the page, not in a full-bleed strip with a
  * changing background colour. That is what makes a long marketing page read as a
- * set of objects — modules you could reorder — instead of one continuous poster.
+ * set of objects - modules you could reorder - instead of one continuous poster.
  *
  * Three tones, and they are literal rather than themed:
  *
- * - `paper` — the page's own colour. For sections that should feel like part of
+ * - `paper` - the page's own colour. For sections that should feel like part of
  *   the page rather than a card on it.
- * - `raised` — a white (or dark-theme card) panel with a border. The default.
- * - `dark` — the fixed near-black panel, identical in both themes. This is the
+ * - `raised` - a white (or dark-theme card) panel with a border. The default.
+ * - `dark` - the fixed near-black panel, identical in both themes. This is the
  *   tone that carries the mock UI and the live demos, because a screen recording
  *   of an app is dark in real life.
  */
@@ -61,7 +61,7 @@ export function Module({
  * designed.
  *
  * `tone` is not decoration. The copy colours were previously fixed, and on a
- * dark module that meant `#615D59` body text on `#0E0E10` — 2.96:1, which is
+ * dark module that meant `#615D59` body text on `#0E0E10` - 2.96:1, which is
  * unreadable. The panel's own `text-on-module` inheritance is not enough either,
  * because these elements set a colour explicitly.
  */

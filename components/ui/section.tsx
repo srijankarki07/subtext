@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
  * content.
  *
  * DESIGN/ and the design doc both ask for sections separated by spacing and a
- * rule rather than a bordered card around every group — the panels previously
+ * rule rather than a bordered card around every group - the panels previously
  * wrapped almost everything in `rounded-md border border-white/[0.05]
  * bg-white/[0.02]`, which is what made the inspector read as a dense control
  * wall.

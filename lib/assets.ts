@@ -2,8 +2,8 @@
  * Photo storage, outside the document.
  *
  * Fabric serialises an image object's pixels into its JSON as a base64 data
- * URL. That put a copy of the photo into *every* history snapshot — thirty of
- * them — and into the `localStorage` payload, which is why saving a realistic
+ * URL. That put a copy of the photo into *every* history snapshot - thirty of
+ * them - and into the `localStorage` payload, which is why saving a realistic
  * photo failed outright on the storage quota: a 5 MB JPEG is about 6.7 MB as
  * base64, and a typical origin quota is 5–10 MB in total.
  *
@@ -69,8 +69,9 @@ export async function putAsset(id: string, blob: Blob): Promise<void> {
 }
 
 export async function getAssetBlob(id: string): Promise<Blob | null> {
-  const record = await runRequest<StoredAsset | undefined>("readonly", (store) =>
-    store.get(id)
+  const record = await runRequest<StoredAsset | undefined>(
+    "readonly",
+    (store) => store.get(id)
   )
   return record?.blob ?? null
 }

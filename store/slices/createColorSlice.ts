@@ -298,7 +298,7 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
     const shadow = text.get("shadow") as Shadow | null
 
     // Fabric scales through scaleX/scaleY and leaves fontSize untouched, so a
-    // quote dragged from 40px to 200px used to report 40px — which meant the
+    // quote dragged from 40px to 200px used to report 40px - which meant the
     // size bonus, and the choice of contrast threshold, were both wrong.
     const scale = Math.abs(text.scaleX ?? 1)
     const fontSize = ((text.get("fontSize") as number) || 40) * scale
@@ -325,7 +325,7 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
       set({ visibility: null })
       return
     } finally {
-      // Runs in the same frame, so the user never sees a flicker — and it runs
+      // Runs in the same frame, so the user never sees a flicker - and it runs
       // even if sampling threw, so the text can never be left invisible.
       text.set("visible", true)
       canvas.renderAll()

@@ -7,7 +7,7 @@
  * onto it. That is what turns "put the quote roughly in the middle" into "the
  * quote is centred".
  *
- * All of it is pure — plain numbers in, plain numbers out — so the arithmetic
+ * All of it is pure - plain numbers in, plain numbers out - so the arithmetic
  * can be exercised in Node. That matters here more than usual: a snapping bug is
  * a one-pixel lie that looks plausible on screen.
  */
@@ -43,7 +43,7 @@ export interface AxisAlignedBox {
  *
  * Rotation is ignored on purpose. Fabric objects here default to a centre
  * origin, and the ones that do not (the artboard-filling effect rects) are set
- * to a top-left origin explicitly — so the origin has to be honoured rather
+ * to a top-left origin explicitly - so the origin has to be honoured rather
  * than assumed. Snapping a rotated object by its unrotated box is a known
  * approximation: it is right at 0°, 90°, 180° and 270°, and off by at most the
  * difference in between. Every composition in this app is built unrotated.
@@ -103,7 +103,7 @@ export interface Guide {
 /**
  * Margin of the safe area, as a fraction of the frame.
  *
- * Broadcast uses 5% for title-safe — the region a title can sit in without
+ * Broadcast uses 5% for title-safe - the region a title can sit in without
  * being cropped by a screen's overscan. For a quote poster the same margin is
  * the one that keeps text clear of the UI a social app draws over the edges, so
  * the standard number is the honest one to use rather than an invented one.
@@ -120,7 +120,7 @@ export interface GuideOptions {
  * The guides the artboard itself contributes: its edges and centre lines, and
  * the third lines.
  *
- * These are always offered to the solver — snapping to the artboard's centre
+ * These are always offered to the solver - snapping to the artboard's centre
  * should work whether or not the grid is on screen, because the grid is a
  * display preference and the geometry is not. `GuideOptions` decides only what
  * gets *drawn*.
@@ -193,7 +193,7 @@ const NO_SNAP: SnapOutcome = { dx: 0, dy: 0, guides: [] }
 /**
  * The offset that pulls `box` onto the nearest guide, per axis.
  *
- * All three of the box's own lines compete — its two edges and its centre — and
+ * All three of the box's own lines compete - its two edges and its centre - and
  * the *closest* match wins, so a small object near a guide snaps by its edge
  * while a centred one snaps by its centre. Within one axis only one line may
  * win; ties go to whichever the loop reaches first, which is the box's leading
@@ -239,7 +239,7 @@ export function solveSnap(
   if (x.position === null && y.position === null) return NO_SNAP
 
   // The moved box, so the drawn guides span the object rather than the whole
-  // artboard — a guide line that runs the full width of the frame would be
+  // artboard - a guide line that runs the full width of the frame would be
   // drawn over the artboard's own edge and read as a border.
   const moved: AxisAlignedBox = {
     ...box,
@@ -286,7 +286,7 @@ export function extentOf(
  * Converts a screen-pixel threshold into canvas units.
  *
  * A fixed canvas-unit threshold would feel loose when zoomed out and
- * unusably tight when zoomed in — the whole point is that the pull is a
+ * unusably tight when zoomed in - the whole point is that the pull is a
  * constant *screen* distance.
  */
 export function snapThreshold(zoom: number, screenPixels = 6): number {

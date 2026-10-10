@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
  * - **Small numbers.** 14px of travel and a 0.5s ease. The brief asked for
  *   subtle: anything larger reads as a slideshow rather than as polish.
  * - **`useReducedMotion` is honoured, not assumed.** With the OS setting on, the
- *   content is simply there — no transition, no transform — which is what that
+ *   content is simply there - no transition, no transform - which is what that
  *   preference is for.
  */
 export function Reveal({

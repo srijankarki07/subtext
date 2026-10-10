@@ -52,8 +52,8 @@ const TOOL_COPY: Record<string, { title: string; hint: string }> = {
 /**
  * The text blocks a composition is built from.
  *
- * Each one is a different job in a quote card — the words, who said them, where
- * to find them, and the signature — rather than variations on the same thing,
+ * Each one is a different job in a quote card - the words, who said them, where
+ * to find them, and the signature - rather than variations on the same thing,
  * which is how the list read when it was four rows of "Typography".
  */
 function TextBlocks() {

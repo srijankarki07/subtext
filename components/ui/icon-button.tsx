@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  * The editor's icon-only button.
  *
  * `label` is required and always wins over any spread props, so an icon-only
- * control can never ship without an accessible name — the previous code had
+ * control can never ship without an accessible name - the previous code had
  * only six `aria-label`s across the whole editor, and several controls were a
  * bare `<Trash2 size={12} />` with no padding at all.
  *
@@ -16,8 +16,11 @@ import { cn } from "@/lib/utils"
  * is the floor for a pointer target in this app.
  */
 
-interface IconButtonProps extends Omit<React.ComponentProps<"button">, "aria-label"> {
-  /** Accessible name. Required — this is the whole point of the component. */
+interface IconButtonProps extends Omit<
+  React.ComponentProps<"button">,
+  "aria-label"
+> {
+  /** Accessible name. Required - this is the whole point of the component. */
   label: string
   icon: React.ReactNode
   /**

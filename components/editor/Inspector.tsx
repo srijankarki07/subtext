@@ -26,7 +26,7 @@ import type { EditorTool } from "@/components/editor/ToolRail"
  * Contextual inspector.
  *
  * The controls shown depend on what is selected (design doc §13). Selection
- * drives complexity, so the panel never shows controls that cannot apply — and
+ * drives complexity, so the panel never shows controls that cannot apply - and
  * that has to include the cases where the honest answer is "not here": an effect
  * layer is adjusted by the Cinema panel, so the inspector says which layer it is
  * and offers to take you there, rather than offering it font controls.
@@ -54,7 +54,7 @@ export function useSelectionSummary() {
  *
  * Used by effect layers and unrecognised layers. It names what is selected and
  * either hands over to the panel that owns it or says plainly that there is
- * nothing to change — both better than a tab of controls that do nothing.
+ * nothing to change - both better than a tab of controls that do nothing.
  */
 function InertState({
   label,

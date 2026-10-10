@@ -26,7 +26,7 @@ const hexToRgba = (hex: string, alpha: number) => {
  *
  * `buildBlurLayers` awaits `clone()`, and the Fade slider fires on every change,
  * so two builds can overlap. Both would find ring 3 missing and both would add
- * one, putting the same object in the canvas twice — which is what produced the
+ * one, putting the same object in the canvas twice - which is what produced the
  * duplicate React key in the layers list.
  */
 const blurLayerBuilds = new Set<string>()
@@ -62,8 +62,8 @@ export const createEffectSlice: StateCreator<
     } = get()
     if (!canvas) return
 
-    // Adding a layer is several steps — create the object, apply its gradient,
-    // push it to the front, register it in the store — and `updateVignette`
+    // Adding a layer is several steps - create the object, apply its gradient,
+    // push it to the front, register it in the store - and `updateVignette`
     // below records one of them. The transaction keeps the final state only, so
     // the step is titled for what the user did rather than for the internal
     // call that happened to run last.
@@ -229,7 +229,7 @@ export const createEffectSlice: StateCreator<
    *
    * One per ring: ring 0 is the core, matching the handle, and the rest are
    * clipped progressively wider so the blur can fade out. Rings are only built
-   * when a feather is asked for, so a hard zone — the common case — costs one
+   * when a feather is asked for, so a hard zone - the common case - costs one
    * clone rather than four.
    */
   buildBlurLayers: async (handleId, feather) => {
@@ -602,7 +602,7 @@ export const createEffectSlice: StateCreator<
 
   /**
    * Warmth is a colour grade like any other, so it goes through `applyPreset`
-   * and inherits its history handling — passing a coalesce key is what keeps a
+   * and inherits its history handling - passing a coalesce key is what keeps a
    * slider drag to a single undo step instead of one per pixel of travel.
    */
   applyWarmth: (value) =>
@@ -612,7 +612,7 @@ export const createEffectSlice: StateCreator<
    * Applies a duotone and records the settings.
    *
    * The settings are stored, not just applied, so the panel reflects whatever
-   * the image is actually graded with — including when a template sets it.
+   * the image is actually graded with - including when a template sets it.
    */
   applyDuotone: (lightHex, darkHex, intensity = get().duotoneIntensity) => {
     set({

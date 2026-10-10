@@ -14,13 +14,13 @@ import {
  * text and measured contrast against that single average. A quote straddling
  * white sky and a dark ridge was scored against a mid-grey that exists nowhere
  * in the image, so it could report PASS over unreadable text and FAIL over
- * readable text. Averaging is the wrong operation — readability is set by the
+ * readable text. Averaging is the wrong operation - readability is set by the
  * *worst* part of the background, not the mean.
  *
  * So this keeps a luminance histogram of the region instead of a summary
  * colour, and measures against the least favourable part of it that the text
  * still realistically sits on. It also counts the text's own readback
- * mechanisms — an outline or a shadow is a readability intervention, and a
+ * mechanisms - an outline or a shadow is a readability intervention, and a
  * white quote with a black outline on a white sky was previously scored FAIL.
  *
  * Everything here is pure: pixels and colour strings in, a report out. Reading
@@ -52,7 +52,7 @@ export interface RegionStats {
   /** Mean colour of the darkest and brightest 10% of the region. */
   darkHex: string
   lightHex: string
-  /** Mean colour of the whole region — what the old engine measured against. */
+  /** Mean colour of the whole region - what the old engine measured against. */
   meanHex: string
   /** Mean colour of the middle of the region, which is the typical backdrop. */
   medianHex: string
@@ -149,7 +149,11 @@ export function mixHex(a: string, b: string, t: number): string {
  */
 export const colourDistance = differenceCiede2000()
 
-export function areVisuallyDistinct(a: string, b: string, minDelta = 3): boolean {
+export function areVisuallyDistinct(
+  a: string,
+  b: string,
+  minDelta = 3
+): boolean {
   const A = parse(a)
   const B = parse(b)
   if (!A || !B) return true
@@ -356,7 +360,7 @@ function rgbToHex(r: number, g: number, b: number): string {
 /**
  * WCAG's own definition of large text, in pixels at 96dpi: 18pt (24px), or
  * 14pt (18.66px) when bold. Large text is allowed a lower contrast bar, and
- * this product's quotes are almost always large — the previous engine ignored
+ * this product's quotes are almost always large - the previous engine ignored
  * that entirely and filtered recommendations at 4.5:1 regardless, which threw
  * away perfectly good colours on the user's behalf.
  */
@@ -394,7 +398,7 @@ export function ratioToScore(
   if (ratio >= pass) {
     return 70 + ((ratio - pass) / (strong - pass)) * 18
   }
-  // Below the bar, fall away steeply — this is the case that ruins a post.
+  // Below the bar, fall away steeply - this is the case that ruins a post.
   return 70 * Math.pow(Math.max(0, ratio) / pass, 1.5)
 }
 
@@ -405,8 +409,8 @@ export function ratioToScore(
  * how much that edge actually helps.
  *
  * A filled quote is read against its fill. An outlined quote is read against
- * whichever of the fill or the outline contrasts more — that is what an
- * outline is for — so scoring it on fill alone reports FAIL for text that is
+ * whichever of the fill or the outline contrasts more - that is what an
+ * outline is for - so scoring it on fill alone reports FAIL for text that is
  * plainly legible. A shadow works the same way but more weakly, and the
  * weaker it is (large blur, no offset) the less of its colour actually lands.
  */
@@ -481,7 +485,7 @@ export function contrastEdges(
  * or two cannot define readability for a whole block of text.
  *
  * Note it is *not* the endpoint closest to the text's own luminance. Contrast
- * is multiplicative — (max + 0.05) / (min + 0.05) — so the nearer endpoint can
+ * is multiplicative - (max + 0.05) / (min + 0.05) - so the nearer endpoint can
  * give the higher ratio. Mid-grey text sits 0.22 from black but 0.78 from
  * white, yet scores 5.3:1 against black and only 3.9:1 against white. Taking
  * the closer endpoint would have reported the flattering number.
@@ -594,7 +598,7 @@ export function buildReport(input: ReportInput): VisibilityReport {
   }
   if (region.spread > 0.18) {
     notes.push(
-      "The background is busy underneath the text — a flat patch would read better."
+      "The background is busy underneath the text - a flat patch would read better."
     )
   }
   if (regionalSpreadNoteApplies(region)) {
@@ -645,7 +649,9 @@ export interface Recommendation {
   /** The score this would reach, or null when it cannot be predicted. */
   predictedScore: number | null
   /** Present when the action is a colour change, for a one-click apply. */
-  apply?: { kind: "stroke"; color: string; width: number } | { kind: "fill"; color: string }
+  apply?:
+    | { kind: "stroke"; color: string; width: number }
+    | { kind: "fill"; color: string }
 }
 
 /**
@@ -705,7 +711,10 @@ function scoreFor(
   const base = ratioToScore(ratio, fontSize, fontWeight)
   const busyness = Math.min(12, Math.round(region.spread * 40))
   const large = isLargeText(fontSize, fontWeight)
-  return Math.max(0, Math.min(100, Math.round(base - busyness + (large ? 4 : 2))))
+  return Math.max(
+    0,
+    Math.min(100, Math.round(base - busyness + (large ? 4 : 2)))
+  )
 }
 
 // ------------------------------------------------------- auto-colour candidates
@@ -735,7 +744,11 @@ export function rankColours(
   const { region, fill: current, fontSize, fontWeight } = report
 
   const candidates: ColourCandidate[] = []
-  const push = (color: string, label: string, origin: ColourCandidate["origin"]) => {
+  const push = (
+    color: string,
+    label: string,
+    origin: ColourCandidate["origin"]
+  ) => {
     const ratio = worstRatioAgainst(region, relativeLuminance(color))
     candidates.push({
       color,
@@ -754,19 +767,30 @@ export function rankColours(
     // A lighter and a darker variant of each palette colour keeps the image's
     // hue while buying contrast, which is usually the more attractive fix.
     const lightness = perceptualLightness(color)
-    push(mixHex("#FFFFFF", color, Math.min(1, lightness + 0.35)), "Lightened image colour", "adjusted")
-    push(mixHex("#000000", color, Math.max(0, lightness - 0.35)), "Darkened image colour", "adjusted")
+    push(
+      mixHex("#FFFFFF", color, Math.min(1, lightness + 0.35)),
+      "Lightened image colour",
+      "adjusted"
+    )
+    push(
+      mixHex("#000000", color, Math.max(0, lightness - 0.35)),
+      "Darkened image colour",
+      "adjusted"
+    )
   }
 
   push(current, "Current", "current")
 
   // Rank by score, then drop candidates that are perceptually the same colour
-  // as something already kept — three near-identical greys is not a choice.
-  const ranked = candidates.sort((a, b) => b.score - a.score || b.ratio - a.ratio)
+  // as something already kept - three near-identical greys is not a choice.
+  const ranked = candidates.sort(
+    (a, b) => b.score - a.score || b.ratio - a.ratio
+  )
 
   const kept: ColourCandidate[] = []
   for (const candidate of ranked) {
-    if (kept.some((k) => !areVisuallyDistinct(k.color, candidate.color))) continue
+    if (kept.some((k) => !areVisuallyDistinct(k.color, candidate.color)))
+      continue
     kept.push(candidate)
     if (kept.length >= limit) break
   }

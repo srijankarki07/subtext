@@ -5,7 +5,7 @@ import { Rect, type Canvas } from "fabric"
  *
  * The blur is a clone of the artwork carrying a Blur filter, with a clip path
  * matching the draggable handle. A clip path is binary, so a "hard" zone has a
- * visible rectangular seam — which is what the vignette's falloff avoids
+ * visible rectangular seam - which is what the vignette's falloff avoids
  * looking like.
  *
  * Feathering is done by stacking further copies of the same blurred clone,
@@ -15,7 +15,7 @@ import { Rect, type Canvas } from "fabric"
  * outward. Compositing identical colours is order-independent, so the layers
  * need no particular stacking order.
  *
- * The alternative — a custom filter multiplying alpha by a gradient — was
+ * The alternative - a custom filter multiplying alpha by a gradient - was
  * rejected: `BaseFilter.getFragmentSource()` returns an *identity* shader, so a
  * filter implementing only `applyTo2d` is silently skipped whenever WebGL is
  * active. That would have failed quietly in most browsers.
@@ -37,7 +37,12 @@ export const BLUR_MAX_SPREAD = 0.25
  * outward by `spread` each, so the blur dissolves rather than stopping.
  */
 export function blurRingRect(
-  handle: { left: number; top: number; getScaledWidth: () => number; getScaledHeight: () => number },
+  handle: {
+    left: number
+    top: number
+    getScaledWidth: () => number
+    getScaledHeight: () => number
+  },
   ring: number,
   feather: number
 ): { left: number; top: number; width: number; height: number } {
@@ -63,7 +68,7 @@ export function blurRingRect(
 /**
  * Recomputes every blur zone's clip paths from its handle.
  *
- * Called when a handle moves or scales, and after any load — `loadFromJSON`
+ * Called when a handle moves or scales, and after any load - `loadFromJSON`
  * replaces every object, which drops the listeners registered at creation time.
  * Both paths share this so a fix in one cannot miss the other.
  */
@@ -73,8 +78,10 @@ export function applyBlurClips(canvas: Canvas): void {
   objects.forEach((handle: any) => {
     if (!handle.id?.startsWith("blur-handle")) return
 
-    const overlays: any[] = handle.overlayIds ?? (handle.overlayId ? [handle.overlayId] : [])
-    const feather = typeof handle.blurFeather === "number" ? handle.blurFeather : 0
+    const overlays: any[] =
+      handle.overlayIds ?? (handle.overlayId ? [handle.overlayId] : [])
+    const feather =
+      typeof handle.blurFeather === "number" ? handle.blurFeather : 0
 
     overlays.forEach((overlayId) => {
       const overlay = objects.find(

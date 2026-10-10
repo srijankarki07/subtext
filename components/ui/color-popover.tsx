@@ -3,13 +3,17 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 /**
  * Colour picker popover.
  *
  * Replaces the old `ColorPickerDropdown`, which was absolutely positioned
- * inside the panel's scroll container and was therefore clipped — worst of all
+ * inside the panel's scroll container and was therefore clipped - worst of all
  * in the duotone row, where its ~133px parent hid more than half of a fixed
  * 240px panel. It also had no dismissal path at all (`isOpen` in, but no
  * `onClose` and no outside-click or Escape handling), so the only way to close
@@ -129,11 +133,11 @@ function ColorPopover({
   }
 
   /**
-   * `<input type="color">` always reports and stores its value in lowercase —
+   * `<input type="color">` always reports and stores its value in lowercase -
    * setting `#F3F0E8` reads back as `#f3f0e8`. Feeding it the uppercased
    * normalised form made React's controlled-input resync detect a difference on
    * every commit and dispatch a synthetic input event to correct it, which
-   * re-entered `commitDraft`, which set state again — looping until React threw
+   * re-entered `commitDraft`, which set state again - looping until React threw
    * "Maximum update depth exceeded". Matching the browser's own casing is the
    * fix; it is not a cosmetic preference.
    */
@@ -145,7 +149,7 @@ function ColorPopover({
   const triggerElement = trigger ?? (
     <button
       type="button"
-      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <ColorSwatch color={value} />
     </button>

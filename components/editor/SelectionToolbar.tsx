@@ -76,7 +76,7 @@ export default function SelectionToolbar() {
    * the outer container's coordinates, and those differ by the artboard's offset
    * inside the workspace:
    *
-   * 1. Every toolbar sat one offset too low — on top of the text it belonged to.
+   * 1. Every toolbar sat one offset too low - on top of the text it belonged to.
    * 2. A child of the artboard box is clipped by it, and that box is
    *    `overflow-hidden`, so a bar reaching past the artwork's edge was cut off
    *    and unreachable, because a scroll container cannot scroll to a negative
@@ -131,7 +131,7 @@ export default function SelectionToolbar() {
       window.innerWidth - half - 8
     )}px`
 
-    // The object can be taller than the window — a full-bleed composition is —
+    // The object can be taller than the window - a full-bleed composition is -
     // and then neither side has room and the bar would be off-screen entirely.
     // Pinned inside the viewport it overlaps the artwork, which is worse to look
     // at and much better than being invisible.
@@ -147,7 +147,7 @@ export default function SelectionToolbar() {
 
   useEffect(() => {
     if (!canvas) return
-    // While dragging, the toolbar tracks the object — the same events the canvas
+    // While dragging, the toolbar tracks the object - the same events the canvas
     // already listens to, rather than a reason to re-render on every frame.
     const events = [
       "object:moving",
@@ -174,7 +174,7 @@ export default function SelectionToolbar() {
    * Shown while a text layer is being edited, deliberately.
    *
    * It used to hide itself mid-edit on the reasoning that its actions "do not
-   * apply" then — which was wrong, and the wrongness was the point. Double-click
+   * apply" then - which was wrong, and the wrongness was the point. Double-click
    * into a text layer, select one word, and every action here applies to *that
    * range*: `applyTextStyle` routes through Fabric's `setSelectionStyles`
    * whenever an edit selection exists, and `getActiveSelectionStyle` reads the
@@ -209,7 +209,7 @@ export default function SelectionToolbar() {
        * styling work: Fabric keeps its edit caret in a hidden text area, and a
        * plain mousedown moves focus out of it, which ends the edit *before* the
        * button's action runs. `applyTextStyle` then takes its whole-object branch
-       * — measured: selecting a word and pressing Bold changed the entire quote's
+       * - measured: selecting a word and pressing Bold changed the entire quote's
        * weight and left `styles` empty. Preventing the default keeps the caret,
        * and therefore the selection, alive through the click.
        */
@@ -230,7 +230,7 @@ function Actions({
   /*
    * Subscribed to as a change *signal*, not for its value.
    *
-   * The buttons show state — is this text bold, which way is it aligned — read
+   * The buttons show state - is this text bold, which way is it aligned - read
    * from the live object through `getActiveSelectionStyle`. That reads the canvas,
    * which is not reactive, so nothing here would re-render after a style was
    * applied and the bold button would keep showing the state it had before the

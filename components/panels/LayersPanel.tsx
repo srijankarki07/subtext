@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
  * Image", so vignettes, letterbox bars, blur zones and gradients were all
  * indistinguishable; they now carry their own names and icons. And the drop
  * indicator was a `border-t-2` that changed the row's box, shifting the whole
- * list by a pixel mid-drag — it is now an overlay that costs no layout.
+ * list by a pixel mid-drag - it is now an overlay that costs no layout.
  */
 
 type Layer = {
@@ -73,7 +73,7 @@ function describe(obj: any): { label: string; icon: typeof Type } {
 /**
  * A row's preview.
  *
- * The list was a column of identical glyphs — a text row, an image row and a
+ * The list was a column of identical glyphs - a text row, an image row and a
  * vignette row all read the same at a glance, so finding a layer meant reading
  * every label. Each kind now shows what it is: text renders in its own face and
  * colour, an image shows its own pixels, and the effect layers show the thing
@@ -196,8 +196,8 @@ export default function LayersPanel() {
    * Selects a row, optionally adding to what is already selected.
    *
    * A group is a real `ActiveSelection` on the canvas rather than a list of ids
-   * in this component, so everything downstream — the inspector, the floating
-   * toolbar, delete, drag — sees the same selection the canvas does. Holding a
+   * in this component, so everything downstream - the inspector, the floating
+   * toolbar, delete, drag - sees the same selection the canvas does. Holding a
    * private notion of "selected layers" in the panel is how two views of one
    * state drift apart.
    */

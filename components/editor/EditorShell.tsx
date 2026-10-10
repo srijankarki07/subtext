@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils"
  *
  * Regions, largest first: the artboard workspace, then the tool rail, the
  * context panel, and the contextual inspector. The workspace is the only dark
- * surface — everything around it is paper and white card, so the artwork stays
+ * surface - everything around it is paper and white card, so the artwork stays
  * the hero (design doc §2).
  */
 
@@ -87,7 +87,7 @@ export default function EditorShell() {
    *
    * Kept separate from `activeTool` on purpose. The panel used to be hidden by
    * switching the active tool to "select", which conflated "which panel" with
-   * "is a panel showing" — so collapsing the panel also dropped the tool
+   * "is a panel showing" - so collapsing the panel also dropped the tool
    * selection, and the rail highlighted a tool the user had not chosen.
    */
   const [isPanelOpen, setIsPanelOpen] = useState(true)
@@ -111,8 +111,8 @@ export default function EditorShell() {
   /**
    * Brings the stored document back, once, when the canvas exists.
    *
-   * This is a single-document editor, so the alternative — opening empty every
-   * time while the previous document sits in storage — is the worse failure: it
+   * This is a single-document editor, so the alternative - opening empty every
+   * time while the previous document sits in storage - is the worse failure: it
    * looks like the work is gone. The notice below is what makes it legible
    * rather than mysterious.
    *
@@ -123,7 +123,7 @@ export default function EditorShell() {
     if (!canvas) return
     // Once per mount, and the ref is not decoration: development builds run
     // effects twice, and the second restore set the "already announced" flag on
-    // its first pass and then cleared `restoredAt` on its second — so the notice
+    // its first pass and then cleared `restoredAt` on its second - so the notice
     // never appeared in dev while working in production. A ref survives the
     // double invocation; state would not.
     if (hasRestored.current) return
@@ -169,8 +169,8 @@ export default function EditorShell() {
   /**
    * Opens a tool's panel, unconditionally.
    *
-   * `handleToolChange` is a *toggle* — picking the active tool collapses the
-   * panel — which is right for the rail and wrong for a hand-off from the
+   * `handleToolChange` is a *toggle* - picking the active tool collapses the
+   * panel - which is right for the rail and wrong for a hand-off from the
    * inspector: "Open the Cinema panel" while Cinema was already the active tool
    * closed the very panel it promised to open.
    */

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
  * Tooltips.
  *
  * Base UI opens these on hover *and* on keyboard focus, which the previous
- * `hidden group-hover:block` tooltips in the tool rail did not — keyboard users
+ * `hidden group-hover:block` tooltips in the tool rail did not - keyboard users
  * saw nothing.
  *
  * Mount one `<TooltipProvider>` near the root of the editor; individual
@@ -52,7 +52,11 @@ function Tooltip({
     <TooltipPrimitive.Root>
       <TooltipPrimitive.Trigger render={children} />
       <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Positioner side={side} sideOffset={6} className="isolate z-popover">
+        <TooltipPrimitive.Positioner
+          side={side}
+          sideOffset={6}
+          className="z-popover isolate"
+        >
           <TooltipPrimitive.Popup
             data-slot="tooltip"
             className={cn(

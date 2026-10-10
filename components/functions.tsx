@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
  * controls now require an accessible name.
  *
  * `ColorPickerDropdown` used to live here and has been replaced by
- * `ColorPopover` in `components/ui/color-popover` — see that file for why.
+ * `ColorPopover` in `components/ui/color-popover` - see that file for why.
  */
 
 export function AlignmentButton({

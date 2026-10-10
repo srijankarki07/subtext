@@ -16,7 +16,7 @@ const MAX_HISTORY_STEPS = 30
  * previous entry.
  *
  * A range input fires on every step of a drag, and each one used to push a
- * snapshot — so dragging one slider across its range generated dozens of
+ * snapshot - so dragging one slider across its range generated dozens of
  * entries and wiped the thirty-step stack in a couple of seconds. Grouping
  * repeats of the same control is what makes undo behave the way people expect:
  * one drag, one undo.
@@ -45,7 +45,7 @@ let openTransaction: OpenTransaction | null = null
  * This is a safety net, not a deadline, so it is set well clear of the slowest
  * legitimate transaction rather than close to it. Most are synchronous and
  * finish in milliseconds, but importing a photo holds one open across an image
- * decode and a palette extraction, which can take seconds on a large file —
+ * decode and a palette extraction, which can take seconds on a large file -
  * expiring it early would commit a half-finished snapshot and lose the title.
  * Anything still open after this long came from a body that threw.
  */
@@ -118,8 +118,8 @@ export const createHistorySlice: StateCreator<
       // Compared against what is *stored*, not assumed from the fact that
       // something was committed. That is what makes undo-back-to-the-saved-state
       // read as saved: it is a commit, but it is not a change. An empty
-      // artboard never counts, so booting the editor — which commits "Initial
-      // Canvas" — does not mark a brand-new session dirty.
+      // artboard never counts, so booting the editor - which commits "Initial
+      // Canvas" - does not mark a brand-new session dirty.
       isDirty:
         !isDocumentEmpty(objectCount) &&
         state.savedSignature !==
@@ -272,7 +272,7 @@ export const createHistorySlice: StateCreator<
 
         // Restored from `getActiveObjects` rather than `getActiveObject`, so a
         // load that leaves several objects selected reports the same count the
-        // selection events would — otherwise the inspector described one layer
+        // selection events would - otherwise the inspector described one layer
         // while the artboard showed a group.
         const restored = canvas.getActiveObjects()
         const state = get()

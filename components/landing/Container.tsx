@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
  * The page's measure.
  *
  * Nothing on the landing page spans the viewport. Every section sits inside
- * 1248px with a gutter, and the modules inside that are inset again — which is
+ * 1248px with a gutter, and the modules inside that are inset again - which is
  * the whole point of the layout: content confined to a defined container reads
  * as composed, where edge-to-edge bands read as a brochure.
  *

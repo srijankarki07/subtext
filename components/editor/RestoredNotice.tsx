@@ -14,7 +14,7 @@ import { useEditorStore } from "@/store/useEditorStore"
  * user has to dismiss.
  *
  * "Start fresh" is the destructive option and is styled as such, but it is not
- * irreversible by accident — it goes through the same confirmation as New canvas
+ * irreversible by accident - it goes through the same confirmation as New canvas
  * by calling that action rather than clearing storage itself.
  */
 
@@ -41,7 +41,7 @@ export default function RestoredNotice() {
       <p className="min-w-0 flex-1 truncate text-[11px] text-[var(--text-secondary)]">
         Your last session came back{restoredAt ? ` (saved ${restoredAt})` : ""}
         {documentTitle && documentTitle !== "Untitled"
-          ? ` — ${documentTitle}`
+          ? ` - ${documentTitle}`
           : ""}
         .
       </p>

@@ -288,7 +288,7 @@ export default function TextPanel() {
         />
         {/* Size and weight are what people come here for; the two fine-tuning
             controls sit behind a disclosure so they do not push the rest of the
-            panel — outline, shadow — off the bottom of a 324px column. */}
+            panel - outline, shadow - off the bottom of a 324px column. */}
         <Disclosure summary="Spacing">
           <AppleSlider
             label="Letter spacing"

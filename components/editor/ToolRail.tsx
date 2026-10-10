@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
  * The tool spine.
  *
  * DESIGN/ §6: compact, muted when inactive, a soft selected surface when
- * active — the rail frames the artwork rather than competing with it.
+ * active - the rail frames the artwork rather than competing with it.
  *
  * The labels use the shared `Tooltip` primitive, which opens on keyboard focus
  * as well as hover; the previous `group-hover:block` span was invisible to
@@ -28,12 +28,7 @@ import { cn } from "@/lib/utils"
  */
 
 export type EditorTool =
-  | "select"
-  | "text"
-  | "media"
-  | "templates"
-  | "cinema"
-  | "layers"
+  "select" | "text" | "media" | "templates" | "cinema" | "layers"
 
 const TOOLS = [
   { id: "select", label: "Select", icon: MousePointer2, shortcut: "V" },
@@ -66,7 +61,10 @@ export default function ToolRail({
         S
       </div>
 
-      <nav aria-label="Editor tools" className="flex flex-col items-center gap-1">
+      <nav
+        aria-label="Editor tools"
+        className="flex flex-col items-center gap-1"
+      >
         {TOOLS.map(({ id, label, icon: Icon, shortcut }) => {
           const isActive = activeTool === id
 
@@ -83,7 +81,7 @@ export default function ToolRail({
                 }
                 onClick={() => onToolChange(id)}
                 className={cn(
-                  "relative flex size-10 cursor-pointer items-center justify-center rounded-lg outline-none transition-colors",
+                  "relative flex size-10 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                   isActive
                     ? "bg-primary/10 text-primary"

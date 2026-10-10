@@ -4,7 +4,11 @@ import { useState } from "react"
 import { Check, History, Layers } from "lucide-react"
 
 import { IconButton } from "@/components/ui/icon-button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
 
@@ -30,7 +34,7 @@ export default function HistoryDropdown() {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      {/* The trigger must be the native button itself — wrapping it in a div
+      {/* The trigger must be the native button itself - wrapping it in a div
           made Base UI warn that button semantics were being dropped. */}
       <PopoverTrigger
         render={
@@ -79,7 +83,7 @@ export default function HistoryDropdown() {
                   onClick={() => handleSelect(index)}
                   aria-current={isCurrent || undefined}
                   className={cn(
-                    "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left outline-none transition-colors",
+                    "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors outline-none",
                     "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                     isCurrent
                       ? "bg-primary/10"

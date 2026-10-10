@@ -15,7 +15,7 @@ import type {
  *
  * 1. **It must not carry the photo.** Fabric writes an image's pixels into its
  *    JSON as a base64 data URL, so the previous snapshots held a full copy of
- *    the photo each — thirty copies, and the same payload went to
+ *    the photo each - thirty copies, and the same payload went to
  *    `localStorage`. Snapshots now keep only the asset id and re-hydrate the
  *    bytes from IndexedDB when restored.
  *
@@ -83,7 +83,7 @@ export function dehydrateCanvas(canvas: Canvas): unknown {
  *
  * Fabric needs a URL it can load, so the blob is turned into an object URL.
  * Returns the number of images that could not be rehydrated, which means the
- * asset is gone — a cleared browser store, most likely.
+ * asset is gone - a cleared browser store, most likely.
  */
 export async function hydrateDocument(json: unknown): Promise<number> {
   const document = json as { objects?: Array<Record<string, unknown>> }

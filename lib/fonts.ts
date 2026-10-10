@@ -46,7 +46,7 @@ export interface FontDef {
  */
 export const FONTS: FontDef[] = [
   // ============================================================
-  // SERIF — EDITORIAL / LUXURY
+  // SERIF - EDITORIAL / LUXURY
   // ============================================================
 
   {
@@ -190,7 +190,7 @@ export const FONTS: FontDef[] = [
   },
 
   // ============================================================
-  // SANS-SERIF — MODERN / PREMIUM
+  // SANS-SERIF - MODERN / PREMIUM
   // ============================================================
 
   {
@@ -360,7 +360,7 @@ export const FONTS: FontDef[] = [
   },
 
   // ============================================================
-  // DISPLAY — CINEMATIC / POSTER
+  // DISPLAY - CINEMATIC / POSTER
   // ============================================================
 
   {
@@ -533,7 +533,7 @@ export const FONTS: FontDef[] = [
   },
 
   // ============================================================
-  // SCRIPT — SIGNATURE / LUXURY
+  // SCRIPT - SIGNATURE / LUXURY
   // ============================================================
 
   {

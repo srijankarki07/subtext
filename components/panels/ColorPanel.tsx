@@ -17,12 +17,12 @@ import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
 
 /**
- * Visibility — the product's core claim, so it gets the panel rather than a row.
+ * Visibility - the product's core claim, so it gets the panel rather than a row.
  *
  * Three contrast figures are shown rather than one, because the difference
  * between them is the point: the *worst* case is what a reader's eye actually
  * hits, the typical case is what most of the quote sits on, and the area mean is
- * what the engine used to measure — a colour that often exists nowhere in the
+ * what the engine used to measure - a colour that often exists nowhere in the
  * image. Showing all three makes the score auditable instead of a magic number.
  */
 
@@ -147,7 +147,7 @@ export default function ColorPanel() {
         </p>
 
         {/*
-          The score and its verdict stay on screen — they are the point of the
+          The score and its verdict stay on screen - they are the point of the
           panel. Everything that *supports* the number is folded away, because
           three metrics, a list of notes and an arithmetic table is most of a
           324px column, and it was pushing the suggestions and the colour picker

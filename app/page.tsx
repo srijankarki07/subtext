@@ -1,7 +1,6 @@
-import Link from "next/link"
 import { Download, Grid2x2, RotateCcw, Sparkles, Wand2 } from "lucide-react"
+import Link from "next/link"
 
-import { Button } from "@/components/ui/button"
 import Bento from "@/components/landing/Bento"
 import { Container } from "@/components/landing/Container"
 import Gallery from "@/components/landing/Gallery"
@@ -9,11 +8,12 @@ import Hero from "@/components/landing/Hero"
 import LiveContrast from "@/components/landing/LiveContrast"
 import LiveGrade from "@/components/landing/LiveGrade"
 import LiveSnap from "@/components/landing/LiveSnap"
+import { Module, ModuleHeading } from "@/components/landing/Module"
 import Nav from "@/components/landing/Nav"
 import { Reveal, RevealGroup, RevealItem } from "@/components/landing/Reveal"
 import SiteFooter from "@/components/landing/SiteFooter"
 import TemplateShowcase from "@/components/landing/TemplateShowcase"
-import { Module, ModuleHeading } from "@/components/landing/Module"
+import { Button } from "@/components/ui/button"
 import { GALLERY } from "@/lib/gallery.generated"
 
 /**
@@ -24,10 +24,12 @@ import { GALLERY } from "@/lib/gallery.generated"
  * composed objects instead of one continuous poster.
  *
  * The rule it holds itself to is that nothing here claims a capability the
- * editor does not have. The hero image and the gallery are real exports; the
- * readability panel is the real engine reading a canvas painted on this page;
- * the snapping demo is the real solver. `scratch/build-gallery.mjs` regenerates
- * the images from the app, so the page cannot drift away from the product.
+ * editor does not have. The hero is a live render rather than a recording of
+ * one - its grade is the editor's own colour matrix, its grid is the editor's
+ * own guide geometry, and its comparison is the editor's own clip-path
+ * construction. The gallery images are real exports, and
+ * `scratch/build-gallery.mjs` regenerates them from the app, so the page cannot
+ * drift away from the product.
  */
 
 const HOW_IT_WORKS = [
@@ -54,16 +56,13 @@ const HOW_IT_WORKS = [
 ]
 
 export default function LandingPage() {
-  const hero = GALLERY[0]
-  const rest = GALLERY.slice(1)
-
   return (
     <>
       <span id="top" />
       <Nav />
 
-      <main className="flex flex-col gap-6 pb-6">
-        <Hero image={hero} count={GALLERY.length} />
+      <main className="flex flex-col gap-26 pb-6 max-md:gap-16">
+        <Hero />
 
         {/* ----------------------------------------- the live engine, up top */}
         <Container>
@@ -77,7 +76,7 @@ export default function LandingPage() {
                 tone="dark"
                 eyebrow="Running live on this page"
                 title="It measures the part of the background your text actually fails on."
-                body="A checker that averages the area behind the words will happily pass a quote crossing a bright cloud. This panel is not an illustration of that idea — it is the engine from the editor, reading the pixels behind the text as the light drifts across them."
+                body="A checker that averages the area behind the words will happily pass a quote crossing a bright cloud. This panel is not an illustration of that idea - it is the engine from the editor, reading the pixels behind the text as the light drifts across them."
               />
               <div className="mt-10">
                 <LiveContrast />
@@ -100,7 +99,7 @@ export default function LandingPage() {
                 <RevealItem key={step.title}>
                   {/*
                     A rule between the steps rather than a box around each. Four
-                    columns of grey text with nothing between them run together —
+                    columns of grey text with nothing between them run together -
                     the eye cannot tell where one step ends, which is the thing
                     that made this section hard to read. The first has no rule, so
                     the row does not start with a stray line.
@@ -135,11 +134,7 @@ export default function LandingPage() {
 
         {/* ------------------------------------------------- what is in it */}
         <Container>
-          <Module
-            tone="paper"
-            id="features"
-            className="px-0 py-0 sm:px-0 sm:py-0"
-          >
+          <Module tone="paper" id="features" className="px-0">
             <ModuleHeading
               eyebrow="What is in it"
               title="Every part earns its place."
@@ -159,7 +154,7 @@ export default function LandingPage() {
                 tone="dark"
                 eyebrow="Templates"
                 title="A template is a whole composition."
-                body="Type, grade, grain and framing chosen together. Applying one is a starting point you then move — not a font you pick."
+                body="Type, grade, grain and framing chosen together. Applying one is a starting point you then move - not a font you pick."
               />
               <div className="mt-8">
                 <TemplateShowcase items={GALLERY} />
@@ -189,7 +184,7 @@ export default function LandingPage() {
                   tone="dark"
                   eyebrow="Grain and grade"
                   title="Effects that reach the file."
-                  body="Film grain used to live in an overlay only the screen could see, so every export came out clean. Both effects here run from the editor's own code — the grain tile the export composites, and the same colour matrix Fabric applies."
+                  body="Film grain used to live in an overlay only the screen could see, so every export came out clean. Both effects here run from the editor's own code - the grain tile the export composites, and the same colour matrix Fabric applies."
                 />
                 <div className="mt-8">
                   <LiveGrade item={GALLERY[5] ?? GALLERY[1]} />
@@ -200,11 +195,11 @@ export default function LandingPage() {
                 {[
                   {
                     title: "The grain is a tile, not a filter",
-                    body: "A generated texture at a fixed amplitude, blended the same way on screen and on export. That is why 28 on the slider means the same thing in the file as it does on the artboard.",
+                    body: "A generated texture at a fixed amplitude, blended the same way on screen and on export. That is why the grain you can see on the demo is the grain the file contains, at the same 28.",
                   },
                   {
                     title: "The grade is one matrix",
-                    body: "Duotone maps luminance between two colours with a 4×5 transform. The panel above hands that matrix straight to the browser, which is the same transform the canvas applies.",
+                    body: "Duotone maps luminance between two colours with a 4×5 transform. The demo hands that matrix straight to the browser, which is the same transform the canvas applies.",
                   },
                   {
                     title: "Everything is undoable",
@@ -237,7 +232,15 @@ export default function LandingPage() {
               body="Every image below came out of the editor: that template applied to that photograph at that canvas size, captured from the export the Download button renders. Nothing here is a screenshot of a design file."
             />
             <div className="mt-9">
-              <Gallery items={rest} />
+              {/*
+                All of `GALLERY`, not `slice(1)`. The hero used to render
+                `GALLERY[0]` itself, so skipping it here was right; now that the
+                hero shows a live render instead, the first image has to come
+                from the gallery or it leaves the page entirely - and
+                `scratch/verify-landing.mjs` counts distinct gallery files, so
+                the page would come up one short.
+              */}
+              <Gallery items={GALLERY} />
             </div>
           </Module>
         </Container>
@@ -250,7 +253,7 @@ export default function LandingPage() {
                 tone="dark"
                 eyebrow="Why it exists"
                 title="Text over a photo is the most common way to make something unreadable."
-                body="The words are the point, and they are usually the last thing anyone checks. Subtext puts the measurement in the loop, so the decision about colour and contrast is made while you can still change it — instead of after somebody cannot read your post."
+                body="The words are the point, and they are usually the last thing anyone checks. Subtext puts the measurement in the loop, so the decision about colour and contrast is made while you can still change it - instead of after somebody cannot read your post."
               />
 
               <div className="flex flex-col gap-4">
@@ -263,7 +266,7 @@ export default function LandingPage() {
                   {
                     icon: Sparkles,
                     title: "Outline and shadow count",
-                    body: "They are readability mechanisms, and the score credits them — but only as far as they actually hold up the text.",
+                    body: "They are readability mechanisms, and the score credits them - but only as far as they actually hold up the text.",
                   },
                   {
                     icon: Download,

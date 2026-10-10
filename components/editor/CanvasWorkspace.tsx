@@ -35,7 +35,7 @@ const DynamicCanvas = dynamic(() => import("@/components/editor/Canvas"), {
  * space to the store, which re-fits the artboard whenever the view is in fit
  * mode. Previously the fit scale was computed once when the aspect ratio
  * changed and never revisited, so opening the inspector, toggling a panel or
- * resizing the window cropped or off-centred the artboard with no way back —
+ * resizing the window cropped or off-centred the artboard with no way back -
  * and the zoom readout was a hardcoded "100%".
  *
  * The scroll container is `overflow-auto` rather than `overflow-hidden`, so
@@ -66,7 +66,7 @@ function ZoomControls() {
       </button>
 
       {/* The percentage doubles as a reset-to-fit control. Its accessible name
-          is deliberately state-independent — a label that changes with the
+          is deliberately state-independent - a label that changes with the
           value is announced as a different control each time it changes. */}
       <button
         type="button"
@@ -123,7 +123,7 @@ export default function CanvasWorkspace() {
     const measure = () => {
       // clientWidth/Height include padding and exclude the scrollbar, so the
       // padding has to come off to get the space the artboard can actually
-      // occupy — otherwise a fitted artboard is always a little too big and
+      // occupy - otherwise a fitted artboard is always a little too big and
       // the workspace shows a scrollbar at 100% fit.
       const styles = getComputedStyle(el)
       const width =

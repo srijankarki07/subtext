@@ -14,7 +14,7 @@ import {
  * Snapping, demonstrated with the solver that does it.
  *
  * A card drifts across a miniature artboard and, as it approaches the centre,
- * is pulled onto it and the guide line appears — the same
+ * is pulled onto it and the guide line appears - the same
  * `artboardGuides`/`solveSnap` pair the editor calls while you drag. The drift is
  * animated by this component, but the *snap* is not: the offset applied to the
  * card's position is whatever the solver returns, so what is on screen is the
@@ -42,7 +42,7 @@ export default function LiveSnap() {
 
   useEffect(() => {
     if (reduced) {
-      // One frame, mid-drift, with the snap applied — the point still lands.
+      // One frame, mid-drift, with the snap applied - the point still lands.
       const outcome = solveSnap(
         boxOf({
           left: 96,
@@ -159,7 +159,7 @@ export default function LiveSnap() {
         for it to mean.
 
         It used to print the card's *centre* offset from the artboard centre and
-        call that "centred" — so a snap that caught the card's right edge, which
+        call that "centred" - so a snap that caught the card's right edge, which
         is correct behaviour, showed as -50 and read as a bug. The number here is
         the correction the solver applied this frame, and the label says which
         line matched.
@@ -169,7 +169,7 @@ export default function LiveSnap() {
           ? `pulled ${applied > 0 ? "+" : ""}${applied.toFixed(1)}px onto the ${
               guides[0]?.kind === "edge" ? "frame edge" : "centre line"
             }`
-          : "free — outside the 6px pull"}
+          : "free - outside the 6px pull"}
       </p>
     </div>
   )
