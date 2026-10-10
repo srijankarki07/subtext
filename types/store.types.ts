@@ -301,6 +301,14 @@ export interface CoreSlice {
   /** Which composition guides are drawn. Snapping is independent of this. */
   guides: GuidesState
   /**
+   * Whether the before/after split is showing.
+   *
+   * In the store rather than in the shell because the overlay lives down in the
+   * canvas and the controls that toggle it live up in the chrome; putting it
+   * here is what lets both reach it, and lets the command palette offer it.
+   */
+  isComparing: boolean
+  /**
    * The guides that fired under the object being dragged right now.
    *
    * Transient: set while the pointer is down and cleared on release. It is not
@@ -313,6 +321,7 @@ export interface CoreSlice {
   /** Records a whole selection; the first object becomes `activeObject`. */
   setSelection: (objects: FabricObject[]) => void
   toggleGuide: (key: keyof GuidesState) => void
+  setComparing: (comparing: boolean) => void
   setActiveGuides: (guides: SnapLine[]) => void
   setDocumentTitle: (title: string) => void
   /** Dismisses the restored-session notice without touching the document. */

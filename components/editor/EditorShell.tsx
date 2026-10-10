@@ -9,6 +9,7 @@ import { useTheme } from "@/components/theme-provider"
 
 import Autosave from "@/components/editor/Autosave"
 import CommandPalette from "@/components/editor/CommandPalette"
+import FocusBar from "@/components/editor/FocusBar"
 import Inspector, { InspectorPanelContent } from "@/components/editor/Inspector"
 import RestoredNotice from "@/components/editor/RestoredNotice"
 import TopBar from "@/components/editor/TopBar"
@@ -92,6 +93,7 @@ export default function EditorShell() {
   const [isPanelOpen, setIsPanelOpen] = useState(true)
   const [isInspectorOpen, setIsInspectorOpen] = useState(false)
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
+  const [isFocusMode, setIsFocusMode] = useState(false)
   const [userToggledInspector, setUserToggledInspector] = useState(false)
 
   // Auto-open the inspector on the first selection, but never fight the user
@@ -193,6 +195,37 @@ export default function EditorShell() {
     setIsPanelOpen(true)
   }
 
+  /**
+   * `F` for focus mode.
+   *
+   * Ignored while a text layer is being edited and while a field has focus, for
+   * the same reason the tool keys are: typing an "f" should type an "f".
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "f") return
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return
+
+      const target = event.target
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
+        return
+      }
+      const active = useEditorStore.getState().activeObject as {
+        isEditing?: boolean
+      } | null
+      if (active?.isEditing) return
+
+      event.preventDefault()
+      setIsFocusMode((on) => !on)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
+
   const paletteHandlers = useMemo(
     () => ({
       onOpenTool: handleOpenTool,
@@ -202,6 +235,7 @@ export default function EditorShell() {
       },
       onToggleTheme: () => setTheme(isDark ? "light" : "dark"),
       onExport: () => setIsExportModalOpen(true),
+      onToggleFocusMode: () => setIsFocusMode((on) => !on),
     }),
     [isDark, setTheme, setIsExportModalOpen]
   )
@@ -261,13 +295,15 @@ export default function EditorShell() {
         {/* Renders nothing; it writes the document to storage as it changes. */}
         <Autosave />
 
-        <ToolRail
-          activeTool={activeTool}
-          isPanelOpen={isPanelOpen}
-          onToolChange={handleToolChange}
-        />
+        {!isFocusMode && (
+          <ToolRail
+            activeTool={activeTool}
+            isPanelOpen={isPanelOpen}
+            onToolChange={handleToolChange}
+          />
+        )}
 
-        {isPanelOpen && activeTool !== "select" && (
+        {!isFocusMode && isPanelOpen && activeTool !== "select" && (
           <ContextPanel
             activeTool={activeTool}
             onClose={() => setIsPanelOpen(false)}
@@ -275,15 +311,18 @@ export default function EditorShell() {
         )}
 
         <main className="relative flex min-w-0 flex-1 flex-col">
-          <TopBar
-            isInspectorOpen={isInspectorOpen}
-            onToggleInspector={handleToggleInspector}
-          />
-          <RestoredNotice />
+          {!isFocusMode && (
+            <TopBar
+              isInspectorOpen={isInspectorOpen}
+              onToggleInspector={handleToggleInspector}
+            />
+          )}
+          {!isFocusMode && <RestoredNotice />}
           <CanvasWorkspace />
+          {isFocusMode && <FocusBar onExit={() => setIsFocusMode(false)} />}
         </main>
 
-        {isInspectorOpen && (
+        {isInspectorOpen && !isFocusMode && (
           <Inspector
             onClose={() => setIsInspectorOpen(false)}
             onOpenTool={handleOpenTool}
