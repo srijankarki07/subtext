@@ -345,6 +345,15 @@ export default function Canvas() {
         return
       }
 
+      // Group / ungroup, the way every editor binds them.
+      if (isCmdOrCtrl && key === "g") {
+        e.preventDefault()
+        const store = useEditorStore.getState()
+        if (e.shiftKey) store.ungroupSelection()
+        else store.groupSelection()
+        return
+      }
+
       // 4. QUICK SAVE TO STORAGE: Ctrl+S / Cmd+S
       if (isCmdOrCtrl && (key === "s" || code === "KeyS")) {
         e.preventDefault()

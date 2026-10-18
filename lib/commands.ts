@@ -231,6 +231,23 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       run: () => store().distributeSelection(axis),
     })),
 
+    {
+      id: "group-selection",
+      title: "Group selection",
+      group: "Arrange",
+      shortcut: "$mod G",
+      keywords: "combine layers together",
+      run: () => store().groupSelection(),
+    },
+    {
+      id: "ungroup-selection",
+      title: "Ungroup",
+      group: "Arrange",
+      shortcut: "$mod ⇧ G",
+      keywords: "split separate dissolve group",
+      run: () => store().ungroupSelection(),
+    },
+
     // --- canvas ------------------------------------------------------------
     ...RATIOS.map((ratio) => {
       const preset = {
