@@ -18,7 +18,7 @@ import { applySelectionStyle } from "@/lib/selectionStyle"
 import { importImage, pickImageFile, replaceImage } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
-import { Canvas, IText, Shadow } from "fabric"
+import { ActiveSelection, Canvas, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
 /**
@@ -45,9 +45,12 @@ function persistToSlot(
   } = get()
   if (!canvas) return { ok: false }
 
-  // Deselected for the length of the write: Fabric would otherwise serialise the
-  // selection handles into the document.
-  const activeObj = canvas.getActiveObject()
+  // Deselected for the length of the write so the children are serialised in
+  // absolute coordinates rather than the selection's own space.
+  //
+  // The members are captured first, because Fabric empties an `ActiveSelection`
+  // when it releases it - putting the same instance back would select nothing.
+  const selected = canvas.getActiveObjects()
   canvas.discardActiveObject()
 
   try {
@@ -77,9 +80,24 @@ function persistToSlot(
     console.error(`Failed to write ${key}:`, error)
     return { ok: false }
   } finally {
-    if (activeObj) {
-      canvas.setActiveObject(activeObj)
+    if (selected.length === 1) {
+      canvas.setActiveObject(selected[0])
+    } else if (selected.length > 1) {
+      canvas.setActiveObject(new ActiveSelection(selected, { canvas } as never))
+    }
+    if (selected.length > 0) {
       canvas.requestRenderAll()
+      /*
+       * Put the selection back in the store as well as on the canvas.
+       *
+       * The discard above fires `selection:cleared`, and the canvas's own
+       * handler empties `selectedObjects`. Restoring only the canvas left the
+       * floating toolbar and the inspector believing nothing was selected, so
+       * a selection silently vanished a couple of seconds after any edit -
+       * exactly when autosave ran. It made align-then-distribute impossible:
+       * the first action cleared the toolbar the second one needed.
+       */
+      get().setSelection(canvas.getActiveObjects())
     }
   }
 }

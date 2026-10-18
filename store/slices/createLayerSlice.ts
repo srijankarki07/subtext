@@ -1,5 +1,76 @@
-import { EditorStore, LayerSlice } from "@/types/store.types"
+import { ActiveSelection, type Canvas, type FabricObject } from "fabric"
 import { StateCreator } from "zustand"
+
+import {
+  alignBoxes,
+  distributeBoxes,
+  type AlignMode,
+  type ArrangeBox,
+  type DistributeAxis,
+  type Move,
+} from "@/lib/arrange"
+import { EditorStore, LayerSlice } from "@/types/store.types"
+
+/**
+ * Layers that an alignment may move.
+ *
+ * Effect layers - blur overlays, vignette and gradient bands - are positioned
+ * relative to the photo and are rebuilt from it, so moving one on its own would
+ * break the effect it belongs to. Editor-only objects are handles, not
+ * artwork. Locked layers are excluded for the same reason they cannot be
+ * dragged.
+ */
+function isArrangeable(object: FabricObject): boolean {
+  const flags = object as FabricObject & {
+    locked?: boolean
+    isEffect?: boolean
+    editorOnly?: boolean
+  }
+  return !flags.locked && !flags.isEffect && !flags.editorOnly
+}
+
+/**
+ * Runs a solver over the selected layers in absolute coordinates.
+ *
+ * An `ActiveSelection` keeps its children in the group's own coordinate space,
+ * so a delta measured in scene pixels is not safe to add to `left`/`top` while
+ * one is active. Dropping the selection first restores each child to absolute
+ * coordinates; it is rebuilt afterwards so the user keeps hold of what they had
+ * selected.
+ */
+function arrangeSelection(
+  canvas: Canvas,
+  targets: FabricObject[],
+  solve: (boxes: ArrangeBox[]) => Move[]
+): void {
+  const active = canvas.getActiveObject()
+  const wasMultiple = active?.type === "activeselection"
+  if (wasMultiple) canvas.discardActiveObject()
+
+  const boxes = targets.map((object) => {
+    const rect = object.getBoundingRect()
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    }
+  })
+
+  const moves = solve(boxes)
+  targets.forEach((object, index) => {
+    object.set({
+      left: (object.left ?? 0) + moves[index].dx,
+      top: (object.top ?? 0) + moves[index].dy,
+    })
+    object.setCoords()
+  })
+
+  if (wasMultiple) {
+    canvas.setActiveObject(new ActiveSelection(targets, { canvas } as never))
+  }
+  canvas.requestRenderAll()
+}
 
 export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
   set,
@@ -195,6 +266,34 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
     activeObject.setCoords() // Update bounding box for future mouse interactions
     canvas.requestRenderAll()
     saveHistoryState()
+  },
+
+  alignSelection: (alignment: AlignMode) => {
+    const { canvas, selectedObjects, saveHistoryState, setSelection } = get()
+    if (!canvas) return
+
+    const targets = selectedObjects.filter(isArrangeable)
+    if (targets.length < 2) return
+
+    arrangeSelection(canvas, targets, (boxes) => alignBoxes(boxes, alignment))
+    setSelection(targets)
+    saveHistoryState("Align to selection")
+  },
+
+  distributeSelection: (axis: DistributeAxis) => {
+    const { canvas, selectedObjects, saveHistoryState, setSelection } = get()
+    if (!canvas) return
+
+    const targets = selectedObjects.filter(isArrangeable)
+    if (targets.length < 3) return
+
+    arrangeSelection(canvas, targets, (boxes) => distributeBoxes(boxes, axis))
+    setSelection(targets)
+    saveHistoryState(
+      axis === "horizontal"
+        ? "Distribute horizontally"
+        : "Distribute vertically"
+    )
   },
 
   fitImageToCanvas: (mode) => {
