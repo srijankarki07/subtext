@@ -359,6 +359,29 @@ export default function Canvas() {
         return
       }
 
+      // Nudge the selection: 1px, or 10px with Shift.
+      //
+      // Unmodified arrows only, so ⌘/Ctrl and Alt combinations stay free. The
+      // guards at the top of this handler already returned while a text layer
+      // is being edited or a field has focus, which is what keeps the caret's
+      // own arrow keys intact.
+      if (!isCmdOrCtrl && !e.altKey && activeObj) {
+        const step = e.shiftKey ? 10 : 1
+        const nudge: Record<string, [number, number]> = {
+          ArrowLeft: [-step, 0],
+          ArrowRight: [step, 0],
+          ArrowUp: [0, -step],
+          ArrowDown: [0, step],
+        }
+        const move = nudge[e.key]
+
+        if (move) {
+          e.preventDefault()
+          useEditorStore.getState().nudgeSelection(move[0], move[1])
+          return
+        }
+      }
+
       // 6. DESELECT / CANCEL / CLOSE: Escape
       if (e.key === "Escape") {
         const store = useEditorStore.getState()

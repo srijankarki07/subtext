@@ -112,6 +112,13 @@ export interface LayerSlice {
    * Three or more; with two there is no interior to distribute.
    */
   distributeSelection: (axis: DistributeAxis) => void
+  /**
+   * Moves the selection by a small delta, for arrow-key nudging.
+   *
+   * Repeated calls coalesce into one history entry, so holding an arrow key is
+   * one undo step rather than fifty.
+   */
+  nudgeSelection: (dx: number, dy: number) => void
   fitImageToCanvas: (mode: "fit" | "fill") => void
 }
 

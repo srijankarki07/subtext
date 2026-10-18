@@ -296,6 +296,36 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
     )
   },
 
+  nudgeSelection: (dx, dy) => {
+    const { canvas, saveHistoryState } = get()
+    if (!canvas) return
+
+    // The canvas's active object, not the store's `activeObject`: for a group
+    // the former is the ActiveSelection, and moving it moves every member,
+    // while the latter is only the first member.
+    const active = canvas.getActiveObject()
+    if (!active) return
+
+    // A locked layer does not move. Refuse rather than move a group that
+    // happens to contain one and silently drag the locked layer with it.
+    const locked = canvas
+      .getActiveObjects()
+      .some((object) => (object as { locked?: boolean }).locked)
+    if (locked) return
+
+    active.set({
+      left: (active.left ?? 0) + dx,
+      top: (active.top ?? 0) + dy,
+    })
+    active.setCoords()
+    canvas.requestRenderAll()
+
+    // One history entry per run of presses, not per press: a held arrow key
+    // fires many events a second, and each becoming its own undo step would
+    // make undo useless.
+    saveHistoryState("Nudge", { coalesceKey: "nudge" })
+  },
+
   fitImageToCanvas: (mode) => {
     const { canvas, activeObject, saveHistoryState } = get()
     if (
