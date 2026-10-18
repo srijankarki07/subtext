@@ -191,6 +191,38 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       run: () => store().sendToBack(),
     },
 
+    // Alignment and distribution act on the selection's own bounds, so they
+    // need more than one layer; the store actions enforce the minimum and
+    // no-op otherwise, which is why these can always be offered.
+    ...(
+      [
+        ["left", "Align left"],
+        ["center-h", "Align horizontal centres"],
+        ["right", "Align right"],
+        ["top", "Align top"],
+        ["center-v", "Align vertical centres"],
+        ["bottom", "Align bottom"],
+      ] as const
+    ).map(([alignment, title]) => ({
+      id: `align-${alignment}`,
+      title,
+      group: "Arrange",
+      keywords: "selection layers edges group",
+      run: () => store().alignSelection(alignment),
+    })),
+    ...(
+      [
+        ["horizontal", "Distribute horizontally"],
+        ["vertical", "Distribute vertically"],
+      ] as const
+    ).map(([axis, title]) => ({
+      id: `distribute-${axis}`,
+      title,
+      group: "Arrange",
+      keywords: "spacing gaps even selection layers group",
+      run: () => store().distributeSelection(axis),
+    })),
+
     // --- canvas ------------------------------------------------------------
     ...RATIOS.map((ratio) => {
       const preset = {

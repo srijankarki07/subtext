@@ -9,8 +9,16 @@ import {
 } from "react"
 import {
   AlignCenter,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalSpaceBetween,
   AlignLeft,
   AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  AlignVerticalSpaceBetween,
   Bold,
   Copy,
   Italic,
@@ -49,6 +57,47 @@ import { cn } from "@/lib/utils"
  */
 
 const GAP = 12
+
+/**
+ * Alignment for a group, against the group's own bounds.
+ *
+ * Six controls, in the order the eye reads them: horizontal edges and centre,
+ * then vertical. They only appear for two or more layers, because a lone layer
+ * has nothing to align with - that case is the Image panel's align-to-artboard.
+ */
+const ALIGN_ACTIONS = [
+  { mode: "left", label: "Align left", Icon: AlignHorizontalJustifyStart },
+  {
+    mode: "center-h",
+    label: "Align horizontal centres",
+    Icon: AlignHorizontalJustifyCenter,
+  },
+  { mode: "right", label: "Align right", Icon: AlignHorizontalJustifyEnd },
+  { mode: "top", label: "Align top", Icon: AlignVerticalJustifyStart },
+  {
+    mode: "center-v",
+    label: "Align vertical centres",
+    Icon: AlignVerticalJustifyCenter,
+  },
+  { mode: "bottom", label: "Align bottom", Icon: AlignVerticalJustifyEnd },
+] as const
+
+/**
+ * Equal gaps between the outer two layers, which stay put. Three or more, since
+ * two already define the span.
+ */
+const DISTRIBUTE_ACTIONS = [
+  {
+    axis: "horizontal",
+    label: "Distribute horizontally",
+    Icon: AlignHorizontalSpaceBetween,
+  },
+  {
+    axis: "vertical",
+    label: "Distribute vertically",
+    Icon: AlignVerticalSpaceBetween,
+  },
+] as const
 
 interface Placement {
   /** Centre of the object's box, in the container's coordinates. */
@@ -331,6 +380,34 @@ function Actions({
       >
         <RefreshCw size={14} />
       </BarButton>
+    )
+  }
+
+  if (summary.count > 1) {
+    items.push(
+      ...ALIGN_ACTIONS.map(({ mode, label, Icon }) => (
+        <BarButton
+          key={mode}
+          label={label}
+          onClick={() => store.alignSelection(mode)}
+        >
+          <Icon size={14} />
+        </BarButton>
+      )),
+      ...(summary.count > 2
+        ? [
+            <Divider key="align-divider" />,
+            ...DISTRIBUTE_ACTIONS.map(({ axis, label, Icon }) => (
+              <BarButton
+                key={axis}
+                label={label}
+                onClick={() => store.distributeSelection(axis)}
+              >
+                <Icon size={14} />
+              </BarButton>
+            )),
+          ]
+        : [])
     )
   }
 

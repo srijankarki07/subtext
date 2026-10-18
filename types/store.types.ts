@@ -1,5 +1,6 @@
 import { Canvas, FabricObject } from "fabric"
 
+import type { AlignMode, DistributeAxis } from "@/lib/arrange"
 import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
 import type { VisibilityReport } from "@/lib/visibility"
@@ -98,6 +99,19 @@ export interface LayerSlice {
   alignObjectToCanvas: (
     alignment: "left" | "center-h" | "right" | "top" | "center-v" | "bottom"
   ) => void
+  /**
+   * Aligns the selected layers to the selection's own bounds.
+   *
+   * Two or more layers; a single layer has no selection to align against - that
+   * case is `alignObjectToCanvas`, which aligns to the artboard.
+   */
+  alignSelection: (alignment: AlignMode) => void
+  /**
+   * Spaces the selected layers evenly between the outermost two.
+   *
+   * Three or more; with two there is no interior to distribute.
+   */
+  distributeSelection: (axis: DistributeAxis) => void
   fitImageToCanvas: (mode: "fit" | "fill") => void
 }
 
