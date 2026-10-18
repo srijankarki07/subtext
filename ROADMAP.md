@@ -126,7 +126,6 @@ Small, unglamorous, and everything later lands better on top of it.
 | Align and distribute to selection | Only align-to-canvas exists today. Figma-grade precision starts here                                        | S    |
 | Grouping and ungrouping           | Canva's whole model assumes it. Every multi-object action wants it first                                     | M    |
 | Arrow-key nudging                 | 1px, 10px with shift. Absence of it is felt on every single composition                                     | S    |
-| Fix the name                      | `README.md` still says Cinemate throughout, including its title                                             | S    |
 
 **Parallel track, not blocking:** the three cross-cutting passes already named in
 `BRANCHES.md` — the editor accessibility audit (the landing page was audited, the
