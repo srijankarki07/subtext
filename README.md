@@ -1,6 +1,6 @@
-# Cinemate
+# Subtext
 
-Cinematic design, zero friction. Cinemate is a browser-based editor for making
+Cinematic design, zero friction. Subtext is a browser-based editor for making
 posters, thumbnails and social posts out of a photograph: import an image, grade
 it, and lay type over it that stays readable against whatever is behind it.
 

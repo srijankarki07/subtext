@@ -1,6 +1,6 @@
 # Contributing
 
-Notes for working on Cinemate. Short version: run `pnpm dev`, keep `lib/` free of
+Notes for working on Subtext. Short version: run `pnpm dev`, keep `lib/` free of
 React, format before you push, and write commit subjects that say what changed.
 
 ## Setup
