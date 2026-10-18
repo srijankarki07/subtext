@@ -13,7 +13,7 @@ import FocusBar from "@/components/editor/FocusBar"
 import Inspector, { InspectorPanelContent } from "@/components/editor/Inspector"
 import RestoredNotice from "@/components/editor/RestoredNotice"
 import TopBar from "@/components/editor/TopBar"
-import ToolRail, { type EditorTool } from "@/components/editor/ToolRail"
+import ToolRail from "@/components/editor/ToolRail"
 import ContextMenu from "@/components/editor/contextMenu"
 import ExportModal from "@/components/modals/ExportModal"
 import GlobalDialogs from "@/components/modals/GlobalDialogs"
@@ -22,6 +22,7 @@ import TemplatesPanel from "@/components/panels/TemplatesPanel"
 import { useEditorStore } from "@/store/useEditorStore"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import type { MobileTab } from "@/types/store.types"
+import { TOOL_META, TOOL_ORDER, type EditorTool } from "@/lib/tools"
 import { cn } from "@/lib/utils"
 
 /**
@@ -67,6 +68,18 @@ function MobileTabButton({
     </button>
   )
 }
+
+/**
+ * The tool shortcuts, derived from the registry.
+ *
+ * Written by hand, this map and the shortcuts the rail advertises in its
+ * tooltips could disagree, and the failure was silent: the tooltip promised a
+ * key that nothing handled. Deriving it from the same metadata the tooltip
+ * reads makes that impossible.
+ */
+const TOOL_KEYS: Record<string, EditorTool> = Object.fromEntries(
+  TOOL_ORDER.map((id) => [TOOL_META[id].shortcut.toLowerCase(), id])
+)
 
 export default function EditorShell() {
   const activeObject = useEditorStore((s) => s.activeObject)
@@ -161,12 +174,6 @@ export default function EditorShell() {
   }
 
   /**
-   * Tool selection doubles as the panel toggle, the way it does in Figma and
-   * Canva: picking the tool that is already active collapses the panel, and
-   * picking any other tool opens it. "Select" is a mode rather than a panel,
-   * so it always collapses.
-   */
-  /**
    * Opens a tool's panel, unconditionally.
    *
    * `handleToolChange` is a *toggle* - picking the active tool collapses the
@@ -176,12 +183,22 @@ export default function EditorShell() {
    */
   const handleOpenTool = (tool: EditorTool) => {
     setActiveTool(tool)
-    setIsPanelOpen(tool !== "select")
+    setIsPanelOpen(TOOL_META[tool].hasPanel)
   }
 
+  /**
+   * Tool selection doubles as the panel toggle, the way it does in Figma and
+   * Canva: picking the tool that is already active collapses the panel, and
+   * picking any other tool opens it.
+   *
+   * A tool with no panel always collapses, and that is not the toggle below:
+   * toggling would leave `isPanelOpen` true with a panel-less tool active. Two
+   * other guards also check for a panel, so it is invisible today - but it
+   * breaks the moment either is relaxed.
+   */
   const handleToolChange = (tool: EditorTool) => {
-    if (tool === "select") {
-      setActiveTool("select")
+    if (!TOOL_META[tool].hasPanel) {
+      setActiveTool(tool)
       setIsPanelOpen(false)
       return
     }
@@ -242,15 +259,6 @@ export default function EditorShell() {
 
   // The tool rail advertises these keys in its tooltips, so they need to work.
   useEffect(() => {
-    const TOOL_KEYS: Record<string, EditorTool> = {
-      v: "select",
-      t: "text",
-      m: "media",
-      p: "templates",
-      c: "cinema",
-      l: "layers",
-    }
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return
 
@@ -303,7 +311,7 @@ export default function EditorShell() {
           />
         )}
 
-        {!isFocusMode && isPanelOpen && activeTool !== "select" && (
+        {!isFocusMode && isPanelOpen && TOOL_META[activeTool].hasPanel && (
           <ContextPanel
             activeTool={activeTool}
             onClose={() => setIsPanelOpen(false)}

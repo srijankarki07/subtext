@@ -1,6 +1,11 @@
 import { TEMPLATES } from "@/lib/templates"
 import { useEditorStore } from "@/store/useEditorStore"
-import type { EditorTool } from "@/components/editor/ToolRail"
+import {
+  PANEL_TOOLS,
+  TOOL_META,
+  openToolLabel,
+  type EditorTool,
+} from "@/lib/tools"
 
 /**
  * Everything the editor can do, as data.
@@ -276,20 +281,15 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       keywords: "appearance colour scheme dark light",
       run: () => handlers.onToggleTheme(),
     },
-    ...(
-      [
-        ["text", "Text", "T"],
-        ["media", "Media", "M"],
-        ["templates", "Templates", "P"],
-        ["cinema", "Cinema", "C"],
-        ["layers", "Layers", "L"],
-      ] as const
-    ).map(([tool, label, key]) => ({
+    // One entry per tool that has a panel, from the same metadata the rail
+    // renders. This used to be a second, hand-written list of the tools - and
+    // omitting "select" from it was a third place the same fact was recorded.
+    ...PANEL_TOOLS.map((tool) => ({
       id: `panel-${tool}`,
-      title: `Open the ${label} panel`,
+      title: openToolLabel(tool),
       group: "View",
-      shortcut: key,
-      keywords: "tool panel show",
+      shortcut: TOOL_META[tool].shortcut,
+      keywords: `tool panel show ${TOOL_META[tool].keywords}`,
       run: () => handlers.onOpenTool(tool),
     })),
 

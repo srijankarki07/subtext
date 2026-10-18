@@ -1,15 +1,8 @@
 "use client"
 
-import {
-  ImagePlus,
-  Layers3,
-  LayoutTemplate,
-  MonitorPlay,
-  MousePointer2,
-  Type,
-} from "lucide-react"
-
 import { Tooltip } from "@/components/ui/tooltip"
+import { TOOL_ICONS } from "@/components/editor/toolRegistry"
+import { TOOL_META, TOOL_ORDER, type EditorTool } from "@/lib/tools"
 import { cn } from "@/lib/utils"
 
 /**
@@ -17,6 +10,12 @@ import { cn } from "@/lib/utils"
  *
  * DESIGN/ §6: compact, muted when inactive, a soft selected surface when
  * active - the rail frames the artwork rather than competing with it.
+ *
+ * It renders `TOOL_ORDER` and reads the rest from the registry, so adding a
+ * tool means declaring it in `lib/tools.ts` and binding its icon and panel in
+ * `toolRegistry.tsx`. This file needs no edit for a new tool, which is the
+ * point: it used to hold both the union and the tool list, and both had to
+ * agree with four other files by hand.
  *
  * The labels use the shared `Tooltip` primitive, which opens on keyboard focus
  * as well as hover; the previous `group-hover:block` span was invisible to
@@ -26,23 +25,6 @@ import { cn } from "@/lib/utils"
  * no `onClick` at all, so it was a control that did nothing. Composition tools
  * return here as a real panel in a later pass rather than as a dead icon.
  */
-
-export type EditorTool =
-  "select" | "text" | "media" | "templates" | "cinema" | "layers"
-
-const TOOLS = [
-  { id: "select", label: "Select", icon: MousePointer2, shortcut: "V" },
-  { id: "text", label: "Text", icon: Type, shortcut: "T" },
-  { id: "media", label: "Media", icon: ImagePlus, shortcut: "M" },
-  { id: "templates", label: "Templates", icon: LayoutTemplate, shortcut: "P" },
-  { id: "cinema", label: "Cinema", icon: MonitorPlay, shortcut: "C" },
-  { id: "layers", label: "Layers", icon: Layers3, shortcut: "L" },
-] satisfies {
-  id: EditorTool
-  label: string
-  icon: typeof MousePointer2
-  shortcut: string
-}[]
 
 export default function ToolRail({
   activeTool,
@@ -65,7 +47,9 @@ export default function ToolRail({
         aria-label="Editor tools"
         className="flex flex-col items-center gap-1"
       >
-        {TOOLS.map(({ id, label, icon: Icon, shortcut }) => {
+        {TOOL_ORDER.map((id) => {
+          const { label, shortcut, hasPanel } = TOOL_META[id]
+          const Icon = TOOL_ICONS[id]
           const isActive = activeTool === id
 
           return (
@@ -74,11 +58,10 @@ export default function ToolRail({
                 type="button"
                 aria-label={label}
                 aria-pressed={isActive}
-                // "Select" is a mode with no panel, so it never claims to be
-                // expanded; the others report whether their panel is showing.
-                aria-expanded={
-                  id === "select" ? undefined : isActive ? isPanelOpen : false
-                }
+                // A tool with no panel never claims to be expanded, and the
+                // attribute is absent rather than `false`: "no panel" is not
+                // "collapsed".
+                aria-expanded={hasPanel ? isActive && isPanelOpen : undefined}
                 onClick={() => onToolChange(id)}
                 className={cn(
                   "relative flex size-10 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none",

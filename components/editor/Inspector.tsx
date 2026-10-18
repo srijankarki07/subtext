@@ -20,7 +20,7 @@ import { useEditorStore } from "@/store/useEditorStore"
 import { Button } from "@/components/ui/button"
 import { classifySelection } from "@/lib/selection"
 import { cn } from "@/lib/utils"
-import type { EditorTool } from "@/components/editor/ToolRail"
+import { openToolLabel, type EditorTool } from "@/lib/tools"
 
 /**
  * Contextual inspector.
@@ -205,7 +205,7 @@ export function InspectorPanelContent({
           // Only the effect layers have a home to send you to; an unrecognised
           // layer does not, and inventing one would be worse than saying so.
           tool={summary.kind === "effect" ? "cinema" : undefined}
-          toolLabel="Open the Cinema panel"
+          toolLabel={openToolLabel("cinema")}
           onOpenTool={onOpenTool}
         />
       </div>
