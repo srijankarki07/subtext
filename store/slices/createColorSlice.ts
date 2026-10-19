@@ -5,6 +5,7 @@ import {
   type RegionStats,
   type ReportInput,
 } from "@/lib/visibility"
+import { textPresetById } from "@/lib/textPresets"
 import { ColorSlice, EditorStore } from "@/types/store.types"
 import { IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
@@ -91,6 +92,39 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
     canvas.requestRenderAll()
     calculateContrast()
     saveHistoryState(`Change ${key}`, { coalesceKey: `style:${key}` })
+  },
+
+  applyTextPreset: (id) => {
+    const { canvas, activeObject, saveHistoryState, calculateContrast } = get()
+    if (
+      !canvas ||
+      !activeObject ||
+      activeObject.type !== "i-text" ||
+      (activeObject as { locked?: boolean }).locked
+    ) {
+      return
+    }
+
+    const preset = textPresetById(id)
+    if (!preset) return
+
+    const textObj = activeObject as IText
+    const { shadow, ...style } = preset.style
+
+    // The preset is the whole look, so every property it names is set -
+    // including the ones it clears. Applying "Editorial" after "Neon" must
+    // remove the glow rather than leave it behind.
+    textObj.set({
+      ...style,
+      shadow: shadow ? new Shadow(shadow) : null,
+    })
+
+    canvas.requestRenderAll()
+    calculateContrast()
+    // A run of presets is one undo step, the way a colour drag is.
+    saveHistoryState(`Apply ${preset.name}`, {
+      coalesceKey: "text-preset",
+    })
   },
 
   getActiveSelectionStyle: (key) => {
