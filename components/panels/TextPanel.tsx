@@ -32,6 +32,7 @@ import { ColorPopover } from "@/components/ui/color-popover"
 import { Disclosure } from "@/components/ui/disclosure"
 import { Section } from "@/components/ui/section"
 import { readFontWeight } from "@/lib/fabricDocument"
+import { TEXT_PRESETS } from "@/lib/textPresets"
 import { useEditorStore } from "@/store/useEditorStore"
 
 /**
@@ -108,6 +109,7 @@ export default function TextPanel() {
   const activeObject = useEditorStore((s) => s.activeObject)
   const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
   const applyTextStyle = useEditorStore((s) => s.applyTextStyle)
+  const applyTextPreset = useEditorStore((s) => s.applyTextPreset)
   const getActiveSelectionStyle = useEditorStore(
     (s) => s.getActiveSelectionStyle
   )
@@ -168,6 +170,54 @@ export default function TextPanel() {
 
   return (
     <div className="custom-scrollbar scrollbar-hide flex flex-col gap-6">
+      <Section
+        title="Styles"
+        description="A complete look, applied in one step."
+      >
+        <div className="grid grid-cols-2 gap-1.5">
+          {TEXT_PRESETS.map((preset) => {
+            const hollow = preset.style.fill === "rgba(0,0,0,0)"
+            const shadow = preset.style.shadow
+
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                title={preset.description}
+                aria-label={`Apply the ${preset.name} style`}
+                onClick={() => {
+                  applyTextPreset(preset.id)
+                  // The canvas is not reactive; read the new values on the
+                  // next render so the controls below catch up.
+                  forceUpdate()
+                }}
+                className="cursor-pointer rounded-lg border border-border bg-card px-2 py-2 text-center transition-colors outline-none hover:border-swatch-edge hover:bg-subtle-hover focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <span
+                  className="block truncate text-[13px] leading-none"
+                  style={{
+                    fontFamily: preset.style.fontFamily,
+                    fontWeight: preset.style.fontWeight,
+                    fontStyle: preset.style.fontStyle,
+                    color: hollow
+                      ? (preset.style.stroke ?? undefined)
+                      : preset.style.fill,
+                    WebkitTextStroke: hollow
+                      ? `0.5px ${preset.style.stroke}`
+                      : undefined,
+                    textShadow: shadow
+                      ? `${shadow.offsetX / 3}px ${shadow.offsetY / 3}px ${shadow.blur / 3}px ${shadow.color}`
+                      : undefined,
+                  }}
+                >
+                  {preset.name}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </Section>
+
       <Section title="Alignment">
         <div className="grid grid-cols-6 gap-1 rounded-lg bg-subtle p-1">
           <AlignmentButton

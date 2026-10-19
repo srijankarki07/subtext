@@ -1,4 +1,5 @@
 import { TEMPLATES } from "@/lib/templates"
+import { TEXT_PRESETS } from "@/lib/textPresets"
 import { useEditorStore } from "@/store/useEditorStore"
 import {
   PANEL_TOOLS,
@@ -423,6 +424,17 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       group: "Templates",
       keywords: `${template.category} look style`,
       run: () => store().applyTemplate(template.id),
+    })
+  })
+
+  // Text styles, from the same data the inspector renders.
+  TEXT_PRESETS.forEach((preset) => {
+    commands.push({
+      id: `text-style-${preset.id}`,
+      title: `Apply the ${preset.name} text style`,
+      group: "Typography",
+      keywords: `${preset.keywords} type font style`,
+      run: () => store().applyTextPreset(preset.id),
     })
   })
 

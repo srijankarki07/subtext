@@ -155,6 +155,8 @@ export interface ColorSlice {
     target: "fill" | "stroke" | "shadow" | "background"
   ) => Promise<void>
   applyTextStyle: (key: string, value: any) => void
+  /** Applies a named style to the selected block in one step. */
+  applyTextPreset: (id: string) => void
   getActiveSelectionStyle: (key: string) => any
 }
 
