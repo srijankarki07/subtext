@@ -385,10 +385,21 @@ export interface CoreSlice {
   pasteClipboardObject: () => Promise<void>
 }
 
+/**
+ * ELEMENT SLICE: shapes, lines and icons inserted from the Elements panel.
+ */
+export interface ElementSlice {
+  /** Inserts an element at the artboard's centre. No-op for an unknown id. */
+  addElement: (id: string, colour?: string) => Promise<void>
+  /** Recolours the selected element, if the selection is one. */
+  setElementColor: (colour: string) => void
+}
+
 export type EditorStore = CoreSlice &
   FontSlice &
   HistorySlice &
   LayerSlice &
   ColorSlice &
   ContextMenuSlice &
-  EffectSlice
+  EffectSlice &
+  ElementSlice

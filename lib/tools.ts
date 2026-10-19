@@ -71,6 +71,13 @@ export const TOOL_META = {
     keywords: "preset look layout",
     hint: "A finished design opinion, not a bundle of settings.",
   },
+  elements: {
+    label: "Elements",
+    shortcut: "E",
+    hasPanel: true,
+    keywords: "shapes lines icons frames stickers",
+    hint: "Shapes, lines and icons to build the composition.",
+  },
   cinema: {
     label: "Cinema",
     shortcut: "C",

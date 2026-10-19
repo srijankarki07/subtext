@@ -19,6 +19,8 @@ export interface SelectableLike {
   type?: string
   isEffect?: boolean
   id?: string
+  /** The catalogue name stamped on an inserted element. */
+  elementName?: string
   /** On a blur overlay, the id of the handle that owns the zone. */
   overlayId?: string
   textType?: string
@@ -145,6 +147,15 @@ export function classifySelection(objects: SelectableLike[]): SelectionSummary {
       count,
       label: "Effect layer",
       hint: "This layer is applied by one of the Cinema panel's controls.",
+    }
+  }
+
+  if (object.elementName) {
+    return {
+      kind: "other",
+      count,
+      label: object.elementName,
+      hint: "Recolour it from the Elements panel.",
     }
   }
 

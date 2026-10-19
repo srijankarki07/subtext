@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Lock,
   MonitorPlay,
+  Shapes,
   Square,
   Trash2,
   Type,
@@ -66,6 +67,8 @@ function describe(obj: any): { label: string; icon: typeof Type } {
   if (id.includes("blur")) return { label: "Blur zone", icon: MonitorPlay }
   if (obj.isEffect) return { label: "Effect", icon: MonitorPlay }
   if (obj.type === "image") return { label: "Image", icon: ImageIcon }
+
+  if (obj.elementName) return { label: obj.elementName, icon: Shapes }
 
   return { label: obj.type ?? "Layer", icon: Square }
 }

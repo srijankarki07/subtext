@@ -304,7 +304,11 @@ export function InspectorPanelContent({
         })}
       </div>
 
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div
+        tabIndex={0}
+        aria-label="Selection properties"
+        className="custom-scrollbar min-h-0 flex-1 overflow-y-auto outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+      >
         {activeTab === "font" && <FontPicker />}
         {activeTab === "style" && <TextPanel />}
         {activeTab === "color" && <ColorPanel />}

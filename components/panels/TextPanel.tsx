@@ -167,7 +167,7 @@ export default function TextPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="custom-scrollbar scrollbar-hide flex flex-col gap-6">
       <Section title="Alignment">
         <div className="grid grid-cols-6 gap-1 rounded-lg bg-subtle p-1">
           <AlignmentButton
