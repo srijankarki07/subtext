@@ -12,6 +12,25 @@ import { StateCreator } from "zustand"
 const MAX_HISTORY_STEPS = 30
 
 /**
+ * Whether the current document differs from the stored one.
+ *
+ * An empty artboard on a fresh session is not a change - booting commits
+ * "Initial Canvas" - but an empty artboard *over a stored document* is.
+ * Undoing the last element, or deleting the last layer, has to be written, or a
+ * reload quietly resurrects it.
+ */
+function documentIsDirty(
+  savedSignature: string | null,
+  objectCount: number,
+  parts: Parameters<typeof signatureFromParts>[0]
+): boolean {
+  return (
+    savedSignature !== signatureFromParts(parts) &&
+    (savedSignature !== null || !isDocumentEmpty(objectCount))
+  )
+}
+
+/**
  * Repeated edits of the same control inside this window collapse into the
  * previous entry.
  *
@@ -117,18 +136,13 @@ export const createHistorySlice: StateCreator<
       canRedo: false,
       // Compared against what is *stored*, not assumed from the fact that
       // something was committed. That is what makes undo-back-to-the-saved-state
-      // read as saved: it is a commit, but it is not a change. An empty
-      // artboard never counts, so booting the editor - which commits "Initial
-      // Canvas" - does not mark a brand-new session dirty.
-      isDirty:
-        !isDocumentEmpty(objectCount) &&
-        state.savedSignature !==
-          signatureFromParts({
-            canvasJson: json,
-            effects,
-            documentTitle: state.documentTitle,
-            artboard: state.artboard,
-          }),
+      // read as saved: it is a commit, but it is not a change.
+      isDirty: documentIsDirty(state.savedSignature, objectCount, {
+        canvasJson: json,
+        effects,
+        documentTitle: state.documentTitle,
+        artboard: state.artboard,
+      }),
     })
   }
 
@@ -286,15 +300,16 @@ export const createHistorySlice: StateCreator<
           // Undo is not an edit; it is a move to another state, which may or may
           // not be the stored one. Asking the signature is the only way to know,
           // and it is what makes the badge honest after an undo.
-          isDirty:
-            !isDocumentEmpty(canvas.getObjects().length) &&
-            state.savedSignature !==
-              signatureFromParts({
-                canvasJson: targetState.json,
-                effects: targetState.effects,
-                documentTitle: state.documentTitle,
-                artboard: state.artboard,
-              }),
+          isDirty: documentIsDirty(
+            state.savedSignature,
+            canvas.getObjects().length,
+            {
+              canvasJson: targetState.json,
+              effects: targetState.effects,
+              documentTitle: state.documentTitle,
+              artboard: state.artboard,
+            }
+          ),
         })
 
         get().calculateContrast()

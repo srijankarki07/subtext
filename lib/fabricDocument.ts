@@ -23,6 +23,7 @@ export const DEFAULT_ARTBOARD_BACKGROUND = "#1C1C1E"
  */
 export const DOCUMENT_PROPERTIES = [
   "id",
+  "elementName",
   "isEffect",
   "textType",
   "vignetteColor",
