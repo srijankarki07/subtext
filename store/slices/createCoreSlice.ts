@@ -522,15 +522,24 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   replaceImage: async () => {
-    const { canvas, beginHistoryTransaction, endHistoryTransaction } = get()
+    const {
+      canvas,
+      activeObject,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+    } = get()
     if (!canvas) return
 
     const file = await pickImageFile()
     if (!file) return
 
+    // Replace the selected image when one is selected; otherwise the primary.
+    const target =
+      activeObject?.type === "image" ? (activeObject as FabricImage) : undefined
+
     beginHistoryTransaction("Replace image")
     try {
-      const result = await replaceImage(canvas, file)
+      const result = await replaceImage(canvas, file, { target })
       if (!result) return
       set({ imagePalette: result.palette })
       canvas.requestRenderAll()
@@ -925,13 +934,15 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     if (fx.presetName && CINEMATIC_PRESETS[fx.presetName]) {
       store.applyPreset(CINEMATIC_PRESETS[fx.presetName])
     }
+    // A template's grade is a composition-wide look, so it covers every image
+    // layer - including a cutout placed above the background.
     if (fx.brightness !== undefined)
-      store.applyImageFilter("Brightness", { brightness: fx.brightness })
+      store.applyImageFilter("Brightness", { brightness: fx.brightness }, "all")
     if (fx.contrast !== undefined)
-      store.applyImageFilter("Contrast", { contrast: fx.contrast })
+      store.applyImageFilter("Contrast", { contrast: fx.contrast }, "all")
     if (fx.saturation !== undefined)
-      store.applyImageFilter("Saturation", { saturation: fx.saturation })
-    if (fx.warmth !== undefined) store.applyWarmth(fx.warmth)
+      store.applyImageFilter("Saturation", { saturation: fx.saturation }, "all")
+    if (fx.warmth !== undefined) store.applyWarmth(fx.warmth, "all")
     if (fx.grainIntensity !== undefined)
       store.setGrainIntensity(fx.grainIntensity)
     if (fx.gradientOpacity !== undefined)

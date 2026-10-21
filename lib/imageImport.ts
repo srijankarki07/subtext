@@ -73,8 +73,8 @@ export interface ImportedImage {
 }
 
 /**
- * Loads `file`, scales it to sit comfortably on the artboard, inserts it behind
- * everything else, and extracts its palette.
+ * Loads `file`, scales it to sit comfortably on the artboard, puts it on top,
+ * and extracts its palette.
  *
  * The palette is returned rather than written to the store so this stays a
  * plain function; callers decide where it goes.
@@ -96,8 +96,10 @@ export async function importImage(
   image.scale(coverScale(canvas, image))
   canvas.centerObject(image)
 
-  // Index 0 so the artwork sits behind any text already on the canvas.
-  canvas.insertAt(0, image)
+  // Added on top. Inserting at the back meant every second photo (or cutout)
+  // was hidden underneath the previous one and had to be rescued from the
+  // layers list before it could be seen at all.
+  canvas.add(image)
   canvas.setActiveObject(image)
 
   const palette = await extractPalette(dataUrl, colorCount)
@@ -131,14 +133,17 @@ export function pickImageFile(): Promise<File | null> {
 export async function replaceImage(
   canvas: Canvas,
   file: File,
-  { colorCount = 6 }: { colorCount?: number } = {}
+  { colorCount = 6, target }: { colorCount?: number; target?: FabricImage } = {}
 ): Promise<{ palette: string[] } | null> {
   if (!isImageFile(file)) return null
 
-  const previous = canvas
-    .getObjects()
-    .find((object) => object.type === "image" && !(object as any).isEffect) as
-    FabricImage | undefined
+  const previous =
+    target ??
+    (canvas
+      .getObjects()
+      .find(
+        (object) => object.type === "image" && !(object as any).isEffect
+      ) as FabricImage | undefined)
 
   // Nothing to replace: treat it as a first upload.
   if (!previous) {
@@ -151,7 +156,7 @@ export async function replaceImage(
     storeAsset(file),
   ])
   const next = await FabricImage.fromURL(dataUrl)
-  await swapPhoto(canvas, next, assetId)
+  await swapPhoto(canvas, next, assetId, { target: previous })
   canvas.requestRenderAll()
 
   const palette = await extractPalette(dataUrl, colorCount)

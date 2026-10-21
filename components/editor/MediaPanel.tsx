@@ -24,9 +24,17 @@ export default function MediaPanel() {
   const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
   const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
 
-  const photo = canvas
-    ?.getObjects()
-    .find((object) => object.type === "image" && !(object as never)["isEffect"])
+  // The selected image wins, so Replace and Remove background act on the layer
+  // the user is looking at; otherwise the primary photo.
+  const photo =
+    activeObject?.type === "image"
+      ? activeObject
+      : canvas
+          ?.getObjects()
+          .find(
+            (object) =>
+              object.type === "image" && !(object as never)["isEffect"]
+          )
 
   const selectedIsPhoto = activeObject?.type === "image"
 

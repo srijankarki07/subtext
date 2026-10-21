@@ -22,6 +22,32 @@ const hexToRgba = (hex: string, alpha: number) => {
 }
 
 /**
+ * The image layers an edit applies to.
+ *
+ * Global looks - film grades, templates, duotone - cover every image, so a
+ * cutout placed over the background is graded with it instead of standing out
+ * as the one untouched layer. Manual adjustments - brightness, contrast,
+ * saturation, warmth - use the selected image when it is one, and the primary
+ * photo otherwise, so a slider never silently edits another layer.
+ */
+function effectTargets(
+  get: () => EditorStore,
+  scope: "selected" | "all"
+): FabricImage[] {
+  const images = (get().canvas?.getObjects() ?? []).filter(
+    (object) => object.type === "image" && !(object as any).isEffect
+  ) as FabricImage[]
+
+  if (scope === "all") return images
+
+  const selected = get().activeObject
+  if (selected?.type === "image" && !(selected as any).isEffect) {
+    return [selected as FabricImage]
+  }
+  return images.slice(0, 1)
+}
+
+/**
  * Overlay ids whose clone is currently in flight.
  *
  * `buildBlurLayers` awaits `clone()`, and the Fade slider fires on every change,
@@ -561,41 +587,49 @@ export const createEffectSlice: StateCreator<
     get().saveHistoryState("Film grain", { coalesceKey: "grain" })
   },
 
-  applyImageFilter: (type, options) => {
+  applyImageFilter: (type, options, scope = "selected") => {
     const { canvas, saveHistoryState } = get()
     if (!canvas) return
-    const bg = canvas
-      .getObjects()
-      .find((o) => o.type === "image" && !(o as any).isEffect) as FabricImage
-    if (!bg) return
-    if (!bg.filters) bg.filters = []
-    let filterIndex = bg.filters.findIndex((f) => f.type === type)
 
-    if (filterIndex > -1) Object.assign(bg.filters[filterIndex], options)
-    else {
-      let FilterClass: any
-      if (type === "Brightness") FilterClass = filters.Brightness
-      if (type === "Contrast") FilterClass = filters.Contrast
-      if (type === "Saturation") FilterClass = filters.Saturation
-      if (FilterClass) bg.filters.push(new FilterClass(options))
-    }
-    bg.applyFilters()
+    const targets = effectTargets(get, scope)
+    if (!targets.length) return
+
+    targets.forEach((image) => {
+      if (!image.filters) image.filters = []
+      const filterIndex = image.filters.findIndex((f) => f.type === type)
+
+      if (filterIndex > -1) {
+        Object.assign(image.filters[filterIndex], options)
+      } else {
+        let FilterClass: any
+        if (type === "Brightness") FilterClass = filters.Brightness
+        if (type === "Contrast") FilterClass = filters.Contrast
+        if (type === "Saturation") FilterClass = filters.Saturation
+        if (FilterClass) image.filters.push(new FilterClass(options))
+      }
+      image.applyFilters()
+    })
+
     canvas.requestRenderAll()
     saveHistoryState("Adjust image", { coalesceKey: `filter:${type}` })
   },
 
-  applyPreset: (matrix, coalesceKey) => {
+  applyPreset: (matrix, coalesceKey, scope = "all") => {
     const { canvas, saveHistoryState } = get()
     if (!canvas) return
-    const bg = canvas
-      .getObjects()
-      .find((o) => o.type === "image" && !(o as any).isEffect) as FabricImage
-    if (!bg || !bg.filters) return
 
-    bg.filters = bg.filters.filter((f) => f.type !== "ColorMatrix")
-    if (matrix !== CINEMATIC_PRESETS["None"])
-      bg.filters.push(new filters.ColorMatrix({ matrix }))
-    bg.applyFilters()
+    const targets = effectTargets(get, scope)
+    if (!targets.length) return
+
+    targets.forEach((image) => {
+      if (!image.filters) image.filters = []
+      image.filters = image.filters.filter((f) => f.type !== "ColorMatrix")
+      if (matrix !== CINEMATIC_PRESETS["None"]) {
+        image.filters.push(new filters.ColorMatrix({ matrix }))
+      }
+      image.applyFilters()
+    })
+
     canvas.requestRenderAll()
     saveHistoryState("Colour grade", { coalesceKey })
   },
@@ -605,8 +639,8 @@ export const createEffectSlice: StateCreator<
    * and inherits its history handling - passing a coalesce key is what keeps a
    * slider drag to a single undo step instead of one per pixel of travel.
    */
-  applyWarmth: (value) =>
-    get().applyPreset(getWarmthMatrix(value), "filter:warmth"),
+  applyWarmth: (value, scope = "selected") =>
+    get().applyPreset(getWarmthMatrix(value), "filter:warmth", scope),
 
   /**
    * Applies a duotone and records the settings.
@@ -662,13 +696,14 @@ export const createEffectSlice: StateCreator<
     } = get()
 
     if (category === "adjustments" || category === "all") {
-      applyImageFilter("Brightness", { brightness: 0 })
-      applyImageFilter("Contrast", { contrast: 0 })
-      applyImageFilter("Saturation", { saturation: 0 })
+      // Reset is composition-wide: every image goes back to neutral.
+      applyImageFilter("Brightness", { brightness: 0 }, "all")
+      applyImageFilter("Contrast", { contrast: 0 }, "all")
+      applyImageFilter("Saturation", { saturation: 0 }, "all")
       set({ brightness: 0, contrast: 0, saturation: 0, warmth: 0 })
     }
     if (category === "cinematic" || category === "all") {
-      applyPreset(CINEMATIC_PRESETS["None"])
+      applyPreset(CINEMATIC_PRESETS["None"], undefined, "all")
       set({ duotoneIntensity: 0 })
     }
     if (category === "atmospherics" || category === "all") {
