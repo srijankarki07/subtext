@@ -3,6 +3,7 @@ import { create } from "zustand"
 import { createColorSlice } from "./slices/createColorSlice"
 import { createContextMenuSlice } from "./slices/createContextMenuSlice"
 import { createCoreSlice } from "./slices/createCoreSlice"
+import { createDesignSlice } from "./slices/createDesignSlice"
 import { createElementSlice } from "./slices/createElementSlice"
 import { createHistorySlice } from "./slices/createHistorySlice"
 import { createLayerSlice } from "./slices/createLayerSlice"
@@ -25,4 +26,5 @@ export const useEditorStore = create<EditorStore>()((...a) => ({
   ...createContextMenuSlice(...a),
   ...createEffectSlice(...a),
   ...createElementSlice(...a),
+  ...createDesignSlice(...a),
 }))

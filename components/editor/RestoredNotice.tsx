@@ -22,8 +22,7 @@ export default function RestoredNotice() {
   const restoredAt = useEditorStore((s) => s.restoredAt)
   const documentTitle = useEditorStore((s) => s.documentTitle)
   const acknowledgeRestore = useEditorStore((s) => s.acknowledgeRestore)
-  const clearCanvas = useEditorStore((s) => s.clearCanvas)
-  const clearSavedProject = useEditorStore((s) => s.clearSavedProject)
+  const newDesign = useEditorStore((s) => s.newDesign)
 
   if (!restoredAt) return null
 
@@ -48,10 +47,7 @@ export default function RestoredNotice() {
 
       <button
         type="button"
-        onClick={() => {
-          clearCanvas()
-          clearSavedProject()
-        }}
+        onClick={() => newDesign()}
         className="shrink-0 cursor-pointer rounded-md px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
       >
         Start fresh

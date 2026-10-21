@@ -348,7 +348,7 @@ export default function Canvas() {
       // 4. QUICK SAVE TO STORAGE: Ctrl+S / Cmd+S
       if (isCmdOrCtrl && (key === "s" || code === "KeyS")) {
         e.preventDefault()
-        useEditorStore.getState().saveProjectToStorage()
+        void useEditorStore.getState().saveDesign()
         return
       }
 
