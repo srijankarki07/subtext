@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react"
 
+import { BackgroundRemovalButton } from "@/components/editor/BackgroundRemovalButton"
 import { AlignmentButton } from "@/components/functions"
 import { Button } from "@/components/ui/button"
 import { Section } from "@/components/ui/section"
@@ -60,6 +61,13 @@ export default function ImagePanel() {
             <span className="text-[12px] font-medium">Fit to canvas</span>
           </button>
         </div>
+      </Section>
+
+      <Section
+        title="Background"
+        description="Cut the subject out with a model that runs on this device."
+      >
+        <BackgroundRemovalButton target={activeObject} />
       </Section>
 
       <Section title="Alignment">

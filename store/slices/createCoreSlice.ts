@@ -5,6 +5,8 @@ import {
   withoutEditorChrome,
 } from "@/lib/fabricDocument"
 import { getDesign, putDesign } from "@/lib/designs"
+import { createAssetId, getAssetBlob, putAsset } from "@/lib/assets"
+import { removeBackgroundInWorker } from "@/lib/backgroundRemoval"
 import { dehydrateCanvas, loadDocument } from "@/lib/snapshot"
 import {
   DOCUMENT_KEY,
@@ -15,10 +17,15 @@ import {
 } from "@/lib/persistence"
 import { applyGrain } from "@/lib/grain"
 import { applySelectionStyle } from "@/lib/selectionStyle"
-import { importImage, pickImageFile, replaceImage } from "@/lib/imageImport"
+import {
+  importImage,
+  pickImageFile,
+  replaceImage,
+  swapPhoto,
+} from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
 import { CoreSlice, EditorStore } from "@/types/store.types"
-import { ActiveSelection, Canvas, IText, Shadow } from "fabric"
+import { ActiveSelection, Canvas, FabricImage, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
 /**
@@ -172,6 +179,8 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   setConfirmDialog: (config) => set({ confirmDialog: config }),
   setAlertDialog: (config) => set({ alertDialog: config }),
   lastSavedAt: null,
+  backgroundRemoval: { status: "idle", progress: 0 },
+  backgroundRemovalMode: "person",
   clipboardObject: null,
   documentTitle: "Untitled",
   isDirty: false,
@@ -529,6 +538,140 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       console.error("Failed to replace image:", error)
     } finally {
       endHistoryTransaction()
+    }
+  },
+
+  setBackgroundRemovalMode: (mode) => set({ backgroundRemovalMode: mode }),
+
+  removeBackground: async (target, mode) => {
+    const {
+      canvas,
+      activeObject,
+      backgroundRemoval,
+      backgroundRemovalMode,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+      saveHistoryState,
+    } = get()
+    if (!canvas) return false
+
+    if (
+      backgroundRemoval.status === "loading" ||
+      backgroundRemoval.status === "processing"
+    ) {
+      return false
+    }
+
+    // The explicitly requested image wins, then the selection, then the primary
+    // photo. The Media panel passes the primary so it keeps working when a text
+    // layer happens to be selected; the inspector and context menu pass theirs.
+    const photos = canvas
+      .getObjects()
+      .filter(
+        (object) => object.type === "image" && !(object as any).isEffect
+      ) as FabricImage[]
+
+    const photo =
+      (target?.type === "image" ? (target as FabricImage) : null) ??
+      (activeObject?.type === "image" ? (activeObject as FabricImage) : null) ??
+      photos[0]
+
+    if (!photo) return false
+    if ((photo as { locked?: boolean }).locked) return false
+
+    // The pixels live in IndexedDB under the asset id; the live source is a
+    // fallback for a document restored without one.
+    const assetId = (photo as any).assetId as string | undefined
+    let source = assetId ? await getAssetBlob(assetId) : null
+    if (!source) {
+      const src = photo.getSrc()
+      if (src) {
+        try {
+          source = await fetch(src).then((response) => response.blob())
+        } catch {
+          source = null
+        }
+      }
+    }
+    if (!source) {
+      set({
+        backgroundRemoval: {
+          status: "error",
+          progress: 0,
+          message: "The photo's pixels could not be read.",
+        },
+      })
+      return false
+    }
+
+    set({ backgroundRemoval: { status: "loading", progress: 0 } })
+
+    let cutout: Blob
+    try {
+      cutout = await removeBackgroundInWorker(
+        source,
+        mode ?? backgroundRemovalMode,
+        (update) => set({ backgroundRemoval: { ...update } })
+      )
+    } catch (error) {
+      console.error("Background removal failed:", error)
+      set({
+        backgroundRemoval: {
+          status: "error",
+          progress: 0,
+          message:
+            error instanceof Error
+              ? error.message
+              : "The background remover failed.",
+        },
+      })
+      return false
+    }
+
+    try {
+      // The selection can change while the model runs; never swap a photo that
+      // has since been deleted.
+      if (!canvas.getObjects().includes(photo)) {
+        throw new Error("That photo was removed before the cutout was ready.")
+      }
+
+      const nextAssetId = createAssetId()
+      await putAsset(nextAssetId, cutout)
+      const next = await FabricImage.fromURL(URL.createObjectURL(cutout))
+
+      // One history step: swapping the photo removes one object and inserts
+      // another, and both fire the canvas's add/remove handlers.
+      beginHistoryTransaction("Remove background")
+      try {
+        await swapPhoto(canvas, next, nextAssetId, {
+          target: photo,
+          // History still references the old bytes; deleting them would make
+          // undo restore a photo that is no longer in the store.
+          deletePrevious: false,
+        })
+        canvas.requestRenderAll()
+        saveHistoryState()
+      } finally {
+        endHistoryTransaction()
+      }
+
+      // The palette describes the photograph, not its silhouette: sampling the
+      // cutout would report transparent pixels and edge colours.
+      set({ backgroundRemoval: { status: "done", progress: 100 } })
+      return true
+    } catch (error) {
+      console.error("Could not apply the cutout:", error)
+      set({
+        backgroundRemoval: {
+          status: "error",
+          progress: 0,
+          message:
+            error instanceof Error
+              ? error.message
+              : "The cutout could not be applied.",
+        },
+      })
+      return false
     }
   },
 
