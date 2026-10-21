@@ -227,16 +227,34 @@ Presets are data, the same way templates are.
 | ---- | ------------------------------------------------------------------------ |
 | M    | The effects themselves are easy; making them round-trip is the discipline |
 
-### 5. Template library scale-up
+### 5. Template quality
 
-Categories, search, previews, a real browse experience. The pipeline already
-makes templates cheap — `lib/templates.ts` is declarative and
-`scratch/build-gallery.mjs` regenerates the showcase — so this is mostly
-browsing UI rather than content work.
+Browsing, applying and content, in three parts. The search and category counts
+shipped first; these are the rest.
 
-| Cost | Notes                                                     |
-| ---- | --------------------------------------------------------- |
-| M    | Mostly UI. Content generation is already solved            |
+**Density.** The cards are full-width and four-fifths as tall, so twenty
+templates are several screens of scrolling. A compact two-column grid keeps the
+same previews - the look is what is being judged - while showing twice as much
+at once.
+
+**Visibility on apply.** A layout arrives with the colours it was designed with,
+not the colours the user's photo needs. Applying one should run the contrast
+engine over the real image and choose fill, outline and shadow for the *worst*
+part of the background behind each block, which is the measurement the editor
+already makes. Smart auto-colour also needs a defined fallback: when no passing
+combination exists, apply a deterministic safety treatment (white type with a
+dark shadow) rather than leaving the template's colours on an unreadable image.
+
+**Content and grades.** More layouts, and a wider grade library: modern film
+stocks, Fuji emulations (Classic Chrome, Velvia, Astia, Acros), and older
+aesthetic looks. Grades are colour matrices authored for this project, never
+copied from proprietary LUT files - the repo is public, and a copied `.cube` is
+a licensing problem. A LUT-style *name* that references a stock is fine; a
+copied transform is not.
+
+| Cost | Notes                                                                      |
+| ---- | -------------------------------------------------------------------------- |
+| M    | Density and apply-time visibility are UI and store work; grades are authored data |
 
 ### 6. Gradient and pattern backgrounds
 
@@ -422,17 +440,20 @@ Subtext an editor for footage.
 | Milestone | Contents                                                                   |
 | --------- | -------------------------------------------------------------------------- |
 | **M1 — Foundations** | Tool registry, align/distribute to selection, grouping, nudging, README name fix. Settle hosting |
-| **M2 — The library** | Elements, text effects and presets, template scale-up, designs home          |
+| **M2 — The library** | Elements, text effects and presets, template search, designs home            |
+| **M2.5 — Template quality** | Compact browsing grid, contrast-aware apply, wider layout and grade library |
 | **M3 — The headline** | Background remover, design suggestions, magic resize and multi-size export   |
 | **M4 — The long tail** | Brand kit, share and portability, gradient and pattern backgrounds, curves and levels, font pairing, auto-reframe |
 | **M5 — Moving image** | Animated export, then video backgrounds                                     |
 
 Ordering rationale: M1 makes every later tool cheaper and less bug-prone. M2 and
-M3 are the Canva-parity core and the requested features, and M3 is deliberately
-where the two things that only Subtext can do — the background remover feeding a
-generated backdrop, and the contrast engine explaining itself — arrive together.
-Tier 2 and Tier 3 are refinements and bets that should be judged on how M1–M3
-land.
+M3 are the Canva-parity core and the requested features. M2.5 was added on
+2026-10-21: the template surface is already the product's front door, and making
+it denser, contrast-aware and better stocked is cheaper than the ML work in M3
+while improving the experience more immediately. M3 is deliberately where the
+two things that only Subtext can do — the background remover feeding a generated
+backdrop, and the contrast engine explaining itself — arrive together. Tier 2 and
+Tier 3 are refinements and bets that should be judged on how M1–M3 land.
 
 ---
 

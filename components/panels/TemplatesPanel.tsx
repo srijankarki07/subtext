@@ -87,7 +87,7 @@ function TemplateThumbnailCard({
       type="button"
       aria-label={`Apply the ${template.name} template`}
       onClick={onClick}
-      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left transition-colors outline-none hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-border bg-card p-1.5 text-left transition-colors outline-none hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
       {/* Mini artboard, 4:5 */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-workspace">
@@ -152,13 +152,15 @@ function TemplateThumbnailCard({
                       : "0%"
                 })`,
                 fontFamily: text.fontFamily,
-                fontSize: `${Math.max(7, Math.min(13, text.fontSize * 0.16))}px`,
+                // The card is half as wide as it used to be, so the preview
+                // type scales with it rather than crowding the composition.
+                fontSize: `${Math.max(5, Math.min(10, text.fontSize * 0.085))}px`,
                 fontWeight: text.fontWeight as never,
                 fontStyle: text.fontStyle,
                 color: text.fill,
                 textAlign: text.textAlign,
                 letterSpacing: text.charSpacing
-                  ? `${text.charSpacing * 0.005}px`
+                  ? `${text.charSpacing * 0.003}px`
                   : undefined,
                 opacity: isQuote ? 0.95 : 0.65,
               }}
@@ -169,14 +171,9 @@ function TemplateThumbnailCard({
         })}
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
-        <span className="truncate text-[12px] font-medium text-foreground">
-          {template.name}
-        </span>
-        <span className="shrink-0 rounded bg-subtle px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">
-          {template.category}
-        </span>
-      </div>
+      <span className="mt-1.5 block truncate px-0.5 text-[11px] font-medium text-foreground">
+        {template.name}
+      </span>
     </button>
   )
 }
@@ -339,7 +336,7 @@ export default function TemplatesPanel() {
             </p>
           )}
 
-          <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             {filteredTemplates.map((template) => (
               <TemplateThumbnailCard
                 key={template.id}
