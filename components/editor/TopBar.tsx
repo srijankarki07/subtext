@@ -9,11 +9,11 @@ import {
   FolderOpen,
   Moon,
   MoreHorizontal,
+  Plus,
   Redo2,
   Save,
   Settings2,
   Sun,
-  Trash2,
   Undo2,
 } from "lucide-react"
 
@@ -119,9 +119,7 @@ function ThemeToggle() {
  */
 function DocumentMenu() {
   const [open, setOpen] = useState(false)
-  const hasSavedProject = useEditorStore((s) => s.hasSavedProject)
-  const clearCanvas = useEditorStore((s) => s.clearCanvas)
-  const clearSavedProject = useEditorStore((s) => s.clearSavedProject)
+  const openDesigns = useEditorStore((s) => s.openDesigns)
   const setConfirmDialog = useEditorStore((s) => s.setConfirmDialog)
 
   const item =
@@ -145,38 +143,28 @@ function DocumentMenu() {
           onClick={() => {
             setOpen(false)
             setConfirmDialog({
-              title: "Start a new canvas?",
+              title: "Start a new design?",
               message:
-                "This clears the artboard and its layers. Your saved project, if any, is not affected.",
-              confirmText: "New canvas",
-              onConfirm: () => clearCanvas(),
+                "This clears the artboard and its layers. Your saved designs are not affected.",
+              confirmText: "New design",
+              onConfirm: () => useEditorStore.getState().newDesign(),
             })
           }}
         >
-          <Trash2 size={14} className="text-[var(--text-muted)]" />
-          New canvas
+          <Plus size={14} className="text-[var(--text-muted)]" />
+          New design
         </button>
 
         <button
           type="button"
-          disabled={!hasSavedProject}
-          className={cn(
-            item,
-            "disabled:pointer-events-none disabled:opacity-40"
-          )}
+          className={item}
           onClick={() => {
             setOpen(false)
-            setConfirmDialog({
-              title: "Delete saved project?",
-              message:
-                "The copy stored in this browser will be removed. Anything currently on the artboard stays put.",
-              confirmText: "Delete",
-              onConfirm: () => clearSavedProject(),
-            })
+            void openDesigns()
           }}
         >
           <FolderOpen size={14} className="text-[var(--text-muted)]" />
-          Delete saved project
+          Your designs
         </button>
       </PopoverContent>
     </Popover>
@@ -198,12 +186,10 @@ export default function TopBar({
   isInspectorOpen: boolean
   onToggleInspector: () => void
 }) {
-  const setConfirmDialog = useEditorStore((s) => s.setConfirmDialog)
   const setAspectRatio = useEditorStore((s) => s.setAspectRatio)
   const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
-  const saveProjectToStorage = useEditorStore((s) => s.saveProjectToStorage)
-  const loadProjectFromStorage = useEditorStore((s) => s.loadProjectFromStorage)
-  const hasSavedProject = useEditorStore((s) => s.hasSavedProject)
+  const saveDesign = useEditorStore((s) => s.saveDesign)
+  const openDesigns = useEditorStore((s) => s.openDesigns)
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt)
   const documentTitle = useEditorStore((s) => s.documentTitle)
   const setDocumentTitle = useEditorStore((s) => s.setDocumentTitle)
@@ -236,9 +222,9 @@ export default function TopBar({
   const canRedo = useEditorStore((s) => s.canRedo)
 
   const handleSave = () => {
-    if (saveProjectToStorage()) {
-      setJustSaved(true)
-    }
+    void saveDesign().then((saved) => {
+      if (saved) setJustSaved(true)
+    })
   }
 
   useEffect(() => {
@@ -246,20 +232,6 @@ export default function TopBar({
     const timer = setTimeout(() => setJustSaved(false), 2000)
     return () => clearTimeout(timer)
   }, [justSaved])
-
-  const handleRestore = () => {
-    setConfirmDialog({
-      title: "Restore project",
-      message:
-        "Restore the saved project from this browser? Current unsaved changes will be overwritten.",
-      confirmText: "Restore",
-      onConfirm: async () => {
-        // The saved copy, not the autosaved document: pressing Restore is a
-        // request for the thing the user deliberately kept.
-        await loadProjectFromStorage("savedProject")
-      },
-    })
-  }
 
   const handleRatioChange = (val: string) => {
     setRatioSelection(val)
@@ -344,16 +316,11 @@ export default function TopBar({
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleRestore}
-          disabled={!hasSavedProject}
-          title={
-            hasSavedProject
-              ? "Restore the saved project from this browser"
-              : "No saved project yet"
-          }
+          onClick={() => void openDesigns()}
+          title="Open your saved designs"
         >
           <FolderOpen size={14} />
-          <span>Restore</span>
+          <span>Designs</span>
         </Button>
         <DocumentMenu />
       </div>

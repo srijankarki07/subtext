@@ -15,6 +15,7 @@ import RestoredNotice from "@/components/editor/RestoredNotice"
 import TopBar from "@/components/editor/TopBar"
 import ToolRail from "@/components/editor/ToolRail"
 import ContextMenu from "@/components/editor/contextMenu"
+import DesignsModal from "@/components/modals/DesignsModal"
 import ExportModal from "@/components/modals/ExportModal"
 import GlobalDialogs from "@/components/modals/GlobalDialogs"
 import LayersPanel from "@/components/panels/LayersPanel"
@@ -86,7 +87,7 @@ export default function EditorShell() {
   const activeMobileTab = useEditorStore((s) => s.activeMobileTab)
   const setActiveMobileTab = useEditorStore((s) => s.setActiveMobileTab)
   const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
-  const checkSavedProject = useEditorStore((s) => s.checkSavedProject)
+  const initializeDesigns = useEditorStore((s) => s.initializeDesigns)
   const initializeCustomFonts = useEditorStore((s) => s.initializeCustomFonts)
   const canvas = useEditorStore((s) => s.canvas)
 
@@ -118,8 +119,8 @@ export default function EditorShell() {
   }, [activeObject, isInspectorOpen, userToggledInspector])
 
   useEffect(() => {
-    checkSavedProject()
-  }, [checkSavedProject])
+    void initializeDesigns()
+  }, [initializeDesigns])
 
   /**
    * Brings the stored document back, once, when the canvas exists.
@@ -294,6 +295,7 @@ export default function EditorShell() {
       <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-background font-sans text-foreground antialiased lg:flex-row">
         <ContextMenu />
         <ExportModal />
+        <DesignsModal />
         <GlobalDialogs />
         <CommandPalette
           open={isPaletteOpen}

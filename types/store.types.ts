@@ -1,6 +1,8 @@
 import { Canvas, FabricObject } from "fabric"
 
 import type { AlignMode, DistributeAxis } from "@/lib/arrange"
+import type { DesignSummary } from "@/lib/designs"
+import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
 import type { VisibilityReport } from "@/lib/visibility"
@@ -288,7 +290,6 @@ export interface CoreSlice {
   activeMobileTab: MobileTab
   artboard: { width: number; height: number }
   isExportModalOpen: boolean
-  hasSavedProject: boolean
   lastSavedAt: string | null
   clipboardObject: FabricObject | null
 
@@ -368,18 +369,22 @@ export interface CoreSlice {
   copyCanvasToClipboard: (scale?: number) => Promise<boolean>
 
   // Storage actions
-  saveProjectToStorage: () => boolean
   /**
-   * Loads a stored document. `"document"` is the autosaved copy a reload should
-   * bring back; `"savedProject"` is the explicit copy the Restore button means.
+   * Serialises the current document without writing it anywhere.
+   *
+   * The design library stores the same payload under its own key; sharing this
+   * with autosave is what keeps the two representations identical.
    */
-  loadProjectFromStorage: (
-    source?: "document" | "savedProject"
+  captureDocument: () => ProjectPayload | null
+  /** Restores the autosaved session, the thing a reload should bring back. */
+  loadProjectFromStorage: () => Promise<boolean>
+  /** Loads a payload that is already in memory - a design from the library. */
+  loadProjectPayload: (
+    payload: ProjectPayload,
+    options?: { announce?: boolean }
   ) => Promise<boolean>
   /** Writes the autosaved document slot. Silent: it runs on a timer. */
   autosaveDocument: () => boolean
-  clearSavedProject: () => void
-  checkSavedProject: () => void
 
   // Clipboard actions
   copyActiveObject: () => Promise<void>
@@ -397,6 +402,29 @@ export interface ElementSlice {
   setElementColor: (colour: string) => void
 }
 
+/**
+ * DESIGN SLICE: the local library - save, open, rename and delete designs.
+ */
+export interface DesignSlice {
+  /** Metadata for every saved design, newest first. */
+  designs: DesignSummary[]
+  /** The design the canvas belongs to, or null before the first save. */
+  currentDesignId: string | null
+  isDesignsOpen: boolean
+
+  /** Migrates the old saved copy, then loads the list. Runs once on mount. */
+  initializeDesigns: () => Promise<void>
+  refreshDesigns: () => Promise<void>
+  openDesigns: () => Promise<void>
+  closeDesigns: () => void
+  /** Writes the canvas into the current design, creating one if needed. */
+  saveDesign: () => Promise<boolean>
+  openDesign: (id: string) => Promise<boolean>
+  newDesign: () => void
+  renameDesign: (id: string, name: string) => Promise<void>
+  removeDesign: (id: string) => Promise<void>
+}
+
 export type EditorStore = CoreSlice &
   FontSlice &
   HistorySlice &
@@ -404,4 +432,5 @@ export type EditorStore = CoreSlice &
   ColorSlice &
   ContextMenuSlice &
   EffectSlice &
-  ElementSlice
+  ElementSlice &
+  DesignSlice

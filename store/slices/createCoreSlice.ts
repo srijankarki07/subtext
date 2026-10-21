@@ -4,7 +4,7 @@ import {
   bindBlurHandleListeners,
   withoutEditorChrome,
 } from "@/lib/fabricDocument"
-import { deleteAsset } from "@/lib/assets"
+import { getDesign, putDesign } from "@/lib/designs"
 import { dehydrateCanvas, loadDocument } from "@/lib/snapshot"
 import {
   DOCUMENT_KEY,
@@ -22,16 +22,16 @@ import { ActiveSelection, Canvas, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
 
 /**
- * Serialises the current document and writes it to one of the two slots.
+ * Serialises the current document, without writing it anywhere.
  *
- * Shared by Save and by autosave so the two can never drift into writing
- * different shapes - a slot read back by Restore has to be understood by both
- * paths. Returns the payload so the caller can record its signature.
+ * Shared by autosave and the design library so the two can never store
+ * different shapes - a design opened later has to be understood by the same
+ * loader. The selection is dropped for the length of the snapshot so the
+ * children are serialised in absolute coordinates rather than the selection's
+ * own space; the members are captured first, because Fabric empties an
+ * `ActiveSelection` when it releases it.
  */
-function persistToSlot(
-  get: () => EditorStore,
-  key: string
-): { ok: true; payload: ProjectPayload } | { ok: false } {
+function capturePayload(get: () => EditorStore): ProjectPayload | null {
   const {
     canvas,
     artboard,
@@ -43,22 +43,16 @@ function persistToSlot(
     imagePalette,
     documentTitle,
   } = get()
-  if (!canvas) return { ok: false }
+  if (!canvas) return null
 
-  // Deselected for the length of the write so the children are serialised in
-  // absolute coordinates rather than the selection's own space.
-  //
-  // The members are captured first, because Fabric empties an `ActiveSelection`
-  // when it releases it - putting the same instance back would select nothing.
   const selected = canvas.getActiveObjects()
   canvas.discardActiveObject()
 
   try {
     // Dehydrated: the photo's pixels live in IndexedDB under its asset id, so
-    // what goes to localStorage is a few kilobytes of canvas JSON rather than
-    // an embedded copy of a multi-megabyte photo - which is what made saving a
-    // real photo fail on the storage quota.
-    const payload: ProjectPayload = {
+    // what is stored is a few kilobytes of canvas JSON rather than an embedded
+    // copy of a multi-megabyte photo.
+    return {
       canvasJson: dehydrateCanvas(canvas),
       artboard,
       grainIntensity,
@@ -73,12 +67,9 @@ function persistToSlot(
         minute: "2-digit",
       }),
     }
-
-    localStorage.setItem(key, JSON.stringify(payload))
-    return { ok: true, payload }
   } catch (error) {
-    console.error(`Failed to write ${key}:`, error)
-    return { ok: false }
+    console.error("Could not serialise the document:", error)
+    return null
   } finally {
     if (selected.length === 1) {
       canvas.setActiveObject(selected[0])
@@ -99,6 +90,23 @@ function persistToSlot(
        */
       get().setSelection(canvas.getActiveObjects())
     }
+  }
+}
+
+/** Serialises the document and writes it to a `localStorage` slot. */
+function persistToSlot(
+  get: () => EditorStore,
+  key: string
+): { ok: true; payload: ProjectPayload } | { ok: false } {
+  const payload = capturePayload(get)
+  if (!payload) return { ok: false }
+
+  try {
+    localStorage.setItem(key, JSON.stringify(payload))
+    return { ok: true, payload }
+  } catch (error) {
+    console.error(`Failed to write ${key}:`, error)
+    return { ok: false }
   }
 }
 
@@ -163,7 +171,6 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   alertDialog: null,
   setConfirmDialog: (config) => set({ confirmDialog: config }),
   setAlertDialog: (config) => set({ alertDialog: config }),
-  hasSavedProject: false,
   lastSavedAt: null,
   clipboardObject: null,
   documentTitle: "Untitled",
@@ -200,8 +207,6 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       applyCanvasZoom(canvas, artboard, zoom)
       canvas.requestRenderAll()
     }
-
-    get().checkSavedProject()
   },
 
   /**
@@ -252,85 +257,60 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas?.requestRenderAll()
   },
 
-  checkSavedProject: () => {
-    if (typeof window === "undefined") return
-    const saved = localStorage.getItem(STORAGE_KEY)
-    set({ hasSavedProject: !!saved })
-  },
-
-  saveProjectToStorage: () => {
-    const result = persistToSlot(get, STORAGE_KEY)
-    // Autosave would otherwise write the discarded document straight back.
-    // Failing to write the document slot is not worth an error dialog: the
-    // saved copy is the one the user asked for, and that write is what the
-    // dialog below reports.
-    if (result.ok) persistToSlot(get, DOCUMENT_KEY)
-
-    if (!result.ok) {
-      // Was a raw window.alert(), a third dialog implementation appearing in
-      // browser chrome while the styled alert dialog existed right here.
-      set({
-        alertDialog: {
-          title: "Could not save",
-          message:
-            "This project is too large for browser storage. Try a smaller image, then save again.",
-        },
-      })
-      return false
-    }
-
-    set({
-      hasSavedProject: true,
-      lastSavedAt: result.payload.savedAt,
-      isDirty: false,
-      // Recorded so the *next* comparison has something to compare against.
-      // Without it, "is this saved?" could only ever be answered by the act of
-      // saving, which is exactly why the badge used to lie after an undo.
-      savedSignature: signatureOf(result.payload),
-    })
-    return true
-  },
+  /** Serialises the document for callers that store it themselves. */
+  captureDocument: () => capturePayload(get),
 
   /**
-   * The autosave: writes the *document* slot, and nothing else.
+   * The autosave: writes the session slot, and keeps an open design current.
    *
    * Deliberately silent. It runs on a timer after every edit, so an error dialog
    * would appear unprompted and for a reason the user did not cause; a failure
    * here leaves `isDirty` true, which is the honest signal, and the next edit
    * tries again.
+   *
+   * When the canvas belongs to a saved design, the design record is updated
+   * too - without a new thumbnail, which would mean rendering the artboard on
+   * every autosave. The explicit Save refreshes that.
    */
   autosaveDocument: () => {
     const result = persistToSlot(get, DOCUMENT_KEY)
     if (!result.ok) return false
-    // Marked clean against the document slot, which is what "Saved" means: the
-    // work is written and will come back. Whether there is also an explicit copy
-    // is a separate question, answered by the Save button.
     set({ isDirty: false, savedSignature: signatureOf(result.payload) })
+
+    const designId = get().currentDesignId
+    if (designId) {
+      void (async () => {
+        try {
+          const record = await getDesign(designId)
+          if (!record) return
+          await putDesign({
+            ...record,
+            payload: result.payload,
+            artboard: result.payload.artboard,
+            updatedAt: Date.now(),
+          })
+        } catch (error) {
+          console.error("Could not update the open design:", error)
+        }
+      })()
+    }
     return true
   },
 
   /**
-   * Loads a stored document.
+   * Loads a payload that is already in memory.
    *
-   * Defaults to the autosaved document slot, which is what a reload should bring
-   * back; the Restore button asks for the saved copy explicitly. The fallback
-   * matters for anyone who used the app before the two slots existed: their only
-   * copy is in the saved-project slot, and it should still be restored.
+   * `announce` drives the restored-session notice: the automatic boot path says
+   * so, while opening a design the user just picked does not - they know what
+   * they did.
    */
-  loadProjectFromStorage: async (source = "document") => {
+  loadProjectPayload: async (data, options) => {
     const { canvas, setAspectRatio, saveHistoryState } = get()
-    if (!canvas || typeof window === "undefined") return false
+    if (!canvas) return false
 
     await get().initializeCustomFonts()
 
-    const key = source === "savedProject" ? STORAGE_KEY : DOCUMENT_KEY
-    const raw =
-      localStorage.getItem(key) ??
-      (source === "document" ? localStorage.getItem(STORAGE_KEY) : null)
-    if (!raw) return false
-
     try {
-      const data = JSON.parse(raw)
       const {
         canvasJson,
         artboard,
@@ -360,7 +340,10 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       })
 
       // 3. Load Canvas Objects, restoring the photo from its stored asset first
-      const missingAssets = await loadDocument(canvas, canvasJson)
+      const missingAssets = await loadDocument(
+        canvas,
+        canvasJson as Record<string, unknown>
+      )
       if (missingAssets > 0) {
         set({
           alertDialog: {
@@ -376,40 +359,24 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
       canvas.requestRenderAll()
       saveHistoryState()
+
+      // The session slot is written from what is now on the canvas, and its
+      // signature becomes the baseline. A loaded canvas does not necessarily
+      // re-serialise byte-for-byte into the JSON it came from, so taking the
+      // signature from the write is what makes "saved" mean saved.
+      get().autosaveDocument()
+
+      const announce = options?.announce ?? false
       const alreadyAnnounced =
         typeof sessionStorage !== "undefined" &&
         sessionStorage.getItem(RESTORE_NOTICE_KEY) === "1"
 
-      // The document slot is written from what is now on the canvas, and its
-      // signature becomes the baseline.
-      //
-      // Two things this gets right that a hand-built signature did not. The
-      // commit above ran against whatever baseline was in force *before* the
-      // load - `null` on a fresh boot - so it left the freshly restored document
-      // reading as dirty. And after a Restore, the two slots must agree with
-      // what is on screen: without this, reloading straight after a Restore
-      // would bring back the document that was there before it.
-      //
-      // It also sidesteps a subtlety: a loaded canvas does not necessarily
-      // re-serialise byte-for-byte into the JSON it came from, so a signature
-      // assembled from the *stored* JSON could disagree with the signature of
-      // the canvas as it now stands. Taking the signature from the write makes
-      // the two the same by construction.
-      get().autosaveDocument()
-
-      // Drives the notice: the user is told their session came back rather than
-      // finding someone else's document on their canvas. Only for the automatic
-      // path - announcing a restore the user just asked for would be telling
-      // them what they did - and only once per tab session, after which it is
-      // nagging on every reload.
       set({
         restoredAt:
-          source === "document" && !alreadyAnnounced
-            ? (data.savedAt ?? null)
-            : null,
+          announce && !alreadyAnnounced ? (data.savedAt ?? null) : null,
       })
       if (
-        source === "document" &&
+        announce &&
         !alreadyAnnounced &&
         typeof sessionStorage !== "undefined"
       ) {
@@ -417,30 +384,33 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
       }
       return true
     } catch (error) {
-      console.error("Failed to load project from localStorage:", error)
+      console.error("Failed to load the document:", error)
       return false
     }
   },
 
-  clearSavedProject: () => {
-    if (typeof window === "undefined") return
+  /**
+   * Restores the autosaved session.
+   *
+   * The document slot is what a reload should bring back. The legacy saved-copy
+   * slot is only a fallback for a first run that predates the design library;
+   * `initializeDesigns` migrates it and removes it.
+   */
+  loadProjectFromStorage: async () => {
+    if (typeof window === "undefined") return false
 
-    // Read the payload first: deleting the project should delete the photos it
-    // stored, or they sit in IndexedDB for good with nothing referencing them.
+    const raw =
+      localStorage.getItem(DOCUMENT_KEY) ?? localStorage.getItem(STORAGE_KEY)
+    if (!raw) return false
+
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      const assets: string[] = raw
-        ? (JSON.parse(raw).canvasJson?.objects ?? [])
-            .map((object: any) => object.assetId)
-            .filter((id: unknown): id is string => typeof id === "string")
-        : []
-      assets.forEach((id) => void deleteAsset(id))
+      return await get().loadProjectPayload(JSON.parse(raw), {
+        announce: true,
+      })
     } catch (error) {
-      console.error("Could not read the saved project's assets:", error)
+      console.error("Failed to read the stored document:", error)
+      return false
     }
-
-    localStorage.removeItem(STORAGE_KEY)
-    set({ hasSavedProject: false, lastSavedAt: null })
   },
 
   setActiveObject: (activeObject) => {
@@ -754,17 +724,10 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.requestRenderAll()
     get().saveHistoryState("New canvas")
 
-    // The document slot is overwritten with the empty document, and the saved
-    // copy is left alone.
-    //
-    // That distinction is the dialog's promise - clearing the artboard must not
-    // delete the copy the user asked for, so Restore can still bring it back.
-    // Overwriting rather than removing is what stops a reload resurrecting the
-    // discarded document *and* keeps the saved copy out of reach of the boot
-    // fallback, which exists only for a first-ever session that has nothing but
-    // a saved copy.
-    //
-    // Last, so autosave cannot write the discarded document on its way out.
+    // The session slot is overwritten with the empty document; saved designs
+    // are a separate store and are untouched. `newDesign` detaches the canvas
+    // from its current design before this runs, so the empty state cannot be
+    // written back into the design it came from.
     get().autosaveDocument()
   },
 
