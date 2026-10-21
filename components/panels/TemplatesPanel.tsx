@@ -1,7 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Info, LayoutTemplate, Palette, Sparkles, X } from "lucide-react"
+import {
+  Info,
+  LayoutTemplate,
+  Palette,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
@@ -33,6 +40,26 @@ const CATEGORIES: TemplateCategory[] = [
   "Vintage",
 ]
 
+function searchTerms(query: string): string[] {
+  return query.toLowerCase().split(/\s+/).filter(Boolean)
+}
+
+/**
+ * Everything a search may match: the name, category, grade and the actual
+ * copy. Searching "tears" should find the template that says it, not only the
+ * one that is called it.
+ */
+function templateHaystack(template: Template): string {
+  return [
+    template.name,
+    template.category,
+    template.effects.presetName,
+    ...template.texts.map((text) => `${text.text ?? ""} ${text.fontFamily}`),
+  ]
+    .join(" ")
+    .toLowerCase()
+}
+
 function categoryTint(category: TemplateCategory) {
   switch (category) {
     case "Cinematic":
@@ -58,6 +85,7 @@ function TemplateThumbnailCard({
   return (
     <button
       type="button"
+      aria-label={`Apply the ${template.name} template`}
       onClick={onClick}
       className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-card p-2 text-left transition-colors outline-none hover:border-edge-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.99]"
     >
@@ -158,6 +186,7 @@ export default function TemplatesPanel() {
     "layouts"
   )
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>("All")
+  const [query, setQuery] = useState("")
   const [showInfo, setShowInfo] = useState(true)
   const [selectedLut, setSelectedLut] = useState<string>("None")
 
@@ -165,9 +194,18 @@ export default function TemplatesPanel() {
   const applyPreset = useEditorStore((s) => s.applyPreset)
   const setActiveMobileTab = useEditorStore((s) => s.setActiveMobileTab)
 
+  const terms = searchTerms(query)
+
   const filteredTemplates = TEMPLATES.filter(
     (template) =>
-      activeCategory === "All" || template.category === activeCategory
+      (activeCategory === "All" || template.category === activeCategory) &&
+      terms.every((term) => templateHaystack(template).includes(term))
+  )
+
+  const filteredGrades = CINEMATIC_PRESET_METADATA.filter((meta) =>
+    terms.every((term) =>
+      `${meta.name} ${meta.description}`.toLowerCase().includes(term)
+    )
   )
 
   const handleApplyLut = (name: string) => {
@@ -178,6 +216,38 @@ export default function TemplatesPanel() {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="relative">
+        <Search
+          size={13}
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--text-muted)]"
+        />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => {
+            const value = event.target.value
+            setQuery(value)
+            // A search is library-wide; keeping a category selected would hide
+            // matches in every other one.
+            if (value.trim()) setActiveCategory("All")
+          }}
+          placeholder="Search templates and grades"
+          aria-label="Search templates"
+          className="h-8 w-full rounded-lg border border-border bg-card pr-8 pl-7 text-[12px] text-foreground outline-none placeholder:text-[var(--text-muted)] focus-visible:outline-2 focus-visible:outline-ring"
+        />
+        {query && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => setQuery("")}
+            className="absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-[var(--text-muted)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
       <SegmentedControl
         label="Template type"
         value={activeSubTab}
@@ -235,6 +305,12 @@ export default function TemplatesPanel() {
           <div className="flex flex-wrap gap-1">
             {CATEGORIES.map((category) => {
               const active = activeCategory === category
+              const count =
+                category === "All"
+                  ? TEMPLATES.length
+                  : TEMPLATES.filter(
+                      (template) => template.category === category
+                    ).length
               return (
                 <button
                   key={category}
@@ -249,11 +325,19 @@ export default function TemplatesPanel() {
                       : "bg-subtle text-[var(--text-secondary)] hover:bg-subtle-hover hover:text-foreground"
                   )}
                 >
-                  {category}
+                  {category}{" "}
+                  <span className="text-[10px] opacity-55">{count}</span>
                 </button>
               )
             })}
           </div>
+
+          {filteredTemplates.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-[12px] leading-relaxed text-[var(--text-muted)]">
+              Nothing matches “{query}” in{" "}
+              {activeCategory === "All" ? "the library" : activeCategory}.
+            </p>
+          )}
 
           <div className="flex flex-col gap-2.5">
             {filteredTemplates.map((template) => (
@@ -273,11 +357,17 @@ export default function TemplatesPanel() {
       {activeSubTab === "luts" && (
         <div className="flex flex-col gap-2">
           <p className="flex items-center justify-between px-0.5 text-[11px] text-[var(--text-muted)]">
-            {CINEMATIC_PRESET_METADATA.length} film stocks
+            {filteredGrades.length} film stocks
             <Sparkles size={11} aria-hidden="true" />
           </p>
 
-          {CINEMATIC_PRESET_METADATA.map((meta) => {
+          {filteredGrades.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-[12px] leading-relaxed text-[var(--text-muted)]">
+              Nothing matches “{query}”.
+            </p>
+          )}
+
+          {filteredGrades.map((meta) => {
             const active = selectedLut === meta.name
             return (
               <button
