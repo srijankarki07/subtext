@@ -3,5 +3,9 @@ packages: []
 allowBuilds:
   canvas: false
   msw: false
+  # Node-only halves of the ONNX runtime and protobuf tooling. The browser
+  # build uses onnxruntime-web; neither postinstall is needed at runtime.
+  onnxruntime-node: false
+  protobufjs: false
   sharp: true
   unrs-resolver: true

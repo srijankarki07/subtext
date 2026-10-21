@@ -2,6 +2,8 @@
 
 import { ImagePlus, Maximize, Minimize, RefreshCw, Trash2 } from "lucide-react"
 
+import { BackgroundRemovalButton } from "@/components/editor/BackgroundRemovalButton"
+
 import { Button } from "@/components/ui/button"
 import { Section } from "@/components/ui/section"
 import { useEditorStore } from "@/store/useEditorStore"
@@ -57,6 +59,8 @@ export default function MediaPanel() {
             Replace the photo
           </Button>
         )}
+
+        {photo && <BackgroundRemovalButton target={photo} />}
       </Section>
 
       {photo && (
