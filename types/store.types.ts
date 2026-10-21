@@ -1,4 +1,4 @@
-import { Canvas, FabricObject } from "fabric"
+import { Canvas, FabricObject, IText } from "fabric"
 
 import type { AlignMode, DistributeAxis } from "@/lib/arrange"
 import type { DesignSummary } from "@/lib/designs"
@@ -157,6 +157,17 @@ export interface ColorSlice {
     target: "fill" | "stroke" | "shadow" | "background"
   ) => Promise<void>
   applyTextStyle: (key: string, value: any) => void
+  /**
+   * Makes one block readable against its own background.
+   *
+   * By default only a failing block is changed; `force` is the Smart
+   * auto-colour button, which always chooses the best candidate. `save` records
+   * a history entry for callers outside a transaction.
+   */
+  fitTextToBackground: (
+    text: IText,
+    options?: { force?: boolean; save?: boolean }
+  ) => VisibilityReport | null
   /** Applies a named style to the selected block in one step. */
   applyTextPreset: (id: string) => void
   getActiveSelectionStyle: (key: string) => any
