@@ -88,6 +88,13 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       keywords: "image picture artwork upload",
       run: () => void store().addImage(),
     },
+    {
+      id: "remove-background",
+      title: "Remove the photo's background",
+      group: "Edit",
+      keywords: "cutout matte transparent subject isolate",
+      run: () => void store().removeBackground(),
+    },
 
     // --- edit --------------------------------------------------------------
     {

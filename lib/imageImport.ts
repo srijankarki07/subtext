@@ -151,6 +151,43 @@ export async function replaceImage(
     storeAsset(file),
   ])
   const next = await FabricImage.fromURL(dataUrl)
+  await swapPhoto(canvas, next, assetId)
+  canvas.requestRenderAll()
+
+  const palette = await extractPalette(dataUrl, colorCount)
+  return { palette }
+}
+
+/**
+ * Puts `next` where the current photo is.
+ *
+ * Copies the composition-owned properties - position, scale, grade, lock - and
+ * repoints the blur overlays, which are clipped copies of the same pixels.
+ * Returns the previous image, or null when there was none.
+ *
+ * `deletePrevious` is off for edits that must stay undoable: a history snapshot
+ * still references the old asset id, so deleting it would make undo restore a
+ * photo that is no longer in the store.
+ */
+export async function swapPhoto(
+  canvas: Canvas,
+  next: FabricImage,
+  assetId: string,
+  {
+    target,
+    deletePrevious = true,
+  }: { target?: FabricImage; deletePrevious?: boolean } = {}
+): Promise<FabricImage | null> {
+  const primary = canvas
+    .getObjects()
+    .find((object) => object.type === "image" && !(object as any).isEffect) as
+    FabricImage | undefined
+  const previous = target ?? primary
+  if (!previous) return null
+  // The blur overlays belong to the primary photo; repointing them at a second
+  // image's pixels would break the effect it was built for.
+  const isPrimary = previous === primary
+
   ;(next as any).assetId = assetId
 
   const footprintWidth = previous.getScaledWidth()
@@ -188,33 +225,36 @@ export async function replaceImage(
   canvas.insertAt(Math.max(0, index), next)
   canvas.setActiveObject(next)
 
-  canvas
-    .getObjects()
-    .filter(
-      (object: any) =>
-        typeof object.id === "string" && object.id.startsWith("blur-overlay-")
-    )
-    .forEach((overlay: any) => {
-      overlay.setElement(next.getElement())
-      overlay.set({ scaleX: scale, scaleY: scale })
-      // The overlays are part of the same document, so they reference the same
-      // asset and must survive a save without the photo being re-stored.
-      overlay.assetId = assetId
-    })
+  if (isPrimary) {
+    canvas
+      .getObjects()
+      .filter(
+        (object: any) =>
+          typeof object.id === "string" && object.id.startsWith("blur-overlay-")
+      )
+      .forEach((overlay: any) => {
+        overlay.setElement(next.getElement())
+        overlay.set({ scaleX: scale, scaleY: scale })
+        // The overlays are part of the same document, so they reference the same
+        // asset and must survive a save without the photo being re-stored.
+        overlay.assetId = assetId
+      })
+  }
 
   if ((next.filters ?? []).length > 0) await next.applyFilters()
 
-  // The previous photo is no longer referenced by anything - the overlays were
-  // just repointed - so its bytes would otherwise sit in the asset store for
-  // good, one orphan per replacement.
-  const previousAssetId = (previous as any).assetId as string | undefined
-  if (previousAssetId && previousAssetId !== assetId) {
-    const stillReferenced = canvas
-      .getObjects()
-      .some((object: any) => object.assetId === previousAssetId)
-    if (!stillReferenced) await deleteAsset(previousAssetId)
+  if (deletePrevious) {
+    // The previous photo is no longer referenced by anything - the overlays
+    // were just repointed - so its bytes would otherwise sit in the asset store
+    // for good, one orphan per replacement.
+    const previousAssetId = (previous as any).assetId as string | undefined
+    if (previousAssetId && previousAssetId !== assetId) {
+      const stillReferenced = canvas
+        .getObjects()
+        .some((object: any) => object.assetId === previousAssetId)
+      if (!stillReferenced) await deleteAsset(previousAssetId)
+    }
   }
 
-  const palette = await extractPalette(dataUrl, colorCount)
-  return { palette }
+  return previous
 }

@@ -1,6 +1,7 @@
 import { Canvas, FabricObject, IText } from "fabric"
 
 import type { AlignMode, DistributeAxis } from "@/lib/arrange"
+import type { BackgroundRemovalMode } from "@/lib/backgroundRemoval"
 import type { DesignSummary } from "@/lib/designs"
 import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
@@ -302,6 +303,8 @@ export interface CoreSlice {
   artboard: { width: number; height: number }
   isExportModalOpen: boolean
   lastSavedAt: string | null
+  backgroundRemoval: BackgroundRemovalState
+  backgroundRemovalMode: BackgroundRemovalMode
   clipboardObject: FabricObject | null
 
   /** The workspace name. Persisted with the project and used for export filenames. */
@@ -374,6 +377,19 @@ export interface CoreSlice {
   addImage: () => Promise<void>
   /** Swaps the artwork's photo, keeping the composition. */
   replaceImage: () => Promise<void>
+  /**
+   * Removes a photo's background with an on-device model, replacing its bitmap
+   * while keeping the layout, grade and blur zones.
+   *
+   * Defaults to the selected image, then the primary photo; callers that know
+   * which image they mean (the inspector, the context menu) pass it explicitly.
+   */
+  removeBackground: (
+    target?: FabricObject,
+    mode?: BackgroundRemovalMode
+  ) => Promise<boolean>
+  /** Person (portraits) or Object (general subjects). */
+  setBackgroundRemovalMode: (mode: BackgroundRemovalMode) => void
   deleteActiveObject: (targetObj?: FabricObject | null) => void
   clearCanvas: () => void
   applyTemplate: (templateId: string) => void
@@ -434,6 +450,17 @@ export interface DesignSlice {
   newDesign: () => void
   renameDesign: (id: string, name: string) => Promise<void>
   removeDesign: (id: string) => Promise<void>
+}
+
+export type BackgroundRemovalStatus =
+  "idle" | "loading" | "processing" | "done" | "error"
+
+export interface BackgroundRemovalState {
+  status: BackgroundRemovalStatus
+  /** Model download, 0–100. */
+  progress: number
+  /** Why it failed, when it did. */
+  message?: string
 }
 
 export type EditorStore = CoreSlice &

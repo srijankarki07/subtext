@@ -12,6 +12,7 @@ import {
   Lock,
   Maximize,
   Minimize,
+  Scissors,
   Trash2,
   Unlock,
 } from "lucide-react"
@@ -56,6 +57,8 @@ export default function ContextMenu() {
   const toggleLayerVisibility = useEditorStore((s) => s.toggleLayerVisibility)
   const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
   const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
+  const removeBackground = useEditorStore((s) => s.removeBackground)
+  const backgroundRemoval = useEditorStore((s) => s.backgroundRemoval)
 
   const menuRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<{
@@ -166,6 +169,23 @@ export default function ContextMenu() {
               <span className="flex items-center gap-2.5">
                 <Minimize size={14} className="text-[var(--text-muted)]" />
                 Fit to canvas
+              </span>
+            </button>
+            <button
+              role="menuitem"
+              disabled={
+                backgroundRemoval.status === "loading" ||
+                backgroundRemoval.status === "processing"
+              }
+              onClick={run(() => void removeBackground(target ?? undefined))}
+              className={cn(
+                item,
+                "disabled:pointer-events-none disabled:opacity-40"
+              )}
+            >
+              <span className="flex items-center gap-2.5">
+                <Scissors size={14} className="text-[var(--text-muted)]" />
+                Remove background
               </span>
             </button>
           </div>
