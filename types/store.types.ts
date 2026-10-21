@@ -240,9 +240,21 @@ export interface EffectSlice {
     color2: string
   ) => void
 
-  applyImageFilter: (type: string, options: any) => void
-  applyPreset: (matrix: number[], coalesceKey?: string) => void
-  applyWarmth: (value: number) => void
+  /**
+   * `scope` is "selected" for manual adjustments and "all" for a look that
+   * should cover every image layer.
+   */
+  applyImageFilter: (
+    type: string,
+    options: any,
+    scope?: "selected" | "all"
+  ) => void
+  applyPreset: (
+    matrix: number[],
+    coalesceKey?: string,
+    scope?: "selected" | "all"
+  ) => void
+  applyWarmth: (value: number, scope?: "selected" | "all") => void
   applyDuotone: (lightHex: string, darkHex: string, intensity?: number) => void
   resetEffect: (
     category: "adjustments" | "cinematic" | "atmospherics" | "all"
