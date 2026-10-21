@@ -813,6 +813,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
     // 4. INJECT TEMPLATE TEXTS WITH DYNAMIC BOUNDING BOX CLAMPING
     let quoteObject: IText | null = null
+    const createdTexts: IText[] = []
 
     template.texts.forEach((tConfig) => {
       let content = tConfig.text
@@ -883,24 +884,29 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
       ;(textObject as any).textType = textRole
       canvas.add(textObject)
+      createdTexts.push(textObject)
 
       if (textRole === "quote") quoteObject = textObject
     })
 
     canvas.requestRenderAll()
 
-    // Readability safeguard. A template's fill is chosen against a hypothetical
-    // image, so applying it over a real photo could land exactly the unreadable
-    // result this app exists to prevent. The colour is only overridden when it
-    // actually fails, so a template that works keeps its art direction.
+    // Readability safeguard for every block, not only the quote. A template's
+    // fill is chosen against a hypothetical image, so applying it over a real
+    // photo can land exactly the unreadable result this app exists to prevent.
+    // Each block is measured against its own background and only changed when
+    // it fails, so a template that works keeps its art direction. The selection
+    // is dropped first so its handles cannot tint the sample.
+    canvas.discardActiveObject()
+    createdTexts.forEach((text) => get().fitTextToBackground(text))
+    // The transaction's snapshot was last taken when the texts were added; the
+    // fitted colours are not in it until it is refreshed.
+    get().saveHistoryState()
+
     if (quoteObject) {
       canvas.setActiveObject(quoteObject)
       get().setActiveObject(quoteObject)
       get().calculateContrast()
-
-      if (get().visibility?.badge === "FAIL") {
-        get().autoColorText()
-      }
     }
 
     endHistoryTransaction()

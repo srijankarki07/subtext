@@ -3,7 +3,7 @@ import {
   buildReport,
   rankColours,
   type RegionStats,
-  type ReportInput,
+  type VisibilityReport,
 } from "@/lib/visibility"
 import { textPresetById } from "@/lib/textPresets"
 import { ColorSlice, EditorStore } from "@/types/store.types"
@@ -54,6 +54,73 @@ function readRegion(
   const stride = Math.max(floor, Math.floor(budgeted))
 
   return analyseRegion(data, { stride })
+}
+
+/**
+ * Whether a report is readable *without leaning on a weak effect*.
+ *
+ * The report's badge is decided by the best edge, and a wide soft shadow can
+ * technically carry the number while the glyphs themselves stay white on a
+ * white wall. A fill or a real outline stands on its own; a glow that the
+ * engine itself discounts below 80% does not. Templates use this stricter test.
+ */
+function passesReadability(report: VisibilityReport): boolean {
+  if (report.badge === "FAIL") return false
+  const best = report.edges.reduce((a, b) => (b.ratio > a.ratio ? b : a))
+  return best.reliability >= 0.8
+}
+
+/**
+ * The readability report for one text object.
+ *
+ * Hides the text for the length of the sample so the pixels come from what is
+ * actually behind it, and restores it in a `finally` so a sampling failure can
+ * never leave the layer invisible.
+ */
+function reportForText(
+  canvas: NonNullable<EditorStore["canvas"]>,
+  text: IText,
+  quality: "fast" | "full" = "full"
+): VisibilityReport | null {
+  const shadow = text.get("shadow") as Shadow | null
+
+  // Fabric scales through scaleX/scaleY and leaves fontSize untouched, so a
+  // quote dragged from 40px to 200px would otherwise report 40px.
+  const scale = Math.abs(text.scaleX ?? 1)
+  const fontSize = ((text.get("fontSize") as number) || 40) * scale
+
+  const rawWeight = text.get("fontWeight")
+  const fontWeight =
+    typeof rawWeight === "number" ? rawWeight : rawWeight === "bold" ? 700 : 400
+
+  const strokeWidth = (text.get("strokeWidth") as number) || 0
+
+  text.set("visible", false)
+  canvas.renderAll()
+
+  let region: RegionStats
+  try {
+    region = readRegion(canvas, text.getBoundingRect(), quality)
+  } catch (error) {
+    console.error("Could not sample the region behind the text:", error)
+    return null
+  } finally {
+    text.set("visible", true)
+    canvas.renderAll()
+  }
+
+  return buildReport({
+    region,
+    fill: (text.get("fill") as string) || "#FFFFFF",
+    stroke: strokeWidth > 0 ? (text.get("stroke") as string) : undefined,
+    strokeWidth,
+    shadowColor: shadow?.color,
+    shadowBlur: shadow?.blur,
+    shadowOffset:
+      Math.abs(shadow?.offsetX ?? 0) + Math.abs(shadow?.offsetY ?? 0),
+    fontSize,
+    fontWeight,
+  })
 }
 
 export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
@@ -328,57 +395,93 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
       return
     }
 
-    const text = activeObject as IText
-    const shadow = text.get("shadow") as Shadow | null
+    set({
+      visibility: reportForText(canvas, activeObject as IText, quality),
+    })
+  },
 
-    // Fabric scales through scaleX/scaleY and leaves fontSize untouched, so a
-    // quote dragged from 40px to 200px used to report 40px - which meant the
-    // size bonus, and the choice of contrast threshold, were both wrong.
-    const scale = Math.abs(text.scaleX ?? 1)
-    const fontSize = ((text.get("fontSize") as number) || 40) * scale
+  /**
+   * Makes one text block readable against what is actually behind it.
+   *
+   * Called for every block a template creates. `force` is for the explicit
+   * Smart auto-colour button, which means "choose the best" even when the
+   * current colour technically passes; templates use the default so a working
+   * art direction is left alone.
+   *
+   * The fallback matters more than it looks: a single fill colour cannot pass
+   * against a background that is both black and white, which is exactly the
+   * photo-in-the-middle case this engine exists for. When no fill passes, the
+   * text gets white fill, a dark outline and a dark shadow - a deterministic
+   * treatment that gives the eye an edge on either background.
+   */
+  fitTextToBackground: (text, options = {}) => {
+    const { canvas, imagePalette, saveHistoryState } = get()
+    if (!canvas) return null
 
-    const rawWeight = text.get("fontWeight")
-    const fontWeight =
-      typeof rawWeight === "number"
-        ? rawWeight
-        : rawWeight === "bold"
-          ? 700
-          : 400
+    const report = reportForText(canvas, text)
+    if (!report) return null
+    if (!options.force && passesReadability(report)) return report
 
-    const strokeWidth = (text.get("strokeWidth") as number) || 0
+    const [best] = rankColours(report, imagePalette, 1)
+    if (best) {
+      text.set("fill", best.color)
 
-    // Hide the text so the sample is of what is actually behind it.
-    text.set("visible", false)
-    canvas.renderAll()
+      // Rescore against the same region rather than re-sampling: the pixels
+      // behind the text have not moved, only the colour sitting on them.
+      const updated = buildReport({
+        region: report.region,
+        fill: best.color,
+        stroke: report.applied.strokeColor,
+        strokeWidth: report.applied.strokeWidth,
+        shadowColor: report.applied.shadowColor,
+        shadowBlur: report.applied.shadowBlur,
+        shadowOffset: report.applied.shadowOffset,
+        fontSize: report.fontSize,
+        fontWeight: report.fontWeight,
+      })
 
-    let region: RegionStats
-    try {
-      region = readRegion(canvas, text.getBoundingRect(), quality)
-    } catch (error) {
-      console.error("Could not sample the region behind the text:", error)
-      set({ visibility: null })
-      return
-    } finally {
-      // Runs in the same frame, so the user never sees a flicker - and it runs
-      // even if sampling threw, so the text can never be left invisible.
-      text.set("visible", true)
-      canvas.renderAll()
+      if (passesReadability(updated)) {
+        canvas.requestRenderAll()
+        if (options.save) {
+          saveHistoryState("Improve text contrast", {
+            coalesceKey: "text-contrast",
+          })
+        }
+        return updated
+      }
     }
 
-    const input: ReportInput = {
-      region,
-      fill: (text.get("fill") as string) || "#FFFFFF",
-      stroke: strokeWidth > 0 ? (text.get("stroke") as string) : undefined,
-      strokeWidth,
-      shadowColor: shadow?.color,
-      shadowBlur: shadow?.blur,
-      shadowOffset:
-        Math.abs(shadow?.offsetX ?? 0) + Math.abs(shadow?.offsetY ?? 0),
-      fontSize,
-      fontWeight,
-    }
+    text.set({
+      fill: "#FFFFFF",
+      stroke: "rgba(0,0,0,0.9)",
+      strokeWidth: 1.5,
+      shadow: new Shadow({
+        color: "rgba(0,0,0,0.85)",
+        blur: 18,
+        offsetX: 0,
+        offsetY: 6,
+      }),
+    })
 
-    set({ visibility: buildReport(input) })
+    const fallback = buildReport({
+      region: report.region,
+      fill: "#FFFFFF",
+      stroke: "rgba(0,0,0,0.9)",
+      strokeWidth: 1.5,
+      shadowColor: "rgba(0,0,0,0.85)",
+      shadowBlur: 18,
+      shadowOffset: 6,
+      fontSize: report.fontSize,
+      fontWeight: report.fontWeight,
+    })
+
+    canvas.requestRenderAll()
+    if (options.save) {
+      saveHistoryState("Improve text contrast", {
+        coalesceKey: "text-contrast",
+      })
+    }
+    return fallback
   },
 
   /**
@@ -399,13 +502,18 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
   },
 
   autoColorText: () => {
-    const { activeObject, visibility, imagePalette, applyTextStyle } = get()
-    if (!activeObject || activeObject.type !== "i-text" || !visibility) return
+    const { activeObject } = get()
+    if (!activeObject || activeObject.type !== "i-text") return
 
-    // Ranked rather than filtered: the previous version discarded every
-    // candidate below 4.5:1 even for display type, where WCAG asks for 3:1, so
-    // it rejected good colours on the user's behalf.
-    const [best] = rankColours(visibility, imagePalette, 1)
-    if (best) applyTextStyle("fill", best.color)
+    // Recomputed rather than read from the panel's cached report: the button is
+    // an explicit "fix it", and it may be pressed before a report has ever been
+    // built. Forced, so it always chooses the best colour even when the current
+    // one technically passes - and it falls back to an outline and shadow when
+    // no fill can pass on its own.
+    const report = get().fitTextToBackground(activeObject as IText, {
+      force: true,
+      save: true,
+    })
+    if (report) set({ visibility: report })
   },
 })
