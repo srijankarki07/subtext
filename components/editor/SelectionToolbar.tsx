@@ -26,6 +26,7 @@ import {
   Minimize2,
   RefreshCw,
   Trash2,
+  Ungroup,
   X,
 } from "lucide-react"
 
@@ -380,6 +381,19 @@ function Actions({
       >
         <RefreshCw size={14} />
       </BarButton>
+    )
+  }
+
+  if (summary.kind === "group") {
+    items.push(
+      <BarButton
+        key="ungroup"
+        label="Ungroup"
+        onClick={() => store.ungroupSelection()}
+      >
+        <Ungroup size={14} />
+      </BarButton>,
+      <Divider key="group-divider" />
     )
   }
 

@@ -1,4 +1,4 @@
-import { ActiveSelection, type Canvas, type FabricObject } from "fabric"
+import { ActiveSelection, Group, type Canvas, type FabricObject } from "fabric"
 import { StateCreator } from "zustand"
 
 import {
@@ -27,6 +27,33 @@ function isArrangeable(object: FabricObject): boolean {
     editorOnly?: boolean
   }
   return !flags.locked && !flags.isEffect && !flags.editorOnly
+}
+
+/** A Fabric Group, as opposed to an ActiveSelection or a plain object. */
+function isGroupObject(object: FabricObject): object is Group {
+  return (
+    typeof (object as { getObjects?: unknown }).getObjects === "function" &&
+    object.type !== "activeselection"
+  )
+}
+
+/**
+ * The one photo the effects engine grades.
+ *
+ * Grading, duotone, blur zones and the before/after view all resolve the photo
+ * with a top-level `.find(image)`. Nesting it inside a group would make it
+ * invisible to every one of them, so a group may not contain it.
+ */
+function isBackgroundPhoto(object: FabricObject): boolean {
+  return (
+    object.type === "image" &&
+    (object as { isEffect?: boolean }).isEffect !== true
+  )
+}
+
+/** A layer that can safely go inside a group. */
+function isGroupable(object: FabricObject): boolean {
+  return isArrangeable(object) && !isBackgroundPhoto(object)
 }
 
 /**
@@ -324,6 +351,98 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
     // fires many events a second, and each becoming its own undo step would
     // make undo useless.
     saveHistoryState("Nudge", { coalesceKey: "nudge" })
+  },
+
+  groupSelection: () => {
+    const {
+      canvas,
+      selectedObjects,
+      saveHistoryState,
+      setSelection,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+    } = get()
+    if (!canvas) return
+
+    // All or nothing. Grouping part of what the user selected - quietly
+    // leaving a locked layer or the photo out - is worse than declining.
+    if (selectedObjects.length < 2 || !selectedObjects.every(isGroupable)) {
+      return
+    }
+
+    const targets = selectedObjects
+    // Removing the layers and adding the group would otherwise each be seen by
+    // the canvas's add/remove handlers and recorded as their own history
+    // entries - leaving a half-grouped snapshot between the two.
+    beginHistoryTransaction("Group")
+    try {
+      canvas.discardActiveObject()
+
+      // The group takes the stacking position of its topmost member.
+      const all = canvas.getObjects()
+      const indices = targets.map((object) => all.indexOf(object))
+      if (indices.some((index) => index < 0)) return
+      const top = Math.max(...indices)
+      const below = indices.filter((index) => index < top).length
+
+      canvas.remove(...targets)
+      const group = new Group(targets)
+      canvas.insertAt(top - below, group)
+
+      canvas.setActiveObject(group)
+      canvas.requestRenderAll()
+      setSelection([group])
+      saveHistoryState()
+    } finally {
+      endHistoryTransaction()
+    }
+  },
+
+  ungroupSelection: () => {
+    const {
+      canvas,
+      selectedObjects,
+      saveHistoryState,
+      setSelection,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+    } = get()
+    if (!canvas) return
+
+    // One at a time: ungrouping several would leave no single obvious
+    // selection behind, and the common case is one group.
+    const group = selectedObjects.length === 1 ? selectedObjects[0] : null
+    if (!group || !isGroupObject(group)) return
+    if ((group as { locked?: boolean }).locked) return
+
+    const index = canvas.getObjects().indexOf(group)
+    if (index < 0) return
+
+    // One entry for the whole dissolve, not one for removing the group and
+    // another for adding its children back.
+    beginHistoryTransaction("Ungroup")
+    try {
+      canvas.discardActiveObject()
+      // `removeAll` restores each child's absolute transform, so the artwork
+      // does not move when the group is dissolved.
+      const children = group.removeAll()
+      canvas.remove(group)
+      canvas.insertAt(index, ...children)
+
+      if (children.length === 1) {
+        canvas.setActiveObject(children[0])
+      } else if (children.length > 1) {
+        canvas.setActiveObject(
+          new ActiveSelection(children, { canvas } as never)
+        )
+      }
+
+      canvas.requestRenderAll()
+      setSelection(children)
+      saveHistoryState()
+    } finally {
+      endHistoryTransaction()
+    }
   },
 
   fitImageToCanvas: (mode) => {

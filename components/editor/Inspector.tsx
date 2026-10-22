@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trash2,
   Type,
+  Ungroup,
   X,
 } from "lucide-react"
 
@@ -184,6 +185,32 @@ export function InspectorPanelContent({
           {summary.hint}
         </p>
         <AddBlock />
+      </div>
+    )
+  }
+
+  if (summary.kind === "group") {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <span className="flex size-6 items-center justify-center rounded-md bg-subtle text-[var(--text-secondary)]">
+            <Layers3 size={13} />
+          </span>
+          <span className="text-[13px] font-semibold text-foreground">
+            {summary.label}
+          </span>
+        </div>
+        <p className="text-[12px] leading-relaxed text-[var(--text-muted)]">
+          {summary.hint}
+        </p>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2"
+          onClick={() => useEditorStore.getState().ungroupSelection()}
+        >
+          <Ungroup size={13} />
+          Ungroup
+        </Button>
       </div>
     )
   }

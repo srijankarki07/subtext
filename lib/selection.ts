@@ -27,7 +27,7 @@ export interface SelectableLike {
 }
 
 export type SelectionKind =
-  "none" | "text" | "image" | "effect" | "multi" | "other"
+  "none" | "text" | "image" | "effect" | "group" | "multi" | "other"
 
 export type EffectKind = "vignette" | "letterbox" | "blur" | "gradient"
 
@@ -150,12 +150,26 @@ export function classifySelection(objects: SelectableLike[]): SelectionSummary {
     }
   }
 
+  // Inserted elements are Groups too, so their own name has to win before the
+  // generic container check below.
   if (object.elementName) {
     return {
       kind: "other",
       count,
       label: object.elementName,
       hint: "Recolour it from the Elements panel.",
+    }
+  }
+
+  // A Fabric Group. Duck-typed rather than matched on a type string, which is
+  // a Fabric implementation detail; having `getObjects` is what actually makes
+  // something a container.
+  if (typeof (object as { getObjects?: unknown }).getObjects === "function") {
+    return {
+      kind: "group",
+      count,
+      label: "Group",
+      hint: "Ungroup it to edit the layers inside.",
     }
   }
 

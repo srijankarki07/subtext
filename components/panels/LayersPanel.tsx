@@ -5,6 +5,7 @@ import { ActiveSelection } from "fabric"
 import {
   Eye,
   EyeOff,
+  Group,
   Image as ImageIcon,
   Lock,
   MonitorPlay,
@@ -68,7 +69,11 @@ function describe(obj: any): { label: string; icon: typeof Type } {
   if (obj.isEffect) return { label: "Effect", icon: MonitorPlay }
   if (obj.type === "image") return { label: "Image", icon: ImageIcon }
 
+  // Inserted elements are Groups too, so their catalogue name wins first.
   if (obj.elementName) return { label: obj.elementName, icon: Shapes }
+  if (typeof obj.getObjects === "function" && obj.type !== "activeselection") {
+    return { label: "Group", icon: Group }
+  }
 
   return { label: obj.type ?? "Layer", icon: Square }
 }

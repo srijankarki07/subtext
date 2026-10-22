@@ -122,6 +122,16 @@ export interface LayerSlice {
    * one undo step rather than fifty.
    */
   nudgeSelection: (dx: number, dy: number) => void
+  /**
+   * Groups the selected layers into one object.
+   *
+   * Two or more layers. Refused when the selection contains something that
+   * cannot safely live inside a group - a locked layer, an effect layer, or the
+   * background photo the effects engine grades.
+   */
+  groupSelection: () => void
+  /** Dissolves the selected group, selecting its children. */
+  ungroupSelection: () => void
   fitImageToCanvas: (mode: "fit" | "fill") => void
 }
 
