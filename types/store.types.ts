@@ -219,6 +219,13 @@ export interface LetterboxState {
   bottomId: string
 }
 
+export interface BackgroundSlice {
+  /** The preset behind everything, or null for a transparent ground. */
+  backgroundPreset: string | null
+  /** Applies a preset, or clears the background when given null. */
+  applyBackground: (presetId: string | null) => void
+}
+
 export interface EffectSlice {
   grainIntensity: number
   gradientOpacity: number
@@ -496,6 +503,7 @@ export interface BackgroundRemovalState {
 }
 
 export type EditorStore = CoreSlice &
+  BackgroundSlice &
   FontSlice &
   HistorySlice &
   LayerSlice &

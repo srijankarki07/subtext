@@ -24,6 +24,7 @@ import {
   swapPhoto,
 } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
+import { backgroundIdOf, isBackgroundObject } from "@/lib/backgroundFill"
 import {
   type Frame,
   coverScale,
@@ -88,6 +89,9 @@ function reflowComposition(canvas: Canvas, from: Frame, to: Frame) {
 
   canvas.getObjects().forEach((object) => {
     if ((object as { isEffect?: boolean }).isEffect) return
+    // The background is pinned to the frame rather than placed in it, and
+    // `setAspectRatio` re-sizes it after this runs.
+    if (isBackgroundObject(object)) return
 
     const point = remapPoint(
       { left: object.left ?? 0, top: object.top ?? 0 },
@@ -455,6 +459,10 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         })
       }
 
+      // The background layer is part of the canvas, so the panel's active
+      // swatch is read back from it rather than duplicated in the payload.
+      set({ backgroundPreset: backgroundIdOf(canvas) })
+
       // 4. Re-bind draggable event listeners for any blur handles
       bindBlurHandleListeners(canvas)
 
@@ -597,6 +605,10 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     // 3. Adapt existing letterboxes and vignettes to the new aspect ratio
     const objects = canvas.getObjects()
     objects.forEach((obj: any) => {
+      if (isBackgroundObject(obj)) {
+        obj.set({ left: 0, top: 0, width, height })
+        obj.setCoords()
+      }
       if (obj.id?.startsWith("vignette")) {
         obj.set({ left: 0, top: 0, width, height })
         obj.setCoords()

@@ -25,6 +25,8 @@ export const DOCUMENT_PROPERTIES = [
   "id",
   "elementName",
   "isEffect",
+  "isBackground",
+  "backgroundId",
   "textType",
   "vignetteColor",
   "vignetteType",

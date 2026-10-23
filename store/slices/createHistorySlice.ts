@@ -1,3 +1,4 @@
+import { backgroundIdOf } from "@/lib/backgroundFill"
 import { bindBlurHandleListeners } from "@/lib/fabricDocument"
 import { isDocumentEmpty, signatureFromParts } from "@/lib/persistence"
 import {
@@ -319,6 +320,9 @@ export const createHistorySlice: StateCreator<
           isHistoryProcessing: false,
           activeObject: restored[0] ?? null,
           selectedObjects: restored,
+          // Read back from the restored canvas, so undoing a background change
+          // moves the swatch with it.
+          backgroundPreset: backgroundIdOf(canvas),
           // Undo is not an edit; it is a move to another state, which may or may
           // not be the stored one. Asking the signature is the only way to know,
           // and it is what makes the badge honest after an undo.
