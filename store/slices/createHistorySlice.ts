@@ -86,9 +86,12 @@ export const createHistorySlice: StateCreator<
     effects: EffectSnapshot,
     coalesceKey?: string
   ) => {
-    const { history, historyIndex } = get()
+    const { history, historyIndex, artboard } = get()
     const next = history.slice(0, historyIndex + 1)
     const previous = next[next.length - 1]
+    // Copied, not referenced: the entry has to describe the frame as it was
+    // when the snapshot was taken, and the store's object is replaced on resize.
+    const frame = { width: artboard.width, height: artboard.height }
 
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -110,6 +113,7 @@ export const createHistorySlice: StateCreator<
         timestamp,
         objectCount,
         effects,
+        artboard: frame,
       }
     } else {
       next.push({
@@ -119,6 +123,7 @@ export const createHistorySlice: StateCreator<
         timestamp,
         objectCount,
         effects,
+        artboard: frame,
         coalesceKey,
       })
       if (next.length > MAX_HISTORY_STEPS) next.shift()
@@ -254,6 +259,23 @@ export const createHistorySlice: StateCreator<
 
       try {
         const targetState = history[targetIndex]
+
+        // The frame is state, not part of the object graph. Restoring it first
+        // means the effects the JSON describes are re-sized once, against the
+        // frame they belong to. `setAspectRatio` is the low-level resize on
+        // purpose: the objects are already laid out for this frame, so
+        // reflowing them would move them twice.
+        if (
+          targetState.artboard &&
+          (targetState.artboard.width !== get().artboard.width ||
+            targetState.artboard.height !== get().artboard.height)
+        ) {
+          get().setAspectRatio(
+            targetState.artboard.width,
+            targetState.artboard.height
+          )
+        }
+
         await loadDocument(canvas, JSON.parse(targetState.json))
 
         // Grading and overlay state is not part of the Fabric object graph, so

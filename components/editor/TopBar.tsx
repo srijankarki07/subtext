@@ -186,7 +186,7 @@ export default function TopBar({
   isInspectorOpen: boolean
   onToggleInspector: () => void
 }) {
-  const setAspectRatio = useEditorStore((s) => s.setAspectRatio)
+  const resizeComposition = useEditorStore((s) => s.resizeComposition)
   const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
   const saveDesign = useEditorStore((s) => s.saveDesign)
   const openDesigns = useEditorStore((s) => s.openDesigns)
@@ -237,12 +237,12 @@ export default function TopBar({
     setRatioSelection(val)
     const preset = ASPECT_RATIOS[val as keyof typeof ASPECT_RATIOS]
     if (val !== "custom" && preset) {
-      setAspectRatio(preset.width, preset.height)
+      resizeComposition(preset.width, preset.height)
     }
   }
 
   const applyCustomRatio = () => {
-    if (customW > 100 && customH > 100) setAspectRatio(customW, customH)
+    if (customW > 100 && customH > 100) resizeComposition(customW, customH)
   }
 
   /**

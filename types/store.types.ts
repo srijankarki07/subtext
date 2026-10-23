@@ -51,6 +51,14 @@ export interface HistoryItem {
    */
   effects: EffectSnapshot
   /**
+   * The frame this state was composed on.
+   *
+   * The canvas JSON describes objects in the frame's coordinates, not the
+   * frame itself, so without this an undo of a resize put every layer back
+   * where it had been while the artboard stayed at the new size.
+   */
+  artboard?: { width: number; height: number }
+  /**
    * Identifies the control that produced this entry, so repeated edits of the
    * same control collapse into it instead of filling the stack.
    */
@@ -389,6 +397,8 @@ export interface CoreSlice {
   setActiveMobileTab: (tab: MobileTab) => void
   setIsExportModalOpen: (open: boolean) => void
   setAspectRatio: (width: number, height: number) => void
+  /** Changes the frame and reflows the composition into it. */
+  resizeComposition: (width: number, height: number) => void
 
   // Canvas view. `setViewport` is called by the workspace's ResizeObserver.
   setViewport: (width: number, height: number) => void

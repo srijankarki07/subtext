@@ -260,8 +260,8 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
         id: `ratio-${ratio}`,
         title: `Canvas: ${ratio}`,
         group: "Canvas",
-        keywords: "size aspect ratio resize",
-        run: () => store().setAspectRatio(preset[0], preset[1]),
+        keywords: "size aspect ratio resize reflow magic",
+        run: () => store().resizeComposition(preset[0], preset[1]),
       }
     }),
 

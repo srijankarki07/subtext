@@ -24,6 +24,13 @@ import {
   swapPhoto,
 } from "@/lib/imageImport"
 import { TEMPLATES } from "@/lib/templates"
+import {
+  type Frame,
+  coverScale,
+  coversFrame,
+  remapPoint,
+  resizeFactor,
+} from "@/lib/resize"
 import { CoreSlice, EditorStore } from "@/types/store.types"
 import { ActiveSelection, Canvas, FabricImage, IText, Shadow } from "fabric"
 import { StateCreator } from "zustand"
@@ -38,6 +45,91 @@ import { StateCreator } from "zustand"
  * own space; the members are captured first, because Fabric empties an
  * `ActiveSelection` when it releases it.
  */
+/**
+ * Keeps a text block inside the new frame.
+ *
+ * Font sizes are scaled by area, so a layout that grew taller rather than
+ * wider can leave a long line wider than the artboard. The margin and floor
+ * match template application, so a resized block is clamped the same way a
+ * freshly applied one is.
+ */
+function clampTextToFrame(text: IText, frame: Frame) {
+  const sideMargin = frame.width * 0.08
+  const originX = text.originX ?? "left"
+  const left = text.left ?? 0
+  let available = frame.width - sideMargin * 2
+  if (originX === "left") available = frame.width - left - sideMargin
+  else if (originX === "right") available = left - sideMargin
+  if (available <= 50) return
+
+  const screenWidth = text.width * (text.scaleX ?? 1)
+  if (screenWidth <= available) return
+
+  text.set(
+    "fontSize",
+    Math.max(
+      14,
+      Math.floor((text.fontSize ?? 40) * (available / Math.max(screenWidth, 1)))
+    )
+  )
+}
+
+/**
+ * Moves every layer into the new frame.
+ *
+ * Three rules, in the order they matter: the backdrop photo is re-covered, type
+ * keeps its weight rather than its pixel size, and everything else is scaled as
+ * a shape. Effects are skipped because `setAspectRatio` already resizes
+ * vignettes and letterboxes to the full frame - reflowing them first would
+ * double-apply.
+ */
+function reflowComposition(canvas: Canvas, from: Frame, to: Frame) {
+  const factor = resizeFactor(from, to)
+
+  canvas.getObjects().forEach((object) => {
+    if ((object as { isEffect?: boolean }).isEffect) return
+
+    const point = remapPoint(
+      { left: object.left ?? 0, top: object.top ?? 0 },
+      from,
+      to
+    )
+    object.set({ left: point.left, top: point.top })
+
+    if (
+      object.type === "image" &&
+      coversFrame(
+        {
+          width: object.getScaledWidth(),
+          height: object.getScaledHeight(),
+        },
+        from
+      )
+    ) {
+      const image = object as FabricImage
+      const scale = coverScale(
+        { width: image.width ?? 1, height: image.height ?? 1 },
+        to
+      )
+      image.set({ scaleX: scale, scaleY: scale })
+      canvas.centerObject(image)
+    } else if (object.type === "i-text" || object.type === "textbox") {
+      const text = object as IText
+      text.set({
+        fontSize: Math.max(8, Math.round((text.fontSize ?? 40) * factor)),
+      })
+      clampTextToFrame(text, to)
+    } else {
+      object.set({
+        scaleX: (object.scaleX ?? 1) * factor,
+        scaleY: (object.scaleY ?? 1) * factor,
+      })
+    }
+
+    object.setCoords()
+  })
+}
+
 function capturePayload(get: () => EditorStore): ProjectPayload | null {
   const {
     canvas,
@@ -454,6 +546,35 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
 
   setComparing: (isComparing) => set({ isComparing }),
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
+
+  /**
+   * Reflows the composition to another frame, the way a "magic resize" should.
+   *
+   * `setAspectRatio` alone only changes the canvas: the photo keeps its old
+   * cover scale, so changing 9:16 to 1:1 leaves a band of background above and
+   * below, and every text block stays at its old pixel position while the frame
+   * moves around it. Reflow is what makes the result a design rather than a
+   * cropped one.
+   *
+   * Restoring a document keeps calling `setAspectRatio`: its objects are not on
+   * the canvas yet, and remapping them would be remapping nothing.
+   */
+  resizeComposition: (width, height) => {
+    const { canvas, beginHistoryTransaction, endHistoryTransaction } = get()
+    if (!canvas) return
+
+    const from = { width: canvas.getWidth(), height: canvas.getHeight() }
+    if (from.width === width && from.height === height) return
+
+    beginHistoryTransaction("Resize canvas")
+    try {
+      reflowComposition(canvas, from, { width, height })
+      get().setAspectRatio(width, height)
+    } finally {
+      endHistoryTransaction()
+    }
+  },
+
   setAspectRatio: (width, height) => {
     const { canvas, saveHistoryState, isFit, zoom } = get()
     if (!canvas) return
