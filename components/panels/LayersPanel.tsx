@@ -56,6 +56,9 @@ function describe(obj: any): { label: string; icon: typeof Type } {
     return { label: text.substring(0, 24) || "Empty text", icon: Type }
   }
 
+  // The ground, not artwork: named so it does not read as a stray rectangle.
+  if (obj.isBackground) return { label: "Background", icon: Square }
+
   const id = String(obj.id ?? "")
 
   if (id.startsWith("vignette")) return { label: "Vignette", icon: MonitorPlay }
@@ -211,6 +214,9 @@ export default function LayersPanel() {
    */
   const select = (obj: any, additive = false) => {
     if (!canvas) return
+    // The background is not a layer you arrange; selecting it would put resize
+    // handles on the frame itself. It is changed from the Media panel.
+    if (obj.isBackground) return
 
     const current = canvas.getActiveObjects()
     const next = !additive
@@ -251,8 +257,12 @@ export default function LayersPanel() {
             return (
               <div
                 key={`${layer.id}-${actualIndex}`}
-                draggable
+                draggable={!layer.obj.isBackground}
                 onDragStart={(event) => {
+                  if (layer.obj.isBackground) {
+                    event.preventDefault()
+                    return
+                  }
                   setDraggedIndex(actualIndex)
                   event.dataTransfer.effectAllowed = "move"
                 }}
