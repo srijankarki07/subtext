@@ -9,6 +9,7 @@ import { IconButton } from "@/components/ui/icon-button"
 import { Section } from "@/components/ui/section"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { Tooltip } from "@/components/ui/tooltip"
+import ToneSection from "@/components/panels/ToneSection"
 import { useEditorStore } from "@/store/useEditorStore"
 
 /**
@@ -75,6 +76,8 @@ export default function EffectsPanel() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ToneSection />
+
       <Section
         title="Adjustments"
         action={

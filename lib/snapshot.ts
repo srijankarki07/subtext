@@ -1,6 +1,9 @@
 import type { Canvas } from "fabric"
 
 import { getAssetBlob, releaseIssuedAssetUrls } from "@/lib/assets"
+// Side-effect import: registers the ToneCurve filter class before any document
+// is deserialised. Without it a saved curve comes back as an inert plain object.
+import "@/lib/toneFilter"
 import { DOCUMENT_PROPERTIES } from "@/lib/fabricDocument"
 import type {
   BlurZoneState,
