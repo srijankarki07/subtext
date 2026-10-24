@@ -5,11 +5,13 @@ import {
   LayoutTemplate,
   MonitorPlay,
   MousePointer2,
+  Palette,
   Shapes,
   Type,
 } from "lucide-react"
 
 import MediaPanel from "@/components/editor/MediaPanel"
+import BrandPanel from "@/components/panels/BrandPanel"
 import EffectsPanel from "@/components/panels/EffectPanel"
 import ElementsPanel from "@/components/panels/ElementsPanel"
 import LayersPanel from "@/components/panels/LayersPanel"
@@ -40,6 +42,7 @@ export const TOOL_ICONS: Record<EditorTool, typeof MousePointer2> = {
   media: ImagePlus,
   templates: LayoutTemplate,
   elements: Shapes,
+  brand: Palette,
   cinema: MonitorPlay,
   layers: Layers3,
 }
@@ -65,6 +68,7 @@ export const TOOL_PANELS: {
   media: MediaPanel,
   templates: TemplatesPanel,
   elements: ElementsPanel,
+  brand: BrandPanel,
   cinema: EffectsPanel,
   layers: LayersPanel,
 }

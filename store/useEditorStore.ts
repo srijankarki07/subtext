@@ -1,6 +1,7 @@
 import { EditorStore } from "@/types/store.types"
 import { create } from "zustand"
 import { createBackgroundSlice } from "./slices/createBackgroundSlice"
+import { createBrandSlice } from "./slices/createBrandSlice"
 import { createColorSlice } from "./slices/createColorSlice"
 import { createContextMenuSlice } from "./slices/createContextMenuSlice"
 import { createCoreSlice } from "./slices/createCoreSlice"
@@ -21,6 +22,7 @@ export const ASPECT_RATIOS = {
 export const useEditorStore = create<EditorStore>()((...a) => ({
   ...createCoreSlice(...a),
   ...createBackgroundSlice(...a),
+  ...createBrandSlice(...a),
   ...createFontSlice(...a),
   ...createHistorySlice(...a),
   ...createLayerSlice(...a),

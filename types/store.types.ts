@@ -2,6 +2,7 @@ import { Canvas, FabricObject, IText } from "fabric"
 
 import type { AlignMode, DistributeAxis } from "@/lib/arrange"
 import type { BackgroundRemovalMode } from "@/lib/backgroundRemoval"
+import type { BrandFontRole, BrandKit } from "@/lib/brandKit"
 import type { DesignSummary } from "@/lib/designs"
 import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
@@ -217,6 +218,25 @@ export interface LetterboxState {
   id: string
   topId: string
   bottomId: string
+}
+
+export interface BrandSlice {
+  brandKit: BrandKit
+  isBrandLoaded: boolean
+  loadBrandKit: () => Promise<void>
+  /** Stores a colour, ignoring duplicates and non-hex values. */
+  addBrandColour: (value: string) => void
+  /** Stores the selection's fill, when it has a readable one. */
+  addBrandColourFromSelection: () => boolean
+  removeBrandColour: (id: string) => void
+  /** Paints the selection with a brand colour. */
+  applyBrandColour: (value: string) => boolean
+  saveBrandFontFromSelection: (role: BrandFontRole) => boolean
+  applyBrandFont: (role: BrandFontRole) => boolean
+  clearBrandFont: (role: BrandFontRole) => void
+  addBrandLogo: (file: File) => Promise<boolean>
+  removeBrandLogo: (id: string) => void
+  placeBrandLogo: (id: string) => Promise<boolean>
 }
 
 export interface BackgroundSlice {
@@ -503,6 +523,7 @@ export interface BackgroundRemovalState {
 }
 
 export type EditorStore = CoreSlice &
+  BrandSlice &
   BackgroundSlice &
   FontSlice &
   HistorySlice &

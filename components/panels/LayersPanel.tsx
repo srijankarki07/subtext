@@ -70,6 +70,7 @@ function describe(obj: any): { label: string; icon: typeof Type } {
     return { label: "Gradient overlay", icon: MonitorPlay }
   if (id.includes("blur")) return { label: "Blur zone", icon: MonitorPlay }
   if (obj.isEffect) return { label: "Effect", icon: MonitorPlay }
+  if (obj.isLogo) return { label: "Logo", icon: ImageIcon }
   if (obj.type === "image") return { label: "Image", icon: ImageIcon }
 
   // Inserted elements are Groups too, so their catalogue name wins first.
