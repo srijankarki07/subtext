@@ -674,7 +674,7 @@ export default function Canvas() {
               Start with an image
             </h2>
             <p className="mt-1.5 text-[12px] text-[var(--color-on-workspace-muted)]">
-              Drop a photo here, or click to choose a file
+              Drop a photo here, or choose a file
             </p>
             <span className="mt-4 rounded-lg border border-[var(--color-on-workspace-hairline)] px-3 py-1.5 text-[12px] font-medium text-[var(--color-on-workspace)]">
               Upload photo

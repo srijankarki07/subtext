@@ -1,5 +1,7 @@
 import { Canvas, FabricObject, IText } from "fabric"
 
+import type { EditorTool } from "@/lib/tools"
+
 import type { AlignMode, DistributeAxis } from "@/lib/arrange"
 import type { BackgroundRemovalMode } from "@/lib/backgroundRemoval"
 import type { BrandFontRole, BrandKit } from "@/lib/brandKit"
@@ -22,7 +24,12 @@ export interface GuidesState {
   centre: boolean
   safeArea: boolean
 }
-export type MobileTab = "templates" | "layers" | "edit" | "export" | null
+/**
+ * The mobile sheet's current destination: any tool's panel, or the selection
+ * inspector. Derived from `EditorTool` so a new tool is reachable on a phone
+ * without a second list to remember.
+ */
+export type MobileTab = EditorTool | "edit" | null
 
 export interface ContextMenuState {
   visible: boolean
@@ -445,6 +452,8 @@ export interface CoreSlice {
   zoomBy: (factor: number) => void
   fitToViewport: () => void
   addText: (type: TextBlockType) => void
+  /** Puts the selected text layer into editing, for touch screens. */
+  editActiveText: () => void
   addImage: () => Promise<void>
   /** Swaps the artwork's photo, keeping the composition. */
   replaceImage: () => Promise<void>

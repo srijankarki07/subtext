@@ -1,7 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Download, Layers, LayoutTemplate, Settings2, X } from "lucide-react"
+import {
+  Download,
+  LayoutGrid,
+  PenLine,
+  Redo2,
+  Settings2,
+  SlidersHorizontal,
+  Undo2,
+  X,
+} from "lucide-react"
 
 import CanvasWorkspace from "@/components/editor/CanvasWorkspace"
 import ContextPanel from "@/components/editor/ContextPanel"
@@ -18,11 +27,10 @@ import ContextMenu from "@/components/editor/contextMenu"
 import DesignsModal from "@/components/modals/DesignsModal"
 import ExportModal from "@/components/modals/ExportModal"
 import GlobalDialogs from "@/components/modals/GlobalDialogs"
-import LayersPanel from "@/components/panels/LayersPanel"
-import TemplatesPanel from "@/components/panels/TemplatesPanel"
+import { TOOL_ICONS, TOOL_PANELS } from "@/components/editor/toolRegistry"
+import { Button } from "@/components/ui/button"
 import { useEditorStore } from "@/store/useEditorStore"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import type { MobileTab } from "@/types/store.types"
 import { TOOL_META, TOOL_ORDER, type EditorTool } from "@/lib/tools"
 import { cn } from "@/lib/utils"
 
@@ -35,37 +43,47 @@ import { cn } from "@/lib/utils"
  * the hero (design doc §2).
  */
 
-function MobileTabButton({
-  icon,
+/**
+ * One destination in the mobile strip.
+ *
+ * The strip is built from the same registry as the desktop rail, so every tool
+ * that exists on a desktop exists on a phone. Two of these are not tools -
+ * "Edit" opens the selection inspector - and they are the only hand-written
+ * entries left on this surface.
+ */
+function MobileStripButton({
   label,
-  tab,
+  icon,
+  active,
+  onClick,
+  fixedWidth = 58,
 }: {
-  icon: React.ReactNode
   label: string
-  tab: MobileTab
+  icon: React.ReactNode
+  active: boolean
+  onClick: () => void
+  fixedWidth?: number
 }) {
-  const activeMobileTab = useEditorStore((s) => s.activeMobileTab)
-  const setActiveMobileTab = useEditorStore((s) => s.setActiveMobileTab)
-  const isActive = activeMobileTab === tab
-
   return (
     <button
       type="button"
-      onClick={() => setActiveMobileTab(isActive ? null : tab)}
-      aria-pressed={isActive}
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      style={{ width: fixedWidth }}
       className={cn(
-        "relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] transition-colors outline-none",
+        "relative flex h-full shrink-0 cursor-pointer flex-col items-center justify-center gap-1 text-[10px] transition-colors outline-none",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-        isActive
+        active
           ? "font-medium text-primary"
-          : "text-[var(--text-muted)] hover:text-foreground"
+          : "text-[var(--text-muted)] active:text-foreground"
       )}
     >
-      {isActive && (
+      {active && (
         <span className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" />
       )}
       {icon}
-      <span>{label}</span>
+      <span className="max-w-full truncate px-0.5">{label}</span>
     </button>
   )
 }
@@ -87,9 +105,15 @@ export default function EditorShell() {
   const activeMobileTab = useEditorStore((s) => s.activeMobileTab)
   const setActiveMobileTab = useEditorStore((s) => s.setActiveMobileTab)
   const setIsExportModalOpen = useEditorStore((s) => s.setIsExportModalOpen)
+  const openDesigns = useEditorStore((s) => s.openDesigns)
+  const editActiveText = useEditorStore((s) => s.editActiveText)
   const initializeDesigns = useEditorStore((s) => s.initializeDesigns)
   const initializeCustomFonts = useEditorStore((s) => s.initializeCustomFonts)
   const canvas = useEditorStore((s) => s.canvas)
+  const canUndo = useEditorStore((s) => s.canUndo)
+  const canRedo = useEditorStore((s) => s.canRedo)
+  const undo = useEditorStore((s) => s.undo)
+  const redo = useEditorStore((s) => s.redo)
 
   const { resolvedTheme, setTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -186,6 +210,43 @@ export default function EditorShell() {
     setActiveTool(tool)
     setIsPanelOpen(TOOL_META[tool].hasPanel)
   }
+
+  /**
+   * A destination in the mobile strip.
+   *
+   * The strip is a toggle, like the rail: picking the sheet that is already open
+   * closes it. "Select" is a mode rather than a panel, so it always closes the
+   * sheet and returns the user to the canvas.
+   */
+  const openMobileTool = (tool: EditorTool) => {
+    if (!TOOL_META[tool].hasPanel) {
+      setActiveMobileTab(null)
+      handleToolChange(tool)
+      return
+    }
+
+    if (activeMobileTab === tool) {
+      setActiveMobileTab(null)
+      return
+    }
+
+    setActiveMobileTab(tool)
+    handleOpenTool(tool)
+  }
+
+  const toggleMobileEdit = () => {
+    setActiveMobileTab(activeMobileTab === "edit" ? null : "edit")
+  }
+
+  const sheetTool =
+    activeMobileTab && activeMobileTab !== "edit" ? activeMobileTab : null
+  const SheetPanel = sheetTool ? TOOL_PANELS[sheetTool] : null
+  const sheetTitle =
+    activeMobileTab === "edit"
+      ? "Edit"
+      : sheetTool
+        ? TOOL_META[sheetTool].label
+        : ""
 
   /**
    * Tool selection doubles as the panel toggle, the way it does in Figma and
@@ -341,35 +402,64 @@ export default function EditorShell() {
 
         <nav
           aria-label="Editor panels"
-          className="z-popover relative flex h-[68px] shrink-0 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+          className="z-popover relative flex h-[68px] shrink-0 items-stretch border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
         >
-          <MobileTabButton
-            icon={<LayoutTemplate size={19} />}
-            label="Templates"
-            tab="templates"
-          />
-          <MobileTabButton
-            icon={<Settings2 size={19} />}
-            label="Edit"
-            tab="edit"
-          />
-          <MobileTabButton
-            icon={<Layers size={19} />}
-            label="Layers"
-            tab="layers"
-          />
+          {/*
+            One strip, built from the tool registry. The old surface offered
+            Templates, Edit, Layers and Export, so text, photos, elements,
+            brand and cinema were simply absent on a phone - and nothing said
+            so. Everything the desktop rail has now has a destination here.
+          */}
+          {/* The way back to the design library. It was inside the desktop
+              history cluster, so a phone had no way to open a saved design. */}
+          <button
+            type="button"
+            onClick={() => void openDesigns()}
+            aria-label="Your designs"
+            className="flex w-[62px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1 text-[10px] text-[var(--text-muted)] transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring active:text-foreground"
+          >
+            <LayoutGrid size={19} aria-hidden="true" />
+            <span>Designs</span>
+          </button>
+
+          <div className="my-4 w-px shrink-0 bg-border" aria-hidden="true" />
+
+          <div className="scrollbar-hide flex min-w-0 flex-1 items-stretch overflow-x-auto overscroll-x-contain">
+            <MobileStripButton
+              label="Edit"
+              icon={<SlidersHorizontal size={19} aria-hidden="true" />}
+              active={activeMobileTab === "edit"}
+              onClick={toggleMobileEdit}
+            />
+            {TOOL_ORDER.map((tool) => {
+              const Icon = TOOL_ICONS[tool]
+              return (
+                <MobileStripButton
+                  key={tool}
+                  label={TOOL_META[tool].label}
+                  icon={<Icon size={19} aria-hidden="true" />}
+                  active={activeMobileTab === tool}
+                  onClick={() => openMobileTool(tool)}
+                />
+              )
+            })}
+          </div>
+
+          <div className="my-4 w-px shrink-0 bg-border" aria-hidden="true" />
+
           <button
             type="button"
             onClick={() => setIsExportModalOpen(true)}
-            className="relative flex h-full flex-1 cursor-pointer flex-col items-center justify-center gap-1 text-[11px] text-[var(--text-muted)] transition-colors outline-none hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            aria-label="Export"
+            className="flex w-[64px] shrink-0 cursor-pointer flex-col items-center justify-center gap-1 text-[10px] text-[var(--text-muted)] transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring active:text-foreground"
           >
-            <Download size={19} />
+            <Download size={19} aria-hidden="true" />
             <span>Export</span>
           </button>
         </nav>
 
         {activeMobileTab && (
-          <div className="z-sheet absolute inset-0 flex flex-col justify-end bg-black/30 lg:hidden">
+          <div className="z-sheet absolute inset-0 flex flex-col justify-end bg-black/40 backdrop-blur-[1px] lg:hidden">
             <button
               type="button"
               aria-label="Close panel"
@@ -378,21 +468,41 @@ export default function EditorShell() {
             />
             <div
               role="dialog"
-              aria-label={`${activeMobileTab} panel`}
-              className="flex h-[65vh] flex-col rounded-t-2xl border-t border-border bg-card shadow-2xl"
+              aria-modal="true"
+              aria-label={`${sheetTitle} panel`}
+              className="flex h-[72dvh] flex-col rounded-t-3xl border-t border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <h2 className="text-[13px] font-semibold text-foreground capitalize">
-                  {activeMobileTab}
+              <div
+                className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border"
+                aria-hidden="true"
+              />
+              <div className="flex items-center justify-between border-b border-border px-4 pt-2 pb-3">
+                <h2 className="text-[13px] font-semibold text-foreground">
+                  {sheetTitle}
                 </h2>
                 <MobileSheetClose />
               </div>
-              <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
-                {activeMobileTab === "templates" && <TemplatesPanel />}
-                {activeMobileTab === "edit" && (
+              <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+                {activeMobileTab === "edit" &&
+                  activeObject?.type === "i-text" && (
+                    <Button
+                      variant="secondary"
+                      className="mb-4 w-full"
+                      onClick={() => {
+                        // Close first so the artwork is visible behind the caret.
+                        setActiveMobileTab(null)
+                        requestAnimationFrame(() => editActiveText())
+                      }}
+                    >
+                      <PenLine size={14} aria-hidden="true" />
+                      Edit the words
+                    </Button>
+                  )}
+                {activeMobileTab === "edit" ? (
                   <InspectorPanelContent onOpenTool={handleOpenTool} />
-                )}
-                {activeMobileTab === "layers" && <LayersPanel />}
+                ) : SheetPanel ? (
+                  <SheetPanel />
+                ) : null}
               </div>
             </div>
           </div>
