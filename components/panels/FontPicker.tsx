@@ -13,7 +13,13 @@ import {
 } from "lucide-react"
 
 import { IconButton } from "@/components/ui/icon-button"
-import { FONTS, type FontCategory, type FontDef } from "@/lib/fonts"
+import {
+  FONTS,
+  FONT_PAIRINGS,
+  getFontById,
+  type FontCategory,
+  type FontDef,
+} from "@/lib/fonts"
 import { useEditorStore } from "@/store/useEditorStore"
 import { cn } from "@/lib/utils"
 
@@ -36,7 +42,8 @@ import { cn } from "@/lib/utils"
  *    sibling buttons, so both input paths behave identically.
  */
 
-type FontFilter = "All" | "Recommended" | "Premium" | "Uploaded" | FontCategory
+type FontFilter =
+  "All" | "Recommended" | "Pairings" | "Premium" | "Uploaded" | FontCategory
 
 type FontOption = Omit<FontDef, "category"> & {
   category: FontCategory | "Uploaded"
@@ -47,6 +54,7 @@ type FontOption = Omit<FontDef, "category"> & {
 const CATEGORIES: FontFilter[] = [
   "All",
   "Recommended",
+  "Pairings",
   "Premium",
   "Uploaded",
   "Serif",
@@ -60,6 +68,7 @@ export default function FontPicker() {
   const canvas = useEditorStore((s) => s.canvas)
   const activeObject = useEditorStore((s) => s.activeObject)
   const applyTextStyle = useEditorStore((s) => s.applyTextStyle)
+  const applyFontPairing = useEditorStore((s) => s.applyFontPairing)
   const getActiveSelectionStyle = useEditorStore(
     (s) => s.getActiveSelectionStyle
   )
@@ -105,6 +114,26 @@ export default function FontPicker() {
     if (!currentFontFamily) return undefined
     return allFonts.find((font) => font.fabricFamily === currentFontFamily)
   }, [allFonts, currentFontFamily])
+
+  /**
+   * Pairings, filtered by the same search box.
+   *
+   * A pairing is a typographic *composition*, not a font, so it gets its own
+   * view rather than being mixed into the face list: choosing one changes every
+   * text layer, which is a different kind of decision.
+   */
+  const filteredPairings = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return FONT_PAIRINGS
+
+    return FONT_PAIRINGS.filter((pairing) => {
+      const header = getFontById(pairing.header)
+      const body = getFontById(pairing.body)
+      return [pairing.name, header?.name, body?.name]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    })
+  }, [searchQuery])
 
   const filteredFonts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -304,13 +333,73 @@ export default function FontPicker() {
         </div>
 
         <p className="px-0.5 text-[11px] text-[var(--text-muted)] tabular-nums">
-          {filteredFonts.length} {filteredFonts.length === 1 ? "font" : "fonts"}
+          {activeCategory === "Pairings"
+            ? `${filteredPairings.length} ${filteredPairings.length === 1 ? "pairing" : "pairings"}`
+            : `${filteredFonts.length} ${filteredFonts.length === 1 ? "font" : "fonts"}`}
           {activeCategory === "Recommended" && " · curated"}
         </p>
+        {activeCategory === "Pairings" && (
+          <p className="px-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">
+            Sets the display face on the largest text and the body face on the
+            rest.
+          </p>
+        )}
       </div>
 
       {/* Flows in the parent's scroll region - no nested scroller. */}
-      {filteredFonts.length === 0 ? (
+      {activeCategory === "Pairings" ? (
+        filteredPairings.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-[13px] text-[var(--text-muted)]">
+              No pairings found
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("")
+                setActiveCategory("All")
+              }}
+              className="mt-2 cursor-pointer text-[12px] text-primary outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5">
+            {filteredPairings.map((pairing) => {
+              const header = getFontById(pairing.header)
+              const body = getFontById(pairing.body)
+              if (!header || !body) return null
+
+              return (
+                <button
+                  key={pairing.name}
+                  type="button"
+                  onClick={() => applyFontPairing(pairing.name)}
+                  aria-label={`Apply the ${pairing.name} pairing`}
+                  className="flex min-w-0 cursor-pointer flex-col items-start gap-1 rounded-lg border border-border p-2.5 text-left transition-colors outline-none hover:bg-subtle-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                >
+                  <span className="text-[9px] font-medium tracking-[0.08em] text-[var(--text-muted)] uppercase">
+                    {pairing.name}
+                  </span>
+                  <span
+                    className="w-full truncate text-[17px] leading-tight text-foreground"
+                    style={{ fontFamily: header.cssVariable }}
+                  >
+                    {header.name}
+                  </span>
+                  <span
+                    className="w-full truncate text-[11px] leading-tight text-[var(--text-secondary)]"
+                    style={{ fontFamily: body.cssVariable }}
+                  >
+                    with {body.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )
+      ) : filteredFonts.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-[13px] text-[var(--text-muted)]">No fonts found</p>
           <button

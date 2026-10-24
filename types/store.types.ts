@@ -455,6 +455,14 @@ export interface CoreSlice {
   zoomBy: (factor: number) => void
   fitToViewport: () => void
   addText: (type: TextBlockType) => void
+  /**
+   * Applies a curated font pairing across the composition.
+   *
+   * The display face goes on the quote blocks (or the largest text when there
+   * are none); the body face on everything else. Returns false when the
+   * composition has no text or the pairing is unknown.
+   */
+  applyFontPairing: (name: string) => boolean
   /** Puts the selected text layer into editing, for touch screens. */
   editActiveText: () => void
   addImage: () => Promise<void>
