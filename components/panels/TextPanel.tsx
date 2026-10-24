@@ -115,6 +115,7 @@ export default function TextPanel() {
   )
   const alignObjectToCanvas = useEditorStore((s) => s.alignObjectToCanvas)
   const pickColor = useEditorStore((s) => s.pickColor)
+  const saveHistoryState = useEditorStore((s) => s.saveHistoryState)
 
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
 
@@ -158,6 +159,10 @@ export default function TextPanel() {
     }
     textObj.set("shadow", new Shadow({ ...baseShadow, ...updates }))
     canvas.requestRenderAll()
+    // A shadow is a readability decision, not a preview: it has to be
+    // undoable and it has to mark the document dirty. It was neither, so a
+    // shadow edit could vanish on reload.
+    saveHistoryState("Shadow", { coalesceKey: "text-shadow" })
     forceUpdate()
   }
 
@@ -165,6 +170,7 @@ export default function TextPanel() {
     if (!textObj || !canvas) return
     textObj.set("shadow", null)
     canvas.requestRenderAll()
+    saveHistoryState("Remove shadow")
     forceUpdate()
   }
 

@@ -2,7 +2,9 @@ import {
   analyseRegion,
   buildReport,
   rankColours,
+  type MoveCandidate,
   type RegionStats,
+  type Recommendation,
   type VisibilityReport,
 } from "@/lib/visibility"
 import { textPresetById } from "@/lib/textPresets"
@@ -123,12 +125,79 @@ function reportForText(
   })
 }
 
+/**
+ * The vertical positions a suggestion may propose.
+ *
+ * Mid-band centres rather than the exact thirds, so a block that lands here has
+ * breathing room above and below instead of touching an edge.
+ */
+const MOVE_BANDS = [
+  { id: "upper", title: "Move to the upper third", fraction: 0.18 },
+  { id: "middle", title: "Move to the middle", fraction: 0.5 },
+  { id: "lower", title: "Move to the lower third", fraction: 0.82 },
+] as const
+
+/**
+ * Measures the same text at the positions it could move to.
+ *
+ * Same technique as `reportForText`: hide the text, read the pixels, restore.
+ * Rotated text is skipped - the bounding box no longer matches the layer, and
+ * the score at a new position would describe a shape the user does not have.
+ */
+function moveCandidatesFor(
+  canvas: NonNullable<EditorStore["canvas"]>,
+  text: IText
+): MoveCandidate[] {
+  if (Math.abs(text.angle ?? 0) > 0.5) return []
+
+  const canvasHeight = canvas.getHeight()
+  const rect = text.getBoundingRect()
+  if (canvasHeight <= 0 || rect.height <= 0 || rect.height >= canvasHeight) {
+    return []
+  }
+
+  const centre = rect.top + rect.height / 2
+  const candidates: MoveCandidate[] = []
+
+  text.set("visible", false)
+  canvas.renderAll()
+  try {
+    for (const band of MOVE_BANDS) {
+      const target = canvasHeight * band.fraction
+      // A position the text already occupies is not a suggestion.
+      if (Math.abs(target - centre) < canvasHeight * 0.08) continue
+
+      const top = target - rect.height / 2
+      if (top < 0 || top + rect.height > canvasHeight) continue
+
+      candidates.push({
+        id: band.id,
+        title: band.title,
+        top: (text.top ?? 0) + (target - centre),
+        region: readRegion(
+          canvas,
+          { left: rect.left, top, width: rect.width, height: rect.height },
+          "full"
+        ),
+      })
+    }
+  } catch (error) {
+    console.error("Could not measure the move suggestions:", error)
+  } finally {
+    text.set("visible", true)
+    canvas.renderAll()
+  }
+
+  return candidates
+}
+
 export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
   set,
   get
 ) => ({
   imagePalette: [],
   visibility: null,
+  moveCandidates: [],
   isPickingColor: false,
   colorPickerTarget: null,
   pickerSnapshot: null,
@@ -159,6 +228,70 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
     canvas.requestRenderAll()
     calculateContrast()
     saveHistoryState(`Change ${key}`, { coalesceKey: `style:${key}` })
+  },
+
+  /**
+   * Runs one suggestion.
+   *
+   * Transactional because a stroke is two property writes and an undo should
+   * put the text back in one step, not two. Every kind maps onto an action the
+   * panels already call, so a suggestion cannot do something a user could not
+   * have done by hand.
+   */
+  applyRecommendation: (recommendation) => {
+    const {
+      canvas,
+      activeObject,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+    } = get()
+    const apply = recommendation.apply
+    if (!canvas || !apply || activeObject?.type !== "i-text") return
+    if ((activeObject as { locked?: boolean }).locked) return
+
+    const text = activeObject as IText
+
+    beginHistoryTransaction(recommendation.title)
+    try {
+      switch (apply.kind) {
+        case "fill":
+          get().applyTextStyle("fill", apply.color)
+          break
+        case "stroke":
+          get().applyTextStyle("stroke", apply.color)
+          get().applyTextStyle("strokeWidth", apply.width)
+          break
+        case "shadow":
+          get().applyTextStyle(
+            "shadow",
+            new Shadow({
+              color: apply.color,
+              blur: apply.blur,
+              offsetX: 0,
+              offsetY: apply.offset,
+            })
+          )
+          break
+        case "gradient":
+          get().setGradientOverlay(
+            apply.opacity,
+            "linear",
+            "transparent",
+            "black"
+          )
+          break
+        case "move":
+          text.set({ top: apply.top })
+          text.setCoords()
+          canvas.requestRenderAll()
+          get().saveHistoryState(recommendation.title)
+          break
+      }
+    } finally {
+      endHistoryTransaction()
+    }
+
+    get().calculateContrast()
   },
 
   applyTextPreset: (id) => {
@@ -391,12 +524,19 @@ export const createColorSlice: StateCreator<EditorStore, [], [], ColorSlice> = (
 
     // Readability only means anything for text.
     if (!canvas || !activeObject || activeObject.type !== "i-text") {
-      set({ visibility: null })
+      set({ visibility: null, moveCandidates: [] })
       return
     }
 
+    const report = reportForText(canvas, activeObject as IText, quality)
     set({
-      visibility: reportForText(canvas, activeObject as IText, quality),
+      visibility: report,
+      // The candidates cost three more region samples, so they are only
+      // measured for the settled report - not on every frame of a drag.
+      moveCandidates:
+        report && quality === "full"
+          ? moveCandidatesFor(canvas, activeObject as IText)
+          : [],
     })
   },
 

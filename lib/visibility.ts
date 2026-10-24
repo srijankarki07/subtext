@@ -642,64 +642,170 @@ function regionalSpreadNoteApplies(region: RegionStats): boolean {
 
 // --------------------------------------------------------- recommendations
 
+export type RecommendationApply =
+  | { kind: "fill"; color: string }
+  | { kind: "stroke"; color: string; width: number }
+  | { kind: "shadow"; color: string; blur: number; offset: number }
+  | { kind: "gradient"; opacity: number }
+  | { kind: "move"; top: number }
+
 export interface Recommendation {
   id: string
   title: string
   detail: string
   /** The score this would reach, or null when it cannot be predicted. */
   predictedScore: number | null
-  /** Present when the action is a colour change, for a one-click apply. */
-  apply?:
-    | { kind: "stroke"; color: string; width: number }
-    | { kind: "fill"; color: string }
+  apply?: RecommendationApply
+}
+
+/** A position the caller has already sampled for the same text. */
+export interface MoveCandidate {
+  id: string
+  title: string
+  /** The object's new `top`, in canvas coordinates. */
+  top: number
+  /** The pixels behind the text at that position. */
+  region: RegionStats
+}
+
+export interface RecommendOptions {
+  moves?: MoveCandidate[]
+  /** Current strength of the frame gradient, when the caller has one. */
+  gradientOpacity?: number
 }
 
 /**
  * Deterministic suggestions, each with the score it would reach.
  *
  * Nothing here is generated: every suggestion is a specific edit this engine
- * can score before it is applied, so the number shown is the number the user
- * will get.
+ * can score before it is applied, using the same `buildReport` that will
+ * measure it afterwards. That is why the number in the panel is the number the
+ * user gets - it is not an estimate of a different calculation.
+ *
+ * The one exception is the gradient: deepening it changes the pixels
+ * themselves, which this function has no access to, so its prediction is null
+ * and the score arrives after applying. Saying so is better than inventing one.
  */
-export function recommend(report: VisibilityReport): Recommendation[] {
-  const out: Recommendation[] = []
+export function recommend(
+  report: VisibilityReport,
+  options: RecommendOptions = {}
+): Recommendation[] {
   const { region, fill, fontSize, fontWeight, applied } = report
-
-  const variant = (overrides: Partial<ReportInput>): ReportInput => ({
+  const base: ReportInput = {
     region,
     fill,
     fontSize,
     fontWeight,
-    ...applied,
     stroke: applied.strokeColor,
+    strokeWidth: applied.strokeWidth,
     shadowColor: applied.shadowColor,
-    ...overrides,
-  })
-
-  // An outline in whichever of black/white contrasts better with the *region*.
-  if (report.worstRatio < report.requiredRatio) {
-    for (const candidate of ["#000000", "#FFFFFF"]) {
-      const edgesWithStroke = contrastEdges(
-        variant({ stroke: candidate, strokeWidth: 2 }),
-        region
-      )
-      const best = edgesWithStroke.reduce((a, b) => (b.ratio > a.ratio ? b : a))
-      const score = scoreFor(best.ratio, fontSize, fontWeight, region)
-      if (score > report.score) {
-        out.push({
-          id: `stroke-${candidate}`,
-          title: `Add a 2px ${candidate === "#000000" ? "black" : "white"} outline`,
-          detail: `Reaches ${best.ratio.toFixed(2)}:1 against the worst part of the background.`,
-          predictedScore: score,
-          apply: { kind: "stroke", color: candidate, width: 2 },
-        })
-      }
-    }
+    shadowBlur: applied.shadowBlur,
+    shadowOffset: applied.shadowOffset,
   }
 
-  // Moving to a calmer band of the image. The caller supplies candidate
-  // regions it has actually measured, so this is never a guess.
-  return out
+  const out: Recommendation[] = []
+  const push = (candidate: Recommendation) => {
+    // A suggestion that does not improve the score is not a suggestion.
+    if (
+      candidate.predictedScore !== null &&
+      candidate.predictedScore <= report.score
+    ) {
+      return
+    }
+    out.push(candidate)
+  }
+
+  // --- a lighter or a darker fill -----------------------------------------
+  // Mostly white (or black) with a trace of the current fill, so the
+  // suggestion stays in the composition's colour family. `mixHex` returns its
+  // first argument at t = 1, hence the high weight on the target.
+  const fills = [
+    { color: mixHex("#FFFFFF", fill, 0.85), title: "Lighter text" },
+    { color: mixHex("#000000", fill, 0.85), title: "Darker text" },
+  ]
+  for (const candidate of fills) {
+    if (!areVisuallyDistinct(candidate.color, fill, 4)) continue
+    const predicted = buildReport({ ...base, fill: candidate.color })
+    push({
+      id: `fill-${candidate.color.slice(1)}`,
+      title: candidate.title,
+      detail: `${candidate.color.toUpperCase()} reaches ${predicted.worstRatio.toFixed(2)}:1 against the worst part of the background.`,
+      predictedScore: predicted.score,
+      apply: { kind: "fill", color: candidate.color },
+    })
+  }
+
+  // --- an outline ----------------------------------------------------------
+  for (const color of ["#000000", "#FFFFFF"]) {
+    const predicted = buildReport({ ...base, stroke: color, strokeWidth: 2 })
+    push({
+      id: `stroke-${color.slice(1)}`,
+      title: `Add a 2px ${color === "#000000" ? "black" : "white"} outline`,
+      detail: `Reaches ${predicted.worstRatio.toFixed(2)}:1 against the worst part of the background.`,
+      predictedScore: predicted.score,
+      apply: { kind: "stroke", color, width: 2 },
+    })
+  }
+
+  // --- a shadow ------------------------------------------------------------
+  // The shadow contrasts with the backdrop, so it takes the opposite side of
+  // the region's median.
+  const shadowColor =
+    perceptualLightness(region.medianHex) < 0.5 ? "#FFFFFF" : "#000000"
+  const shadowBlur = 18
+  const shadowOffset = 3
+  const shadow = buildReport({
+    ...base,
+    shadowColor,
+    shadowBlur,
+    shadowOffset,
+  })
+  push({
+    id: `shadow-${shadowColor.slice(1)}`,
+    title: `Add a soft ${shadowColor === "#000000" ? "black" : "white"} shadow`,
+    detail: `Separates the type from the photo, reaching ${shadow.worstRatio.toFixed(2)}:1.`,
+    predictedScore: shadow.score,
+    apply: {
+      kind: "shadow",
+      color: shadowColor,
+      blur: shadowBlur,
+      offset: shadowOffset,
+    },
+  })
+
+  // --- a deeper frame gradient --------------------------------------------
+  if (
+    report.badge === "FAIL" &&
+    options.gradientOpacity !== undefined &&
+    options.gradientOpacity < 70
+  ) {
+    out.push({
+      id: "gradient",
+      title: "Darken the frame",
+      detail:
+        "Deepens the gradient behind the type. Its score is measured once applied.",
+      predictedScore: null,
+      apply: {
+        kind: "gradient",
+        opacity: Math.min(75, options.gradientOpacity + 20),
+      },
+    })
+  }
+
+  // --- a calmer part of the photo -----------------------------------------
+  for (const move of options.moves ?? []) {
+    const predicted = buildReport({ ...base, region: move.region })
+    push({
+      id: `move-${move.id}`,
+      title: move.title,
+      detail: `That part of the photo measures ${predicted.worstRatio.toFixed(2)}:1.`,
+      predictedScore: predicted.score,
+      apply: { kind: "move", top: move.top },
+    })
+  }
+
+  // Best first; the unscored gradient after everything with a number.
+  return out.sort((a, b) => (b.predictedScore ?? -1) - (a.predictedScore ?? -1))
 }
 
 function scoreFor(
