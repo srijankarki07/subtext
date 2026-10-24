@@ -262,10 +262,10 @@ export default function TopBar({
     <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-3 select-none sm:px-4">
       {/* Document identity */}
       <div className="flex min-w-0 items-center gap-3">
-        <span className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">
+        <span className="hidden text-[13px] font-semibold tracking-[-0.01em] text-foreground sm:inline">
           Subtext
         </span>
-        <div className="h-4 w-px bg-border" />
+        <div className="hidden h-4 w-px bg-border sm:block" />
         <input
           aria-label="Document title"
           value={documentTitle}
@@ -371,26 +371,48 @@ export default function TopBar({
           </SelectContent>
         </Select>
 
-        {/* The single filled action in the app. */}
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => setIsExportModalOpen(true)}
-        >
-          <Download size={14} />
-          <span>Export</span>
-        </Button>
+        {/* The single filled action in the app. On a phone it lives in the
+            bottom strip, where a thumb can reach it. */}
+        <div className="hidden lg:flex">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            <Download size={14} />
+            <span>Export</span>
+          </Button>
+        </div>
 
         <CompareToggle />
 
+        <div className="flex items-center gap-0.5 lg:hidden">
+          <IconButton
+            icon={<Undo2 size={15} />}
+            label="Undo"
+            disabled={!canUndo}
+            onClick={() => useEditorStore.getState().undo()}
+          />
+          <IconButton
+            icon={<Redo2 size={15} />}
+            label="Redo"
+            disabled={!canRedo}
+            onClick={() => useEditorStore.getState().redo()}
+          />
+        </div>
+
         <ThemeToggle />
 
-        <IconButton
-          icon={<Settings2 size={15} />}
-          label={isInspectorOpen ? "Hide inspector" : "Show inspector"}
-          active={isInspectorOpen}
-          onClick={onToggleInspector}
-        />
+        {/* The inspector is a side column on desktop and a sheet on a phone;
+            the phone's control is the Edit destination in the bottom strip. */}
+        <div className="hidden lg:flex">
+          <IconButton
+            icon={<Settings2 size={15} />}
+            label={isInspectorOpen ? "Hide inspector" : "Show inspector"}
+            active={isInspectorOpen}
+            onClick={onToggleInspector}
+          />
+        </div>
       </div>
     </header>
   )

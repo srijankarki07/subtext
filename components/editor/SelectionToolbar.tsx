@@ -480,7 +480,10 @@ function BarButton({
         aria-pressed={active}
         onClick={onClick}
         className={cn(
-          "flex size-7 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none",
+          // 36px on touch devices; the 28px desktop target is too small for a
+          // thumb, and this bar is the only way to act on a selection on a
+          // phone.
+          "flex size-9 cursor-pointer items-center justify-center rounded-lg transition-colors outline-none lg:size-7",
           "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
           destructive
             ? "text-[var(--text-muted)] hover:bg-destructive/10 hover:text-destructive"

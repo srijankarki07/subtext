@@ -972,6 +972,24 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
   },
 
   /**
+   * Puts the selected text into editing without a double click.
+   *
+   * Double-click is the desktop way in; on a touch screen it is at best a
+   * double-tap and at worst nothing, which leaves the words unreachable. This
+   * is the same entry point, exposed as a button.
+   */
+  editActiveText: () => {
+    const { canvas, activeObject } = get()
+    if (!canvas || activeObject?.type !== "i-text") return
+
+    const text = activeObject as IText
+    canvas.setActiveObject(text)
+    text.enterEditing()
+    text.selectAll()
+    canvas.requestRenderAll()
+  },
+
+  /**
    * Starts a new document: clears the artboard and resets everything that
    * describes it, but keeps the Fabric canvas alive.
    *
