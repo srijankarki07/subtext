@@ -68,14 +68,20 @@ export default function ColorPanel() {
   const imagePalette = useEditorStore((s) => s.imagePalette)
   const autoColorText = useEditorStore((s) => s.autoColorText)
   const applyTextStyle = useEditorStore((s) => s.applyTextStyle)
+  const moveCandidates = useEditorStore((s) => s.moveCandidates)
+  const gradientOpacity = useEditorStore((s) => s.gradientOpacity)
+  const applyRecommendation = useEditorStore((s) => s.applyRecommendation)
 
   const candidates = useMemo(
     () => (visibility ? rankColours(visibility, imagePalette) : []),
     [visibility, imagePalette]
   )
   const suggestions = useMemo(
-    () => (visibility ? recommend(visibility) : []),
-    [visibility]
+    () =>
+      visibility
+        ? recommend(visibility, { moves: moveCandidates, gradientOpacity })
+        : [],
+    [visibility, moveCandidates, gradientOpacity]
   )
 
   if (!activeObject || activeObject.type !== "i-text") {
@@ -229,10 +235,26 @@ export default function ColorPanel() {
 
       {suggestions.length > 0 && (
         <Section
-          title="Suggestions"
-          description="Measured before you apply them."
+          title={failing ? "Low contrast" : "Suggestions"}
+          description={
+            failing
+              ? "The words do not stand apart from what is behind them."
+              : "Measured before you apply them."
+          }
+          action={
+            failing ? (
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={() => applyRecommendation(suggestions[0])}
+              >
+                <Wand2 size={12} aria-hidden="true" />
+                Fix automatically
+              </Button>
+            ) : undefined
+          }
         >
-          {suggestions.map((suggestion) => (
+          {suggestions.slice(0, 4).map((suggestion) => (
             <div
               key={suggestion.id}
               className="flex items-start justify-between gap-2 rounded-lg border border-border p-2.5"
@@ -246,25 +268,21 @@ export default function ColorPanel() {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
-                {suggestion.predictedScore !== null && (
+                {suggestion.predictedScore !== null ? (
                   <span className="text-[11px] text-[var(--text-secondary)] tabular-nums">
                     → {suggestion.predictedScore}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    not scored
                   </span>
                 )}
                 {suggestion.apply && (
                   <Button
                     variant="secondary"
                     size="xs"
-                    onClick={() => {
-                      const apply = suggestion.apply
-                      if (!apply) return
-                      if (apply.kind === "stroke") {
-                        applyTextStyle("stroke", apply.color)
-                        applyTextStyle("strokeWidth", apply.width)
-                      } else {
-                        applyTextStyle("fill", apply.color)
-                      }
-                    }}
+                    aria-label={`Apply: ${suggestion.title}`}
+                    onClick={() => applyRecommendation(suggestion)}
                   >
                     Apply
                   </Button>

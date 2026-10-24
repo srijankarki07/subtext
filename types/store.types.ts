@@ -7,7 +7,11 @@ import type { DesignSummary } from "@/lib/designs"
 import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
-import type { VisibilityReport } from "@/lib/visibility"
+import type {
+  MoveCandidate,
+  Recommendation,
+  VisibilityReport,
+} from "@/lib/visibility"
 import { CustomFontMetadata } from "@/lib/customFonts"
 
 export type TextBlockType = "quote" | "author" | "handle" | "signature"
@@ -156,6 +160,12 @@ export interface ColorSlice {
    * shadow contribute. Null when nothing textual is selected.
    */
   visibility: VisibilityReport | null
+  /**
+   * Vertical positions measured for the selected text, as places it could move
+   * to. Recomputed with the report, so a suggestion can quote the score at the
+   * position it is proposing rather than a guess.
+   */
+  moveCandidates: MoveCandidate[]
   isPickingColor: boolean
   colorPickerTarget: "fill" | "stroke" | "shadow" | "background" | null
   pickerSnapshot: HTMLCanvasElement | null
@@ -190,6 +200,8 @@ export interface ColorSlice {
   ) => VisibilityReport | null
   /** Applies a named style to the selected block in one step. */
   applyTextPreset: (id: string) => void
+  /** Runs one measured suggestion against the selected text. */
+  applyRecommendation: (recommendation: Recommendation) => void
   getActiveSelectionStyle: (key: string) => any
 }
 
