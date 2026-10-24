@@ -78,6 +78,13 @@ export const TOOL_META = {
     keywords: "shapes lines icons frames stickers",
     hint: "Shapes, lines and icons to build the composition.",
   },
+  brand: {
+    label: "Brand",
+    shortcut: "B",
+    hasPanel: true,
+    keywords: "logo palette colours fonts kit identity",
+    hint: "Colours, fonts and logos you reuse, kept on this device.",
+  },
   cinema: {
     label: "Cinema",
     shortcut: "C",
