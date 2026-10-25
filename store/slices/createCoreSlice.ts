@@ -23,6 +23,7 @@ import {
   replaceImage,
   swapPhoto,
 } from "@/lib/imageImport"
+import { FONT_PAIRINGS, getFontById } from "@/lib/fonts"
 import { TEMPLATES } from "@/lib/templates"
 import { backgroundIdOf, isBackgroundObject } from "@/lib/backgroundFill"
 import {
@@ -969,6 +970,70 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
     canvas.setActiveObject(textObject)
     canvas.requestRenderAll()
     saveHistoryState()
+  },
+
+  /**
+   * Applies a curated pairing across the composition.
+   *
+   * The pairing data has always lived in `lib/fonts.ts`; this is what makes it
+   * usable. The display face goes on the quote blocks - or, when the text does
+   * not carry that role, on the largest block - and the reading face on
+   * everything else. That is the same hierarchy templates use, so applying a
+   * pairing to a template's output keeps its structure rather than flattening
+   * it into one font.
+   */
+  applyFontPairing: (name) => {
+    const { canvas, beginHistoryTransaction, endHistoryTransaction } = get()
+    if (!canvas) return false
+
+    const pairing = FONT_PAIRINGS.find((entry) => entry.name === name)
+    const headerFont = pairing ? getFontById(pairing.header) : undefined
+    const bodyFont = pairing ? getFontById(pairing.body) : undefined
+    if (!pairing || !headerFont || !bodyFont) return false
+
+    const texts = canvas
+      .getObjects()
+      .filter(
+        (object) =>
+          object.type === "i-text" &&
+          (object as { isEffect?: boolean }).isEffect !== true
+      ) as IText[]
+    if (texts.length === 0) return false
+
+    const quotes = texts.filter(
+      (text) => (text as { textType?: string }).textType === "quote"
+    )
+    const headings = new Set<IText>(
+      quotes.length > 0
+        ? quotes
+        : [
+            texts.reduce((largest, text) =>
+              (text.fontSize ?? 0) > (largest.fontSize ?? 0) ? text : largest
+            ),
+          ]
+    )
+
+    beginHistoryTransaction(`Font pairing: ${pairing.name}`)
+    try {
+      const frame = { width: canvas.getWidth(), height: canvas.getHeight() }
+      texts.forEach((text) => {
+        text.set(
+          "fontFamily",
+          headings.has(text) ? headerFont.fabricFamily : bodyFont.fabricFamily
+        )
+        // A wider face can push a block past the artboard; the same clamp
+        // template application uses keeps it inside.
+        clampTextToFrame(text, frame)
+        text.setCoords()
+      })
+      canvas.requestRenderAll()
+      get().saveHistoryState(`Font pairing: ${pairing.name}`)
+    } finally {
+      endHistoryTransaction()
+    }
+
+    get().calculateContrast()
+    return true
   },
 
   /**
