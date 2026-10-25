@@ -1,6 +1,7 @@
 import type { Canvas } from "fabric"
 
 import { getAssetBlob, releaseIssuedAssetUrls } from "@/lib/assets"
+import { DEFAULT_MOTION, type MotionSettings } from "@/lib/motion"
 // Side-effect import: registers the ToneCurve filter class before any document
 // is deserialised. Without it a saved curve comes back as an inert plain object.
 import "@/lib/toneFilter"
@@ -43,6 +44,8 @@ export interface EffectSnapshot {
   saturation: number
   warmth: number
   imagePalette: string[]
+  /** The export's timing and animation, which lives in the store. */
+  motion: MotionSettings
 }
 
 export function captureEffects(state: Partial<EffectSnapshot>): EffectSnapshot {
@@ -61,6 +64,7 @@ export function captureEffects(state: Partial<EffectSnapshot>): EffectSnapshot {
     saturation: state.saturation ?? 0,
     warmth: state.warmth ?? 0,
     imagePalette: [...(state.imagePalette ?? [])],
+    motion: { ...(state.motion ?? DEFAULT_MOTION) },
   }
 }
 

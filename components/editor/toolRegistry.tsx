@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import {
+  Clapperboard,
   ImagePlus,
   Layers3,
   LayoutTemplate,
@@ -12,6 +13,7 @@ import {
 
 import MediaPanel from "@/components/editor/MediaPanel"
 import BrandPanel from "@/components/panels/BrandPanel"
+import MotionPanel from "@/components/panels/MotionPanel"
 import EffectsPanel from "@/components/panels/EffectPanel"
 import ElementsPanel from "@/components/panels/ElementsPanel"
 import LayersPanel from "@/components/panels/LayersPanel"
@@ -44,6 +46,7 @@ export const TOOL_ICONS: Record<EditorTool, typeof MousePointer2> = {
   elements: Shapes,
   brand: Palette,
   cinema: MonitorPlay,
+  motion: Clapperboard,
   layers: Layers3,
 }
 
@@ -70,5 +73,6 @@ export const TOOL_PANELS: {
   elements: ElementsPanel,
   brand: BrandPanel,
   cinema: EffectsPanel,
+  motion: MotionPanel,
   layers: LayersPanel,
 }

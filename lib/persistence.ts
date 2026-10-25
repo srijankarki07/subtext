@@ -1,4 +1,5 @@
 import type { EffectSnapshot } from "@/lib/snapshot"
+import type { MotionSettings } from "@/lib/motion"
 import type {
   BlurZoneState,
   LetterboxState,
@@ -74,6 +75,8 @@ export interface ProjectPayload {
   letterboxes: LetterboxState[]
   imagePalette: string[]
   documentTitle: string
+  /** Optional so payloads written before motion existed still load. */
+  motion?: MotionSettings
   /** Display only, and deliberately outside the signature. */
   savedAt: string
 }
@@ -96,6 +99,7 @@ export function signatureOf(payload: Omit<ProjectPayload, "savedAt">): string {
     payload.letterboxes,
     payload.imagePalette,
     payload.documentTitle,
+    payload.motion ?? null,
   ])
 }
 
@@ -125,6 +129,7 @@ export function signatureFromParts(parts: {
     effects.letterboxes,
     effects.imagePalette,
     parts.documentTitle,
+    effects.motion ?? null,
   ])
 }
 
