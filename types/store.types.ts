@@ -1,4 +1,4 @@
-import { Canvas, FabricObject, IText } from "fabric"
+import { Canvas, FabricImage, FabricObject, IText } from "fabric"
 
 import type { EditorTool } from "@/lib/tools"
 
@@ -9,6 +9,7 @@ import type { DesignSummary } from "@/lib/designs"
 import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
+import type { ToneState } from "@/lib/tonal"
 import type {
   MoveCandidate,
   Recommendation,
@@ -308,6 +309,8 @@ export interface EffectSlice {
    * `scope` is "selected" for manual adjustments and "all" for a look that
    * should cover every image layer.
    */
+  /** Applies levels and a curve to the selected image, or the primary photo. */
+  applyTone: (tone: ToneState, target?: FabricImage | null) => void
   applyImageFilter: (
     type: string,
     options: any,

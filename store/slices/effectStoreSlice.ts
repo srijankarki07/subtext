@@ -3,6 +3,8 @@ import {
   getDuotoneMatrix,
   getWarmthMatrix,
 } from "@/lib/filters"
+import { applyToneToImage } from "@/lib/imageTone"
+import type { ToneState } from "@/lib/tonal"
 import { EditorStore, EffectSlice } from "@/types/store.types"
 import { FabricImage, filters, Gradient, Rect } from "fabric"
 
@@ -585,6 +587,26 @@ export const createEffectSlice: StateCreator<
   setGrainIntensity: (intensity) => {
     set({ grainIntensity: intensity })
     get().saveHistoryState("Film grain", { coalesceKey: "grain" })
+  },
+
+  /**
+   * Levels and curve, as one filter.
+   *
+   * A single filter rather than a stack of Gamma/Contrast ones: the curve is
+   * nonlinear and cannot be expressed as their composition, and one filter is
+   * one pass over the pixels. Coalesced in history so dragging a point is one
+   * undo, not one per frame.
+   */
+  applyTone: (tone: ToneState, target) => {
+    const { canvas, saveHistoryState } = get()
+    if (!canvas) return
+
+    const targets = target ? [target] : effectTargets(get, "selected")
+    if (!targets.length) return
+
+    targets.forEach((image) => applyToneToImage(image, tone))
+    canvas.requestRenderAll()
+    saveHistoryState("Tone curve", { coalesceKey: "tone" })
   },
 
   applyImageFilter: (type, options, scope = "selected") => {
