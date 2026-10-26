@@ -95,6 +95,13 @@ export function buildCommands(handlers: CommandHandlers): Command[] {
       keywords: "cutout matte transparent subject isolate",
       run: () => void store().removeBackground(),
     },
+    {
+      id: "smart-crop",
+      title: "Frame the photo automatically",
+      group: "Edit",
+      keywords: "smart crop auto reframe subject keep detail",
+      run: () => store().smartCrop(),
+    },
 
     // --- edit --------------------------------------------------------------
     {

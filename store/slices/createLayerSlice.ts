@@ -1,4 +1,10 @@
-import { ActiveSelection, Group, type Canvas, type FabricObject } from "fabric"
+import {
+  ActiveSelection,
+  Group,
+  type Canvas,
+  type FabricImage,
+  type FabricObject,
+} from "fabric"
 import { StateCreator } from "zustand"
 
 import {
@@ -9,6 +15,7 @@ import {
   type DistributeAxis,
   type Move,
 } from "@/lib/arrange"
+import { smartCropImage } from "@/lib/imageCrop"
 import { EditorStore, LayerSlice } from "@/types/store.types"
 
 /**
@@ -468,5 +475,52 @@ export const createLayerSlice: StateCreator<EditorStore, [], [], LayerSlice> = (
     activeObject.setCoords()
     canvas.requestRenderAll()
     saveHistoryState()
+  },
+
+  /**
+   * Frames the photo on its most detailed crop.
+   *
+   * Re-covers first, because the chosen window is computed against the
+   * artboard's aspect and a photo the user has scaled by hand no longer has a
+   * meaningful window. One transaction, so the reframe is one undo; when the
+   * photo cannot be sampled, nothing is recorded and the old placement stands.
+   */
+  smartCrop: () => {
+    const {
+      canvas,
+      activeObject,
+      beginHistoryTransaction,
+      endHistoryTransaction,
+      saveHistoryState,
+    } = get()
+    if (!canvas) return false
+
+    const selected = activeObject as
+      (FabricImage & { isEffect?: boolean }) | null
+    const target =
+      selected?.type === "image" && !selected.isEffect
+        ? selected
+        : (canvas
+            .getObjects()
+            .find(
+              (object) =>
+                object.type === "image" &&
+                (object as { isEffect?: boolean }).isEffect !== true
+            ) as FabricImage | undefined)
+    if (!target || (target as { locked?: boolean }).locked) return false
+
+    let applied = false
+    beginHistoryTransaction("Smart crop")
+    try {
+      applied = smartCropImage(target, canvas) !== null
+      if (applied) {
+        canvas.requestRenderAll()
+        saveHistoryState("Smart crop")
+      }
+    } finally {
+      endHistoryTransaction()
+    }
+
+    return applied
   },
 })
