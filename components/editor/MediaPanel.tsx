@@ -2,6 +2,7 @@
 
 import {
   Ban,
+  Crop,
   ImagePlus,
   Maximize,
   Minimize,
@@ -35,6 +36,7 @@ export default function MediaPanel() {
   const canvas = useEditorStore((s) => s.canvas)
   const activeObject = useEditorStore((s) => s.activeObject)
   const fitImageToCanvas = useEditorStore((s) => s.fitImageToCanvas)
+  const smartCrop = useEditorStore((s) => s.smartCrop)
   const deleteActiveObject = useEditorStore((s) => s.deleteActiveObject)
   const backgroundPreset = useEditorStore((s) => s.backgroundPreset)
   const applyBackground = useEditorStore((s) => s.applyBackground)
@@ -90,7 +92,7 @@ export default function MediaPanel() {
       {photo && (
         <Section
           title="Placement"
-          description="Fill crops to the artboard; fit shows the whole photo."
+          description="Fill crops to the artboard, fit shows the whole photo, and frame keeps the busiest crop."
         >
           <div className="flex gap-2">
             <button
@@ -122,6 +124,23 @@ export default function MediaPanel() {
             >
               <Minimize size={16} aria-hidden="true" />
               <span className="text-[12px] font-medium">Fit</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedIsPhoto) {
+                  canvas?.setActiveObject(photo)
+                  canvas?.requestRenderAll()
+                  useEditorStore.getState().setActiveObject(photo)
+                }
+                smartCrop()
+              }}
+              aria-label="Smart crop the photo"
+              title="Frame the most detailed crop"
+              className="flex flex-1 cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-border bg-card py-3 text-[var(--text-secondary)] transition-colors outline-none hover:bg-subtle-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring active:scale-[0.98]"
+            >
+              <Crop size={16} aria-hidden="true" />
+              <span className="text-[12px] font-medium">Frame</span>
             </button>
           </div>
 

@@ -154,6 +154,11 @@ export interface LayerSlice {
   /** Dissolves the selected group, selecting its children. */
   ungroupSelection: () => void
   fitImageToCanvas: (mode: "fit" | "fill") => void
+  /**
+   * Re-covers the photo and frames the most detailed crop of the artboard's
+   * aspect. Returns false when there is no photo or it cannot be sampled.
+   */
+  smartCrop: () => boolean
 }
 
 /**
