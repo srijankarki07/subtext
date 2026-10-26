@@ -23,6 +23,7 @@ import {
   replaceImage,
   swapPhoto,
 } from "@/lib/imageImport"
+import { DEFAULT_MOTION } from "@/lib/motion"
 import { FONT_PAIRINGS, getFontById } from "@/lib/fonts"
 import { TEMPLATES } from "@/lib/templates"
 import { backgroundIdOf, isBackgroundObject } from "@/lib/backgroundFill"
@@ -146,6 +147,7 @@ function capturePayload(get: () => EditorStore): ProjectPayload | null {
     letterboxes,
     imagePalette,
     documentTitle,
+    motion,
   } = get()
   if (!canvas) return null
 
@@ -166,6 +168,7 @@ function capturePayload(get: () => EditorStore): ProjectPayload | null {
       letterboxes,
       imagePalette,
       documentTitle,
+      motion,
       savedAt: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -427,6 +430,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         letterboxes,
         imagePalette,
         documentTitle,
+        motion,
       } = data
 
       // 1. Restore Artboard & CSS scaling
@@ -443,6 +447,7 @@ export const createCoreSlice: StateCreator<EditorStore, [], [], CoreSlice> = (
         letterboxes: letterboxes ?? [],
         imagePalette: imagePalette ?? [],
         documentTitle: documentTitle ?? "Untitled",
+        motion: motion ?? DEFAULT_MOTION,
       })
 
       // 3. Load Canvas Objects, restoring the photo from its stored asset first

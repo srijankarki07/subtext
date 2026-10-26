@@ -8,6 +8,7 @@ import { createCoreSlice } from "./slices/createCoreSlice"
 import { createDesignSlice } from "./slices/createDesignSlice"
 import { createElementSlice } from "./slices/createElementSlice"
 import { createHistorySlice } from "./slices/createHistorySlice"
+import { createMotionSlice } from "./slices/createMotionSlice"
 import { createLayerSlice } from "./slices/createLayerSlice"
 import { createEffectSlice } from "./slices/effectStoreSlice"
 import { createFontSlice } from "./slices/createFontSlice"
@@ -25,6 +26,7 @@ export const useEditorStore = create<EditorStore>()((...a) => ({
   ...createBrandSlice(...a),
   ...createFontSlice(...a),
   ...createHistorySlice(...a),
+  ...createMotionSlice(...a),
   ...createLayerSlice(...a),
   ...createColorSlice(...a),
   ...createContextMenuSlice(...a),

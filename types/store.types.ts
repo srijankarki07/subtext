@@ -9,6 +9,7 @@ import type { DesignSummary } from "@/lib/designs"
 import type { ProjectPayload } from "@/lib/persistence"
 import type { SnapLine } from "@/lib/composition"
 import type { EffectSnapshot } from "@/lib/snapshot"
+import type { MotionSettings } from "@/lib/motion"
 import type { ToneState } from "@/lib/tonal"
 import type {
   MoveCandidate,
@@ -262,6 +263,12 @@ export interface BrandSlice {
   addBrandLogo: (file: File) => Promise<boolean>
   removeBrandLogo: (id: string) => void
   placeBrandLogo: (id: string) => Promise<boolean>
+}
+
+export interface MotionSlice {
+  /** Timing and entrance animation for the exported video. */
+  motion: MotionSettings
+  setMotion: (patch: Partial<MotionSettings>) => void
 }
 
 export interface BackgroundSlice {
@@ -561,6 +568,7 @@ export interface BackgroundRemovalState {
 
 export type EditorStore = CoreSlice &
   BrandSlice &
+  MotionSlice &
   BackgroundSlice &
   FontSlice &
   HistorySlice &

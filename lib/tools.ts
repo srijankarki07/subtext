@@ -92,6 +92,13 @@ export const TOOL_META = {
     keywords: "grade effects blur vignette letterbox duotone grain",
     hint: "Grade the image so the words sit on it comfortably.",
   },
+  motion: {
+    label: "Motion",
+    shortcut: "A",
+    hasPanel: true,
+    keywords: "animate video reels typewriter fade rise ken burns export mp4",
+    hint: "Animate the composition and export it as a video.",
+  },
   layers: {
     label: "Layers",
     shortcut: "L",

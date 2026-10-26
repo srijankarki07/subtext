@@ -1,4 +1,5 @@
 import { backgroundIdOf } from "@/lib/backgroundFill"
+import { DEFAULT_MOTION } from "@/lib/motion"
 import { bindBlurHandleListeners } from "@/lib/fabricDocument"
 import { isDocumentEmpty, signatureFromParts } from "@/lib/persistence"
 import {
@@ -299,6 +300,7 @@ export const createHistorySlice: StateCreator<
             saturation: effects.saturation,
             warmth: effects.warmth,
             imagePalette: effects.imagePalette,
+            motion: effects.motion ?? DEFAULT_MOTION,
           })
         }
 
